@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Town</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: Verdana, Geneva, sans-serif;
+    background: #bfe6ff;
+    color: #23324a;
+    display: flex; flex-direction: column; align-items: center;
+    overflow-x: hidden;
+  }
+  button { font-family: Verdana, Geneva, sans-serif; }
+  h1 {
+    margin: 14px 0 4px; font-size: clamp(22px, 5vw, 34px);
+    color: #2b4c8c; letter-spacing: 1px;
+  }
+  .hint { margin: 0 0 10px; font-size: clamp(13px, 3vw, 16px); padding: 0 16px; text-align: center; }
+  #wrap {
+    position: relative; width: min(100vw - 16px, 1100px);
+    border-radius: 18px; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(30, 60, 110, .25);
+    margin-bottom: 16px;
+  }
+  #map { display: block; width: 100%; height: auto; transform-origin: 50% 50%; transition: transform .7s ease-in; }
+  #map.zoom { transform: scale(3.2); }
+  #fade { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .6s ease-in .15s; }
+  #fade.on { opacity: 1; }
+
+  .bld { cursor: pointer; outline: none; }
+  .bld .lift { transition: transform .2s ease; transform-box: fill-box; transform-origin: 50% 100%; }
+  .bld:hover .lift, .bld:focus-visible .lift { transform: translateY(-6px) scale(1.04); }
+  .bld:focus-visible .glow, .bld:hover .glow { opacity: 1; }
+  .glow { opacity: 0; transition: opacity .2s; }
+  .bld.shake .lift { animation: shake .45s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-7px); } 40% { transform: translateX(7px); }
+    60% { transform: translateX(-4px); } 80% { transform: translateX(4px); }
+  }
+  .open-star { animation: twinkle 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes twinkle { 50% { transform: scale(1.25) rotate(20deg); } }
+  .tree { animation: sway 3s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes sway { 50% { transform: rotate(2.5deg); } }
+  .splash { animation: splash 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes splash { 50% { transform: scale(1.6); opacity: .6; } }
+
+  #toast {
+    position: absolute; left: 50%; top: 14px; transform: translate(-50%, -30px);
+    background: #fff; border: 3px solid #2b4c8c; border-radius: 14px;
+    padding: 10px 18px; font-size: clamp(13px, 2.6vw, 18px); font-weight: bold;
+    opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  #start {
+    position: fixed; inset: 0; background: rgba(35, 60, 110, .55);
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+    z-index: 5; transition: opacity .35s;
+  }
+  #start.hide { opacity: 0; pointer-events: none; }
+  .card {
+    background: #fff; border-radius: 22px; padding: 26px 28px; max-width: 420px; text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: pop .45s ease-out;
+  }
+  .card h2 { margin: 0 0 10px; color: #2b4c8c; font-size: 28px; }
+  .card p { margin: 0 0 18px; line-height: 1.5; }
+  @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .big {
+    min-height: 52px; padding: 12px 34px; font-size: 20px; font-weight: bold;
+    border: none; border-radius: 30px; background: #ff7aa8; color: #fff; cursor: pointer;
+    box-shadow: 0 4px 0 #d9567f; transition: transform .1s;
+  }
+  .big:active { transform: translateY(3px); box-shadow: 0 1px 0 #d9567f; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tree, .open-star, .splash { animation: none; }
+    #map { transition: none; }
+    #map.zoom { transform: none; }
+    .bld .lift { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <h1>My Town</h1>
+  <p class="hint">Tap a building to go inside.</p>
+  <div id="wrap">
+    <svg id="map" viewBox="0 0 1000 800" xmlns="http://www.w3.org/2000/svg" aria-label="Town map"></svg>
+    <div id="fade"></div>
+    <div id="toast"></div>
+  </div>
+
+  <div id="start">
+    <div class="card">
+      <h2>Welcome to My Town!</h2>
+      <p>Tap a building on the map to go inside and play.<br>The <b>Boutique</b> is open now. More places are coming soon!</p>
+      <button class="big" id="go">Start</button>
+    </div>
+  </div>
+
+<script>
+// ---------- Places on the map ----------
+// To add a new mini-game: set "link" to its file (for example "bakery/bakery.html").
+const PLACES = [
+  { id: 'boutique', name: 'Boutique', x: 70,  y: 120, w: 170, h: 150, wall: '#ffc4dd', roof: '#ff7aa8', style: 'awning', link: 'dress-up/dress-up.html' },
+  { id: 'bakery',   name: 'Bakery',   x: 262, y: 145, w: 150, h: 125, wall: '#ffe9b8', roof: '#c9875a', style: 'tri' },
+  { id: 'library',  name: 'Library',  x: 592, y: 110, w: 180, h: 160, wall: '#d8d2f5', roof: '#7a6cc9', style: 'columns' },
+  { id: 'pets',     name: 'Pet Shop', x: 815, y: 150, w: 140, h: 120, wall: '#c9f0d6', roof: '#45b37a', style: 'awning' },
+  { id: 'school',   name: 'School',   x: 40,  y: 470, w: 190, h: 130, wall: '#ffd2b0', roof: '#e0623a', style: 'tower' },
+  { id: 'grocery',  name: 'Grocery',  x: 268, y: 440, w: 150, h: 120, wall: '#e6f7c4', roof: '#8cbf3a', style: 'flat' },
+  { id: 'bank',     name: 'Bank',     x: 830, y: 420, w: 130, h: 130, wall: '#e3e8ef', roof: '#5d7896', style: 'columns' },
+];
+
+const svg = document.getElementById('map');
+const NS = 'http://www.w3.org/2000/svg';
+
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = s => Math.max(0, Math.min(255, ((n >> s) & 255) + amt));
+  return '#' + ((1 << 24) | (c(16) << 16) | (c(8) << 8) | c(0)).toString(16).slice(1);
+}
+
+function tree(x, y, s = 1) {
+  return `<g class="tree" style="animation-delay:${(x % 7) * -0.4}s">
+    <rect x="${x - 5 * s}" y="${y - 18 * s}" width="${10 * s}" height="${20 * s}" fill="#8a5a3b" rx="3"/>
+    <circle cx="${x}" cy="${y - 34 * s}" r="${22 * s}" fill="#5cbf6a"/>
+    <circle cx="${x - 12 * s}" cy="${y - 26 * s}" r="${14 * s}" fill="#4fae5d"/>
+    <circle cx="${x + 13 * s}" cy="${y - 28 * s}" r="${13 * s}" fill="#68cc76"/></g>`;
+}
+
+function windows(x, y, w, n, color) {
+  let s = '', gap = w / (n + 1);
+  for (let i = 1; i <= n; i++) {
+    const cx = x + gap * i - 15;
+    s += `<rect x="${cx}" y="${y}" width="30" height="28" rx="4" fill="#bfe8ff" stroke="${color}" stroke-width="4"/>
+          <line x1="${cx + 15}" y1="${y}" x2="${cx + 15}" y2="${y + 28}" stroke="${color}" stroke-width="3"/>`;
+  }
+  return s;
+}
+
+function building(p) {
+  const { x, y, w, h, wall, roof, style } = p;
+  const dark = shade(roof, -40), wallDark = shade(wall, -45);
+  let top = '', extra = '';
+  if (style === 'tri') {
+    top = `<polygon points="${x - 12},${y + 4} ${x + w / 2},${y - 55} ${x + w + 12},${y + 4}" fill="${roof}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+           <rect x="${x + w - 40}" y="${y - 50}" width="18" height="34" fill="${dark}"/>`;
+  } else if (style === 'awning') {
+    top = `<rect x="${x - 6}" y="${y - 16}" width="${w + 12}" height="20" rx="6" fill="${roof}"/>`;
+    const n = 6, sw = (w + 12) / n;
+    for (let i = 0; i < n; i++) {
+      extra += `<path d="M${x - 6 + i * sw},${y + 52} h${sw} v18 a${sw / 2},${sw / 2.5} 0 0 1 ${-sw},0z" fill="${i % 2 ? '#fff' : roof}"/>`;
+    }
+  } else if (style === 'columns') {
+    top = `<polygon points="${x - 14},${y + 2} ${x + w / 2},${y - 40} ${x + w + 14},${y + 2}" fill="${roof}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>`;
+    for (let i = 0; i < 4; i++) {
+      const cx = x + 18 + i * ((w - 50) / 3);
+      extra += `<rect x="${cx}" y="${y + 50}" width="14" height="${h - 55}" fill="#fff" stroke="${wallDark}" stroke-width="2"/>`;
+    }
+  } else if (style === 'tower') {
+    top = `<rect x="${x + w / 2 - 28}" y="${y - 60}" width="56" height="62" fill="${wall}" stroke="${wallDark}" stroke-width="4"/>
+           <polygon points="${x + w / 2 - 38},${y - 58} ${x + w / 2},${y - 95} ${x + w / 2 + 38},${y - 58}" fill="${roof}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+           <circle cx="${x + w / 2}" cy="${y - 30}" r="15" fill="#fff" stroke="${dark}" stroke-width="3"/>
+           <path d="M${x + w / 2},${y - 30} v-10 M${x + w / 2},${y - 30} h8" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>
+           <rect x="${x - 6}" y="${y - 8}" width="${w + 12}" height="14" rx="5" fill="${roof}"/>`;
+  } else {
+    top = `<rect x="${x - 6}" y="${y - 14}" width="${w + 12}" height="18" rx="6" fill="${roof}"/>`;
+  }
+
+  const doorW = 36, doorH = 52, dx = x + w / 2 - doorW / 2, dy = y + h - doorH;
+  const winY = style === 'awning' ? y + 82 : y + 66;
+  const wins = style === 'columns' ? '' : windows(x, Math.min(winY, dy - 34), w, w > 160 ? 3 : 2, wallDark);
+  const open = !!p.link;
+
+  return `<g class="bld" data-id="${p.id}" tabindex="0" role="button" aria-label="${p.name}${open ? '' : ', coming soon'}">
+    <g class="lift">
+      <ellipse class="glow" cx="${x + w / 2}" cy="${y + h + 4}" rx="${w / 2 + 18}" ry="14" fill="#fff59a"/>
+      <ellipse cx="${x + w / 2}" cy="${y + h + 4}" rx="${w / 2 + 6}" ry="9" fill="rgba(0,0,0,.15)"/>
+      ${top}
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${wall}" stroke="${wallDark}" stroke-width="4" rx="4"/>
+      ${extra}
+      ${wins}
+      <rect x="${dx}" y="${dy}" width="${doorW}" height="${doorH}" rx="16" ry="16" fill="${dark}"/>
+      <rect x="${dx}" y="${dy + 20}" width="${doorW}" height="${doorH - 20}" fill="${dark}"/>
+      <circle cx="${dx + doorW - 8}" cy="${dy + 30}" r="3" fill="#ffd34d"/>
+      <rect x="${x + w / 2 - 60}" y="${y + 14}" width="120" height="30" rx="8" fill="#fff" stroke="${dark}" stroke-width="3"/>
+      <text x="${x + w / 2}" y="${y + 35}" text-anchor="middle" font-size="17" font-weight="bold" fill="${dark}">${p.name}</text>
+      ${open ? `<g class="open-star"><polygon points="${starPts(x + w - 4, y - 4, 18, 8)}" fill="#ffd34d" stroke="#e6a817" stroke-width="3" stroke-linejoin="round"/></g>` : ''}
+    </g>
+  </g>`;
+}
+
+function starPts(cx, cy, R, r) {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, rad = i % 2 ? r : R;
+    pts.push((cx + rad * Math.cos(a)).toFixed(1) + ',' + (cy + rad * Math.sin(a)).toFixed(1));
+  }
+  return pts.join(' ');
+}
+
+// A car seen from above, pointing right
+function car(id, color) {
+  const light = shade(color, 45), dark = shade(color, -40);
+  return `<g id="${id}">
+    <rect x="-23" y="-12" width="48" height="27" rx="8" fill="rgba(0,0,0,.18)"/>
+    <rect x="5" y="-15" width="5" height="4" rx="1.5" fill="${dark}"/><rect x="5" y="11" width="5" height="4" rx="1.5" fill="${dark}"/>
+    <rect x="-24" y="-13" width="48" height="26" rx="8" fill="${color}" stroke="${dark}" stroke-width="2"/>
+    <rect x="3" y="-10" width="9" height="20" rx="3" fill="#2f4a66"/>
+    <rect x="-17" y="-9" width="6" height="18" rx="2.5" fill="#2f4a66"/>
+    <rect x="-11" y="-10" width="14" height="20" rx="3" fill="${light}"/>
+    <circle cx="21" cy="-8" r="2.5" fill="#fff6b0"/><circle cx="21" cy="8" r="2.5" fill="#fff6b0"/>
+    <rect x="-24" y="-10" width="3" height="5" rx="1" fill="#e0303a"/><rect x="-24" y="5" width="3" height="5" rx="1" fill="#e0303a"/>
+  </g>`;
+}
+
+function house(x, y, wall, roof) {
+  return `<g>
+    <ellipse cx="${x + 35}" cy="${y + 57}" rx="42" ry="6" fill="rgba(0,0,0,.13)"/>
+    <rect x="${x}" y="${y}" width="70" height="56" rx="3" fill="${wall}" stroke="${shade(wall, -45)}" stroke-width="3"/>
+    <polygon points="${x - 8},${y + 3} ${x + 35},${y - 32} ${x + 78},${y + 3}" fill="${roof}" stroke="${shade(roof, -40)}" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="${x + 27}" y="${y + 26}" width="16" height="30" rx="5" fill="${shade(roof, -40)}"/>
+    <rect x="${x + 7}" y="${y + 14}" width="15" height="14" rx="2" fill="#bfe8ff" stroke="${shade(wall, -45)}" stroke-width="2"/>
+    <rect x="${x + 48}" y="${y + 14}" width="15" height="14" rx="2" fill="#bfe8ff" stroke="${shade(wall, -45)}" stroke-width="2"/>
+  </g>`;
+}
+
+// ---------- Roads ----------
+const RB = { x: 500, y: 330, r: 60 };          // roundabout
+const ROADS = [
+  'M-20,330 H1020',                             // Main Street (left to right)
+  'M500,-20 V820',                              // Center Street (top to bottom)
+  'M-20,720 H0 C200,720 320,600 500,600 H1020', // Curvy road at the bottom
+];
+// Driving routes for the cars (they keep to the right side of the road)
+const k = Math.sqrt(RB.r * RB.r - 15 * 15);
+const ROUTES = [
+  `M-60,345 H${500 - k} A60,60 0 0 0 ${500 + k},345 H1060`,
+  `M1060,315 H${500 + k} A60,60 0 0 0 ${500 - k},315 H-60`,
+  `M485,-60 V${330 - k} A60,60 0 0 0 485,${330 + k} V860`,
+  `M-60,732 H0 C200,732 320,612 470,612 Q515,612 515,570 V${330 + k} A60,60 0 0 0 515,${330 - k} V-60`,
+  `M1060,588 H500 C320,588 200,708 0,708 H-60`,
+];
+const CARS = [['#ff6b5e', 120], ['#4d8eff', 100], ['#ffc93d', 90], ['#5cc48a', 110], ['#b07ef0', 95]];
+
+function drawMap() {
+  let s = '';
+  s += `<rect width="1000" height="800" fill="#9fdc84"/>`;
+  const all = ROADS.map(d => `<path d="${d}"/>`).join('');
+  // sidewalks, then road, then lane lines
+  s += `<g fill="none" stroke="#d9d4c7" stroke-width="80">${all}</g><circle cx="${RB.x}" cy="${RB.y}" r="${RB.r}" fill="none" stroke="#d9d4c7" stroke-width="80"/>`;
+  s += `<g fill="none" stroke="#6f7782" stroke-width="60">${all}</g>`;
+  // crosswalks
+  [[230, 330, 0], [800, 330, 0], [500, 150, 90], [500, 470, 90], [700, 600, 0]].forEach(([x, y, a]) => {
+    let z = ''; for (let i = -2; i <= 2; i++) z += `<rect x="-6" y="${i * 11 - 3}" width="12" height="6" fill="#fff" opacity=".85"/>`;
+    s += `<g transform="translate(${x},${y}) rotate(${a})">${z}</g>`;
+  });
+  s += `<g fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="22 22" stroke-linecap="round">${all}</g>`;
+  // roundabout on top of the lane lines, with a fountain in the middle
+  s += `<circle cx="${RB.x}" cy="${RB.y}" r="${RB.r}" fill="none" stroke="#6f7782" stroke-width="60"/>
+        <circle cx="${RB.x}" cy="${RB.y}" r="${RB.r}" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="14 14"/>
+        <circle cx="${RB.x}" cy="${RB.y}" r="30" fill="#7dcf6a" stroke="#d9d4c7" stroke-width="5"/>
+        <circle cx="${RB.x}" cy="${RB.y}" r="17" fill="#7fc8f0" stroke="#5aa9d6" stroke-width="4"/>
+        <circle class="splash" cx="${RB.x}" cy="${RB.y}" r="6" fill="#e6f7ff"/>`;
+  // park with a pond
+  s += `<ellipse cx="690" cy="470" rx="78" ry="40" fill="#7fc8f0" stroke="#5aa9d6" stroke-width="5"/>
+        <ellipse cx="668" cy="460" rx="14" ry="5" fill="#fff" opacity=".6"/>
+        <rect x="660" y="520" width="60" height="22" rx="7" fill="#fff" stroke="#2f7a3c" stroke-width="2"/>
+        <text x="690" y="536" text-anchor="middle" font-size="14" font-weight="bold" fill="#2f7a3c">Park</text>`;
+  // flowers
+  const fl = [[30,270],[240,275],[440,80],[575,275],[980,275],[20,400],[255,410],[440,420],[600,540],[790,410],[980,560],[30,790],[420,780],[980,790]];
+  fl.forEach(([fx, fy], i) => {
+    const c = ['#ff7aa8', '#ffd34d', '#ffffff', '#b28cff'][i % 4];
+    s += `<g>${[0,72,144,216,288].map(a => `<circle cx="${fx + 6 * Math.cos(a * Math.PI / 180)}" cy="${fy + 6 * Math.sin(a * Math.PI / 180)}" r="5" fill="${c}"/>`).join('')}<circle cx="${fx}" cy="${fy}" r="4" fill="#f5a623"/></g>`;
+  });
+  // houses below the curvy road
+  s += house(565, 700, '#fff3c9', '#e07a5f') + house(690, 705, '#d6ecff', '#5d7896') + house(815, 700, '#ffd9e6', '#b5577f');
+  // trees
+  [[440, 270], [565, 265], [985, 110], [25, 120], [590, 420], [795, 480], [775, 560], [600, 560],
+   [935, 760], [80, 790], [190, 795], [300, 780], [255, 470], [440, 545]].forEach(([tx, ty]) => s += tree(tx, ty, 0.9));
+  // clouds
+  s += `<g id="cloud1" opacity=".9"><ellipse cx="0" cy="0" rx="46" ry="18" fill="#fff"/><ellipse cx="-20" cy="-10" rx="22" ry="16" fill="#fff"/><ellipse cx="16" cy="-14" rx="26" ry="18" fill="#fff"/></g>
+        <g id="cloud2" opacity=".8"><ellipse cx="0" cy="0" rx="38" ry="14" fill="#fff"/><ellipse cx="12" cy="-10" rx="22" ry="14" fill="#fff"/></g>`;
+  // buildings
+  PLACES.forEach(p => s += building(p));
+  // invisible car routes, then the cars on top
+  s += ROUTES.map((d, i) => `<path id="route${i}" d="${d}" fill="none"/>`).join('');
+  s += CARS.map(([c], i) => car('car' + i, c)).join('');
+  svg.innerHTML = s;
+}
+drawMap();
+
+// ---------- Moving things ----------
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const movers = CARS.map(([, speed], i) => {
+  const path = document.getElementById('route' + i);
+  const len = path.getTotalLength();
+  return { el: document.getElementById('car' + i), path, len, speed, d: len * ((i * 0.37) % 1) };
+});
+const c1 = document.getElementById('cloud1'), c2 = document.getElementById('cloud2');
+let last = performance.now(), cx1 = 120, cx2 = 700;
+function tick(now) {
+  const dt = Math.min(50, now - last) / 1000; last = now;
+  if (!reduce) {
+    cx1 += 10 * dt; if (cx1 > 1060) cx1 = -60;
+    cx2 += 6 * dt; if (cx2 > 1060) cx2 = -60;
+  }
+  movers.forEach(m => {
+    if (!reduce) { m.d += m.speed * dt; if (m.d > m.len) m.d = 0; }
+    const p = m.path.getPointAtLength(m.d), q = m.path.getPointAtLength(Math.min(m.len, m.d + 2));
+    const ang = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+    m.el.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${ang.toFixed(1)})`);
+  });
+  c1.setAttribute('transform', `translate(${cx1},48)`);
+  c2.setAttribute('transform', `translate(${cx2},80)`);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// ---------- Sounds ----------
+let actx;
+function beep(notes, type = 'triangle') {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    notes.forEach(([f, t, d]) => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.value = f;
+      const st = actx.currentTime + t;
+      g.gain.setValueAtTime(0.0001, st);
+      g.gain.exponentialRampToValueAtTime(0.18, st + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, st + d);
+      o.connect(g).connect(actx.destination); o.start(st); o.stop(st + d + 0.05);
+    });
+  } catch (e) {}
+}
+
+// ---------- Clicking buildings ----------
+const toast = document.getElementById('toast');
+let toastTimer, leaving = false;
+function showToast(msg) {
+  toast.textContent = msg; toast.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+function enter(g) {
+  if (leaving) return;
+  const p = PLACES.find(q => q.id === g.dataset.id);
+  if (!p.link) {
+    g.classList.remove('shake'); void g.getBBox(); g.classList.add('shake');
+    setTimeout(() => g.classList.remove('shake'), 500);
+    beep([[330, 0, .15], [262, .12, .2]], 'sine');
+    showToast(`The ${p.name} is coming soon!`);
+    return;
+  }
+  leaving = true;
+  beep([[523, 0, .2], [659, .1, .2], [784, .2, .35]]);
+  showToast(`Going into the ${p.name}...`);
+  const map = document.getElementById('map');
+  const ox = ((p.x + p.w / 2) / 1000) * 100, oy = ((p.y + p.h - 26) / 800) * 100;
+  map.style.transformOrigin = `${ox}% ${oy}%`;
+  map.classList.add('zoom');
+  document.getElementById('fade').classList.add('on');
+  history.replaceState(null, '', '#town');   // coming back skips the Start screen
+  setTimeout(() => { location.href = p.link; }, reduce ? 300 : 850);
+}
+
+svg.addEventListener('click', e => { const g = e.target.closest('.bld'); if (g) enter(g); });
+svg.addEventListener('keydown', e => {
+  const g = e.target.closest('.bld');
+  if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); enter(g); }
+});
+
+// Reset when coming back with the Back button
+window.addEventListener('pageshow', () => {
+  leaving = false;
+  document.getElementById('map').classList.remove('zoom');
+  document.getElementById('fade').classList.remove('on');
+  toast.classList.remove('show');
+});
+
+// ---------- Start screen ----------
+const start = document.getElementById('start');
+if (location.hash === '#town') start.classList.add('hide');
+document.getElementById('go').addEventListener('click', () => {
+  beep([[440, 0, .12], [660, .08, .2]]);
+  start.classList.add('hide');
+});
+</script>
+</body>
+</html>
