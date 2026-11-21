@@ -54,7 +54,7 @@
   .doll .worn { pointer-events: auto; }
   .wrap { position: absolute; inset: 0; pointer-events: none; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
   .floor { position: absolute; left: 22%; right: 22%; bottom: 3%; height: 5%; border-radius: 50%; background: #ffd6e7; }
-  #stage .worn { pointer-events: auto; cursor: grab; touch-action: none; animation: drop-in .45s cubic-bezier(.3,1.6,.5,1); }
+  #stage .worn { pointer-events: auto; cursor: grab; touch-action: none; animation: drop-in .25s cubic-bezier(.3,1.6,.5,1); }
   #stage .worn.leaving { animation: fade-out .3s forwards; pointer-events: none; }
   .hint { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font-size: 13px; color: #8a7a9c; pointer-events: none; }
 
@@ -70,7 +70,7 @@
     aspect-ratio: 1; border-radius: 16px; background: #fbf8ff; border: 3px solid #eee4f7;
     display: flex; align-items: center; justify-content: center; padding: 8px; position: relative;
     cursor: grab; touch-action: none; transition: transform .15s, border-color .2s;
-    animation: pop .35s backwards;
+    animation: pop .2s backwards;
   }
   .thumb:hover { transform: scale(1.06) rotate(-2deg); border-color: #c7b3f0; }
   .thumb img { max-width: 100%; max-height: 100%; pointer-events: none; -webkit-user-drag: none; }
@@ -1337,7 +1337,7 @@ function renderTray() {
     const key = groupKey(p);
     if (key) b.dataset.group = key;
     b.className = 'thumb' + (wearing[p.cat] === p.id ? ' wearing' : '');
-    b.style.animationDelay = Math.min(i * 0.03, 0.3) + 's';
+    b.style.animationDelay = Math.min(i * 0.008, 0.08) + 's';
     b.title = p.group || p.name; b.setAttribute('role', 'button'); b.setAttribute('aria-label', p.group || p.name);
     b.dataset.id = p.id;
     const img = document.createElement('img'); img.src = ART[p.id].thumb || ART[p.id].src; img.alt = p.name;
@@ -1638,7 +1638,7 @@ async function stickerDone(count) {
   const save = { outfit: Object.assign({}, wearing), under: underBottom };
   const box = document.getElementById('tbMe');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const land = () => { tbSetAvatar(url, save); if (count === 3) { sndWin(); confetti(); } else sndPut(); setTimeout(() => { location.href = '../index.html#town'; }, count === 3 ? 1400 : 700); };
+  const land = () => { tbSetAvatar(url, save); if (count === 3) { sndWin(); confetti(); } else sndPut(); setTimeout(() => { location.href = '../index.html#town'; }, count === 3 ? 800 : 250); };
   if (reduce) { land(); return; }
   const dr = dollEl.getBoundingClientRect(), br = box.getBoundingClientRect();
   const sw = dr.width * 200 / 180, sh = dr.height * (Math.round(180 / 0.5294) + 20) / Math.round(180 / 0.5294);
@@ -1655,7 +1655,7 @@ async function stickerDone(count) {
     { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 140}px) rotate(14deg) scale(${(1 + k) / 2})`, offset: 0.62 },
     { transform: `translate(${dx}px, ${dy}px) rotate(-8deg) scale(${k * 1.18})`, offset: 0.88 },
     { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(${k})`, offset: 1 },
-  ], { duration: 1500, easing: 'ease-in-out', fill: 'forwards' });
+  ], { duration: 1000, easing: 'ease-in-out', fill: 'forwards' });
   anim.onfinish = () => { st.remove(); land(); };
 }
 // Toolbar while dressing: your doll just sparkles the doll here

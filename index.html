@@ -27,9 +27,9 @@
     box-shadow: 0 8px 24px rgba(30, 60, 110, .25);
     margin-bottom: 16px;
   }
-  #map { display: block; width: 100%; height: auto; transform-origin: 50% 50%; transition: transform .7s ease-in; }
+  #map { display: block; width: 100%; height: auto; transform-origin: 50% 50%; transition: transform .38s ease-in; }
   #map.zoom { transform: scale(3.2); }
-  #fade { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .6s ease-in .15s; }
+  #fade { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .3s ease-in .08s; }
   #fade.on { opacity: 1; }
 
   .bld { cursor: pointer; outline: none; }
@@ -81,7 +81,7 @@
   /* ---------- rooms (inside a building) ---------- */
   #roomWrap { position: relative; width: min(100vw - 16px, 1100px); border-radius: 18px; overflow: hidden;
     box-shadow: 0 8px 24px rgba(30, 60, 110, .25); margin-bottom: 16px; }
-  #room { display: block; width: 100%; height: auto; transform-origin: 50% 50%; transition: transform .7s ease-in; }
+  #room { display: block; width: 100%; height: auto; transform-origin: 50% 50%; transition: transform .38s ease-in; }
   #room.zoom { transform: scale(2.4); }
   .view-hidden { display: none !important; }
   #backMap {
@@ -101,7 +101,7 @@
   .sparkle { opacity: 0; transform-box: fill-box; transform-origin: center; }
   .spot.hint .sparkle { animation: sparkle 1.6s ease-in-out infinite; }
   @keyframes sparkle { 0%,100% { opacity: 0; transform: scale(.4) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(25deg); } }
-  #roomFade { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .6s ease-in .15s; }
+  #roomFade { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .3s ease-in .08s; }
   #roomFade.on { opacity: 1; }
   @media (prefers-reduced-motion: reduce) {
     .open-star, .splash { animation: none; }
@@ -449,10 +449,10 @@ function enter(g) {
   document.getElementById('fade').classList.add('on');
   if (room) {
     history.pushState(null, '', '#' + p.id);    // the Back button returns to the map
-    setTimeout(() => showRoom(p.id, true), reduce ? 200 : 800);
+    setTimeout(() => showRoom(p.id, true), reduce ? 100 : 400);
   } else {
     history.replaceState(null, '', '#town');   // coming back skips the Start screen
-    setTimeout(() => { location.href = p.link; }, reduce ? 300 : 850);
+    setTimeout(() => { location.href = p.link; }, reduce ? 150 : 420);
   }
 }
 
@@ -516,7 +516,7 @@ function useSpot(el) {
   roomSvg.style.transformOrigin = `${((sp.x + sp.w / 2) / W) * 100}% ${((sp.y + sp.h / 2) / H) * 100}%`;
   roomSvg.classList.add('zoom');
   document.getElementById('roomFade').classList.add('on');
-  setTimeout(() => { location.href = sp.link; }, reduce ? 300 : 850);
+  setTimeout(() => { location.href = sp.link; }, reduce ? 150 : 420);
 }
 
 roomSvg.addEventListener('click', e => { const s = e.target.closest('.spot'); if (s) useSpot(s); });
@@ -555,6 +555,13 @@ window.addEventListener('pageshow', () => {
 // ---------- Toolbar buttons ----------
 // Your doll: open Dress Up (coming back returns here)
 window.tbOnMe = () => { history.replaceState(null, '', roomId ? '#' + roomId : '#town'); return false; };
+
+// Start downloading Dress Up quietly once the town has loaded, so it opens fast later
+window.addEventListener('load', () => setTimeout(() => {
+  if (!document.querySelector('link[href="dress-up/dress-up.html"]')) {
+    const l = document.createElement('link'); l.rel = 'prefetch'; l.href = 'dress-up/dress-up.html'; document.head.appendChild(l);
+  }
+}, 1500));
 
 // ---------- Start screen ----------
 const start = document.getElementById('start');
