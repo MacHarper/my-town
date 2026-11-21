@@ -556,13 +556,6 @@ window.addEventListener('pageshow', () => {
 // Your doll: open Dress Up (coming back returns here)
 window.tbOnMe = () => { history.replaceState(null, '', roomId ? '#' + roomId : '#town'); return false; };
 
-// Start downloading Dress Up quietly once the town has loaded, so it opens fast later
-window.addEventListener('load', () => setTimeout(() => {
-  if (!document.querySelector('link[href="dress-up/dress-up.html"]')) {
-    const l = document.createElement('link'); l.rel = 'prefetch'; l.href = 'dress-up/dress-up.html'; document.head.appendChild(l);
-  }
-}, 1500));
-
 // ---------- Start screen ----------
 const start = document.getElementById('start');
 if (location.hash === '#town' || ROOMS[location.hash.slice(1)]) start.classList.add('hide');
