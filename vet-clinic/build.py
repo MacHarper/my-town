@@ -17,9 +17,9 @@ i = page.index("<h2>Vet Clinic</h2>") + len("<h2>Vet Clinic</h2>"); page = page[
 a = page.index('  <div class="play" id="play">'); b = page.index("</div>", a) + 6; page = page[:a] + html.strip("\n") + page[b:]
 d = lambda f, m: "data:%s;base64,%s" % (m, base64.b64encode(open(f, "rb").read()).decode())
 A = "vet-clinic/art/"
-ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "dachshund-sit.webp", "image/webp"),
-       "ralphieEat": (A + "ralphie-eat.webp", "image/webp"), "ralphieBath": (A + "ralphie-bath.webp", "image/webp"),
-       "ralphieDone": (A + "ralphie-done.webp", "image/webp"), "cup": (A + "cup.webp", "image/webp"),
+ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets/ralphie-sit.webp", "image/webp"),
+       "ralphieEat": (A + "pets/ralphie-eat.webp", "image/webp"), "ralphieBath": (A + "pets/ralphie-bath.webp", "image/webp"),
+       "ralphieDone": (A + "pets/ralphie-done.webp", "image/webp"), "cup": (A + "cup.webp", "image/webp"),
        "bowlFood": (A + "bowl-food.webp", "image/webp"), "bowlWater": (A + "bowl-water.webp", "image/webp"),
        "soap": (A + "soap.webp", "image/webp"), "towel": (A + "towel.webp", "image/webp"), "brush": (A + "brush.webp", "image/webp")}
 page = page.replace("const ART = {};", "const ART = {\n" + "".join("  %s: '%s',\n" % (k, d(*v)) for k, v in ART.items()) + "};", 1)

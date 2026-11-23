@@ -5,10 +5,10 @@
   /* task list in the header: slides out once when you come in; the current task is the biggest */
   .tasks { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; animation: tasksIn .5s .3s ease-out backwards; }
   @keyframes tasksIn { from { transform: translateX(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
-  .task { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px 0 5px; border: 3px solid #b9dcc6; border-radius: 999px; background: #fff; font-size: 14px; font-weight: bold; color: #7d9a88; }
-  .task svg { width: 28px; height: 28px; flex: 0 0 auto; }
-  .task.cur { height: 54px; padding: 0 18px 0 7px; border: 4px solid #3bb273; font-size: 19px; color: #2b6e47; }
-  .task.cur svg { width: 40px; height: 40px; }
+  .task { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px 0 6px; border: 3px solid #b9dcc6; border-radius: 999px; background: #fff; font-size: 16px; font-weight: bold; color: #7d9a88; }
+  .task svg { width: 32px; height: 32px; flex: 0 0 auto; }
+  .task.cur { height: 62px; padding: 0 20px 0 8px; border: 4px solid #3bb273; font-size: 22px; color: #2b6e47; }
+  .task.cur svg { width: 46px; height: 46px; }
   .task.done { background: #e3f6ea; color: #6f9f80; }
   .task.pop { animation: popSoft .35s ease-out; }
   @keyframes popSoft { from { transform: scale(.85); opacity: .4; } to { transform: scale(1); opacity: 1; } }
@@ -23,6 +23,8 @@
   .tag { pointer-events: none; }
   .tgt:hover .ring, .tgt:focus-visible .ring { opacity: .75; }
   .tgt.on .ring, .petg.drag .ring { opacity: 1; }
+  .tgt.done { cursor: default; }
+  .tgt.done:hover .ring, .tgt.done:hover .tag { opacity: 0 !important; }
   .tgt.on .tag, .tgt.named .tag, .tgt:hover .tag, .tgt:focus-visible .tag { opacity: 1; }
   .pick-arrow { pointer-events: none; animation: bob 1.2s ease-in-out infinite; }
   @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(14px); } }
@@ -36,7 +38,7 @@
   .readout { opacity: 0; transition: opacity .2s; pointer-events: none; }
   .readout.show { opacity: 1; }
   /* the guide: one short line that says what to do next */
-  .guide { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 3; background: #fff; border: 4px solid #3bb273; border-radius: 999px; padding: 8px 20px; font-size: clamp(14px, 2.4vw, 22px); font-weight: bold; color: #2b6e47; white-space: nowrap; transition: opacity .3s; pointer-events: none; }
+  .guide { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 3; background: #fffaf5; border: none; border-radius: 18px; box-shadow: 0 6px 16px rgba(74, 59, 92, .18); padding: 10px 22px; font-size: clamp(14px, 2.4vw, 22px); font-weight: bold; color: #4a3b5c; white-space: nowrap; transition: opacity .3s; pointer-events: none; }
   .guide.hide { opacity: 0; }
   .guide.nudge { animation: nudge .45s ease-out; }
   @keyframes nudge { 0%, 100% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12); } }
@@ -86,7 +88,7 @@
   .ms-panel { width: 94%; height: 92%; padding: 10px 16px 14px; }
   .ms-stage { flex: 1; min-height: 0; width: 100%; touch-action: none; }
   .ms-bar { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 60px; flex-wrap: wrap; }
-  .ms-say { font-size: clamp(14px, 2.3vw, 21px); font-weight: bold; color: #2b6e47; text-align: center; max-width: 640px; }
+  .ms-say { font-size: clamp(14px, 2.3vw, 21px); font-weight: bold; color: #4a3b5c; text-align: center; max-width: 640px; }
   .ms-top { margin: 4px auto 0; min-height: 2.6em; display: block; }   /* the words sit above the cup */
   .ms-btn { min-height: 52px; padding: 0 22px; border: none; border-radius: 999px; background: #3bb273; color: #fff; font-size: 18px; font-weight: bold; box-shadow: 0 4px 0 #2a8a55; display: flex; align-items: center; gap: 8px; }
   .ms-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a8a55; }
@@ -134,10 +136,10 @@
   /* ---------- bath ---------- */
   .bt-panel { width: 94%; height: 92%; padding: 10px 16px 14px; }
   .bt-steps { display: flex; gap: 8px; justify-content: center; }
-  .bt-steps .task { height: 36px; font-size: 13px; }
-  .bt-steps .task.cur { height: 46px; font-size: 16px; }
-  .bt-steps .task svg { width: 24px; height: 24px; }
-  .bt-steps .task.cur svg { width: 32px; height: 32px; }
+  .bt-steps .task { height: 46px; font-size: 16px; }
+  .bt-steps .task.cur { height: 58px; font-size: 20px; }
+  .bt-steps .task svg { width: 30px; height: 30px; }
+  .bt-steps .task.cur svg { width: 40px; height: 40px; }
   .bt-tool { cursor: grab; }
   .bt-tool .ring { opacity: 0; transition: opacity .15s; }
   .bt-tool.on .ring { opacity: 1; }
@@ -162,20 +164,32 @@
      rounded corners, a solid color, and a darker shadow along the bottom that presses in when tapped ---------- */
   .ok, .ms-btn, .pk-close, .pk-next { border: none; border-radius: 16px; font-weight: bold; transition: transform .1s, box-shadow .1s; }
   .ok, .ms-btn { min-height: 54px; padding: 0 30px; background: #3bb273; color: #fff; font-size: 20px; box-shadow: 0 5px 0 #2a8a55; }
-  .ms-btn.soft { background: #c98a5a; color: #fff; border: none; box-shadow: 0 5px 0 #9c6740; }
-  .ms-btn.soft.on { box-shadow: 0 5px 0 #9c6740, 0 0 0 6px #fff6b0; }
+  .ms-btn.soft { background: #4a9be0; color: #fff; border: none; box-shadow: 0 5px 0 #3479b8; }
+  .ms-btn.soft.on { box-shadow: 0 5px 0 #3479b8, 0 0 0 6px #fff6b0; }
   .ms-btn.soft svg ellipse, .ms-btn.soft svg rect { fill: #fff; }
-  .pk-close { width: 52px; height: 52px; background: #9b8aad; box-shadow: 0 5px 0 #7a6a8c; }
+  .pk-close { width: 52px; height: 52px; background: #5f5a6b; box-shadow: 0 5px 0 #46424f; }
   .pk-close svg path { stroke: #fff; }
-  .pk-close:hover { background: #8f7ea2; }
-  .pk-next { width: 64px; height: 64px; background: #3d8fe0; box-shadow: 0 5px 0 #2a6db3; }
+  .pk-close:hover { background: #6b6678; }
+  .pk-next { width: 64px; height: 64px; background: #4a9be0; box-shadow: 0 5px 0 #3479b8; }
   .ok:active, .ms-btn:active, .pk-close:active, .pk-next:active { transform: translateY(4px); }
   .ok:active, .ms-btn:active { box-shadow: 0 1px 0 #2a8a55; }
-  .ms-btn.soft:active { box-shadow: 0 1px 0 #9c6740; }
-  .pk-close:active { box-shadow: 0 1px 0 #7a6a8c; }
-  .pk-next:active { box-shadow: 0 1px 0 #2a6db3; }
+  .ms-btn.soft:active { box-shadow: 0 1px 0 #3479b8; }
+  .pk-close:active { box-shadow: 0 1px 0 #46424f; }
+  .pk-next:active { box-shadow: 0 1px 0 #3479b8; }
   .pk-next:hover, .ok:hover { filter: brightness(1.05); }
   @media (max-width: 980px) { .backtown .back-words { display: none; } .backtown { padding: 0 10px; } }   /* room for the task list */
+  /* a pet's card: grows out of its picture; boy or girl as a blue or pink paw; weight is a blank you find by weighing */
+  .pk-info { position: absolute; inset: 8px; z-index: 4; background: #fff; border-radius: 24px; box-shadow: 0 10px 30px rgba(74, 59, 92, .2); display: flex; align-items: center; gap: 28px; padding: 22px 30px; transform: scale(.2); opacity: 0; transition: transform .3s cubic-bezier(.3, 1.3, .5, 1), opacity .2s; }
+  .pk-info.open { transform: none; opacity: 1; }
+  .pi-pic { flex: 0 0 auto; height: min(100%, 360px); max-width: 45%; object-fit: contain; background: #eaf7ef; border-radius: 22px; padding: 12px; }
+  .pi-body { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+  .pi-name { margin: 0; font-size: clamp(28px, 4.5vw, 44px); color: #4a3b5c; }
+  .pi-facts { display: flex; flex-direction: column; gap: 10px; font-size: clamp(16px, 2.4vw, 22px); color: #4a3b5c; }
+  .pi-row { display: flex; align-items: center; }
+  .pi-paw svg { width: 34px; height: 32px; margin-right: 10px; display: block; }
+  .pi-blank { display: inline-block; width: 64px; border-bottom: 3px solid #6b5a80; height: 1.1em; }
+  .pi-btns { display: flex; gap: 12px; align-items: center; margin-top: 6px; }
+  @media (max-width: 600px) { .pk-info { flex-direction: column; gap: 10px; padding: 14px; } .pi-pic { height: 34%; max-width: 80%; } }
 @@HEADER@@
     <div class="tasks" id="tasks" aria-label="Things to do"></div>
 @@HTML@@
@@ -183,7 +197,15 @@
     <svg id="room" viewBox="0 0 1984 1116" preserveAspectRatio="xMidYMid meet" aria-label="Inside the Vet Clinic"></svg>
     <div class="guide" id="guide"></div>
     <div class="overlay" id="picker" aria-hidden="true">
-      <div class="panel pk-panel" role="dialog" aria-labelledby="pkTitle">
+      <div class="panel pk-panel" role="dialog" aria-labelledby="pkTitle" style="position: relative">
+        <div class="pk-info" id="pkInfo" hidden>
+          <img class="pi-pic" id="piPic" alt="">
+          <div class="pi-body">
+            <h3 class="pi-name" id="piName"></h3>
+            <div class="pi-facts" id="piFacts"></div>
+            <div class="pi-btns"><button class="ms-btn" id="piPick"></button><button class="pk-close" id="piBack" aria-label="Back to all the pets"><svg viewBox="0 0 26 26"><path d="M16 5 L8 13 L16 21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+          </div>
+        </div>
         <div class="pk-head">
           <h3 id="pkTitle">Pick a dog</h3>
           <button class="pk-close" id="pkClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#3bb273" stroke-width="4" stroke-linecap="round"/></svg></button>
@@ -200,7 +222,7 @@
         <div class="wt-big" id="wtBig"></div>
         <div id="wtSays"></div>
         <div class="wt-chart" id="wtChart"></div>
-        <button class="ok" id="wtOk">Got it!</button>
+        <button class="ok" id="wtOk">Got it</button>
       </div>
     </div>
 
@@ -241,9 +263,11 @@
   <div id="toast"></div>
 @@JS@@
 // The room picture is 1984 x 1116; everything on it uses those numbers.
-// To add a pet: put its picture in ART, then add a line to PETS (its own name, never the breed; weight in pounds). The picker fills 8 a page.
+// To add a pet: make its pictures with vet-clinic/pet_art.py, put them in ART (build.py), then add a line to PETS:
+// its own name (the breed only shows on its info card), weight in pounds, boy: true or false, breed, and one thing it loves. The picker fills 8 a page.
 const PETS = {
-  dog: [ { id: 'ralphie', name: 'Ralphie', art: 'dachshundSit', eat: 'ralphieEat', bath: 'ralphieBath', done: 'ralphieDone', weight: 16 } ],
+  dog: [ { id: 'ralphie', name: 'Ralphie', art: 'dachshundSit', eat: 'ralphieEat', bath: 'ralphieBath', done: 'ralphieDone', weight: 16,
+      boy: true, breed: 'Dachshund', loves: 'playing fetch' } ],
   cat: [],
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will
@@ -263,14 +287,14 @@ const TARGETS = {
   food:  { name: 'Food',      x: 1012, y: 332, w: 203, h: 387, tag: 'top' },
   scale: { name: 'Scale',     x: 1226, y: 672, w: 192, h: 86,  tag: 'bottom' },
   water: { name: 'Water',     x: 1379, y: 372, w: 228, h: 362, tag: 'top' },
-  bath:  { name: 'Bath time', x: 1607, y: 342, w: 357, h: 437, tag: 'top' },
+  bath:  { name: 'Bath',      x: 1592, y: 326, w: 384, h: 476, tag: 'top' },
 };
 // The tasks, in order; the room parts for the current task are the ones that light up
 const TASKS = [
-  { name: 'Pick a pet', icon: 'paw',     targets: ['dogs', 'cats'],  guide: 'Pick a pet to care for!' },
-  { name: 'Weigh',      icon: 'scale',   targets: ['scale'],         guide: 'Put your pet on the scale!' },
-  { name: 'Food',       icon: 'bowl',    targets: ['food'],          guide: 'Time to feed your pet!' },   // water comes after eating
-  { name: 'Bath',       icon: 'bubbles', targets: ['bath'],          guide: 'Time for a bath!' },
+  { name: 'Pick a pet', icon: 'paw',     targets: ['dogs', 'cats'],  guide: 'Pick a pet to care for.' },
+  { name: 'Weigh',      icon: 'scale',   targets: ['scale'],         guide: 'Put your pet on the scale.' },
+  { name: 'Food',       icon: 'bowl',    targets: ['food'],          guide: 'Time to feed your pet.' },   // water comes after eating
+  { name: 'Bath',       icon: 'bubbles', targets: ['bath'],          guide: 'Time for a bath.' },
 ];
 // Things in the room when you come in (same numbers as vet-clinic/room_extras.py, which makes the town's picture):
 // Ralphie sitting in the blue bed in the dog crate, and the two bowls on the shelves under the food bin.
@@ -288,7 +312,10 @@ function extrasSvg() {
   return s;
 }
 const hideExtra = id => { const e = document.getElementById(id); if (e) e.style.opacity = 0; };
-const RUG = { cx: 992, bottom: 965, h: 400 };          // where the pet sits on the rug
+const RUG = { cx: 992, bottom: 965, h: 400 };   // h is a big dog's height; smaller dogs are drawn smaller
+const SIZES = [.72, .82, .92, 1];   // up to 10 lb, 11 to 20, 21 to 40, over 40 (the food chart's groups)
+function sizeK(p) { const rules = FOOD[kind] || FOOD.dog; return SIZES[Math.max(0, rules.findIndex(r => p.weight <= r.upTo))] || 1; }
+const rugH = () => RUG.h * sizeK(pet), eatH = () => EAT.h * sizeK(pet), tubH = () => TUB_DOG.h * sizeK(pet);          // where the pet sits on the rug
 const ON_SCALE = { cx: 1322, bottom: 726, k: .63 };     // where it sits on the scale, smaller (it is farther back)
 
 let task = 0, pet = null, kind = 'dog', page = 0, busy = false;
@@ -310,7 +337,7 @@ const say = text => text.replace('your pet', pet ? pet.name : 'your pet');
 function drawTasks(popCur) {
   document.getElementById('tasks').innerHTML = TASKS.map((t, i) => {
     const done = i < task, cur = i === task;
-    const words = done && t.icon === 'scale' && pet ? `${pet.weight} lb` : t.name;
+    const words = t.name;   // tasks are actions (Weigh), even when done
     return `<div class="task${cur ? ' cur' : ''}${done ? ' done' : ''}${cur && popCur ? ' pop' : ''}">${icon(done ? 'check' : t.icon)}<span>${words}</span></div>`;
   }).join('');
 }
@@ -342,12 +369,14 @@ function setTask(i, quiet) {
   task = i;
   const t = TASKS[task];   // after the last task there is none: everything is done
   drawTasks(!quiet);
+  const doneT = TASKS.slice(0, Math.min(task, TASKS.length)).flatMap(x => x.targets).concat(fed ? ['food'] : [], watered ? ['water'] : []);
+  room.querySelectorAll('.tgt').forEach(g => g.classList.toggle('done', doneT.includes(g.dataset.t)));
   const pickTime = task === 0;   // picking a pet: an arrow points at the crates instead of a glow
   room.querySelectorAll('.tgt').forEach(g => { const mine = !!t && t.targets.includes(g.dataset.t); g.classList.toggle('on', mine && !pickTime); g.classList.toggle('named', mine && pickTime); });
   document.getElementById('pickArrow').style.display = pickTime ? '' : 'none';
   const pg = document.querySelector('.petg');
   if (pg) pg.classList.toggle('drag', !!t && (t.icon === 'scale' || t.icon === 'bubbles'));   // drag the pet to the scale or the tub
-  guide(t ? say(t.guide) : `${pet.name} is all clean and happy!`);
+  guide(t ? say(t.guide) : `${pet.name} is all clean and happy.`);
 }
 
 const guideEl = document.getElementById('guide');
@@ -371,6 +400,7 @@ function showToast(msg) {
 function useTarget(g) {
   if (busy) return;
   const id = g.dataset.t;
+  if (g.classList.contains('done')) return;   // already done
   if (!TASKS[task]) return;
   const allowed = TASKS[task].targets.includes(id) || (id === 'water' && fed && !watered);
   if (!allowed) return id === 'water' && TASKS[task].icon === 'bowl' && !fed ? showToast(`Feed ${pet.name} first!`) : nudgeGuide();   // not this one yet
@@ -381,7 +411,7 @@ function useTarget(g) {
   if (id === 'bath') return openBath();
   g.classList.remove('shake'); void g.getBBox(); g.classList.add('shake');   // not built yet
   setTimeout(() => g.classList.remove('shake'), 500);
-  showToast(`${TARGETS[id].name}: coming soon!`);
+  showToast(`${TARGETS[id].name}: coming soon`);
 }
 
 // ---------- Picker ----------
@@ -420,15 +450,36 @@ document.getElementById('pkClose').addEventListener('click', () => closeOverlay(
 picker.addEventListener('click', e => {
   if (e.target === picker) return closeOverlay(picker);
   const c = e.target.closest('.pk-card[data-pet]');
-  if (c) choosePet(PETS[kind].find(a => a.id === c.dataset.pet));
+  if (c) openInfo(PETS[kind].find(a => a.id === c.dataset.pet), c);
 });
+
+// ---------- A pet's card: grows out of its picture in the picker ----------
+const PAW = col => `<svg viewBox="0 0 100 92"><ellipse cx="39" cy="18" rx="10" ry="14" fill="${col}"/><ellipse cx="62" cy="18" rx="10" ry="14" fill="${col}"/><ellipse cx="18" cy="42" rx="9" ry="13" fill="${col}" transform="rotate(-20 18 42)"/><ellipse cx="82" cy="42" rx="9" ry="13" fill="${col}" transform="rotate(20 82 42)"/><path d="M50 44 C32 44 22 66 24 78 C26 88 38 86 50 84 C62 86 74 88 76 78 C78 66 68 44 50 44 Z" fill="${col}"/></svg>`;
+let infoPet = null;
+function openInfo(a, card) {
+  infoPet = a;
+  const el = document.getElementById('pkInfo'), r = card.getBoundingClientRect(), pr = el.parentElement.getBoundingClientRect();
+  el.style.transformOrigin = `${r.left + r.width / 2 - pr.left}px ${r.top + r.height / 2 - pr.top}px`;
+  document.getElementById('piPic').src = ART[a.art];
+  document.getElementById('piName').textContent = a.name;
+  document.getElementById('piFacts').innerHTML = `
+    <div class="pi-row"><span class="pi-paw">${PAW(a.boy ? '#4a9be0' : '#e0457b')}</span>${a.boy ? 'Boy' : 'Girl'}</div>
+    <div class="pi-row"><b>Breed:</b>&nbsp;${a.breed}</div>
+    <div class="pi-row"><b>Weight:</b>&nbsp;<span class="pi-blank"></span>&nbsp;lb</div>
+    <div class="pi-row"><b>Loves:</b>&nbsp;${a.loves}</div>`;
+  document.getElementById('piPick').textContent = `Pick ${a.name}`;
+  el.hidden = false; el.classList.remove('open'); void el.offsetWidth; el.classList.add('open');
+}
+function closeInfo() { const el = document.getElementById('pkInfo'); el.classList.remove('open'); setTimeout(() => { el.hidden = true; }, 250); }
+document.getElementById('piBack').addEventListener('click', closeInfo);
+document.getElementById('piPick').addEventListener('click', () => { const a = infoPet; closeInfo(); choosePet(a); });
 
 function choosePet(a) {
   pet = Object.assign({}, a); closeOverlay(picker);
   if (a.id === EXTRAS.pet.id) hideExtra('cratePet');   // out of the crate
   const pic = new Image();
   pic.onload = () => {
-    const h = RUG.h, w = h * pic.width / pic.height, x = RUG.cx - w / 2, y = RUG.bottom - h;
+    const h = rugH(), w = h * pic.width / pic.height, x = RUG.cx - w / 2, y = RUG.bottom - h;
     document.getElementById('petLayer').innerHTML =
       `<g class="petg" role="button" tabindex="0" aria-label="${a.name}">${ringSvg(x - 24, y - 20, w + 48, h + 36)}
         <image class="pet in" href="${ART[a.art]}" x="${x}" y="${y}" width="${w}" height="${h}"/></g>`;
@@ -461,16 +512,27 @@ room.addEventListener('pointermove', e => {
   if (Math.hypot(dx, dy) > 8) drag.moved = true;
   petMove(dx, dy, 1, 0);
   drag.dx = dx; drag.dy = dy;
+  const spot = petDropSpot(dx, dy);   // close enough: go there now, no need to let go
+  if (spot) { drag = null; document.querySelector('.petg').classList.remove('dragging'); spot === 'scale' ? weigh() : (petMove(0, 0, 1, 0), openBath()); }
 });
+// Drag and drop rule for the whole game: a drop counts when it is within SNAP of the target (in room units),
+// and the thing snaps into place as soon as it gets there.
+const SNAP = 45;
+const near = (t, x, y, below = SNAP) => x > t.x - SNAP && x < t.x + t.w + SNAP && y > t.y - SNAP && y < t.y + t.h + below;
+function petDropSpot(dx, dy) {
+  const fx = RUG.cx + dx, fy = RUG.bottom + dy, t = TASKS[task];   // where the pet's feet are
+  if (t && t.icon === 'scale' && near(TARGETS.scale, fx, fy, 160)) return 'scale';
+  if (t && t.icon === 'bubbles' && near(TARGETS.bath, fx, fy, 160)) return 'bath';
+  return null;
+}
 room.addEventListener('pointerup', () => {
   if (!drag) return;
   const d = drag; drag = null;
   document.querySelector('.petg').classList.remove('dragging');
   if (!d.moved) return;
-  const fx = RUG.cx + d.dx, fy = RUG.bottom + d.dy;   // where the pet's feet are
-  const s = TARGETS.scale, b = TARGETS.bath, bathing = TASKS[task] && TASKS[task].icon === 'bubbles';
-  if (!bathing && fx > s.x - 140 && fx < s.x + s.w + 140 && fy > s.y - 260 && fy < s.y + s.h + 120) weigh();
-  else if (bathing && fx > b.x - 60 && fx < b.x + b.w + 60 && fy > b.y - 60 && fy < b.y + b.h + 160) { petMove(0, 0, 1, 0); openBath(); }
+  const spot = petDropSpot(d.dx, d.dy);
+  if (spot === 'scale') weigh();
+  else if (spot === 'bath') { petMove(0, 0, 1, 0); openBath(); }
   else petMove(0, 0, 1, 350);   // not on the right spot: back to the rug
 });
 
@@ -668,10 +730,10 @@ function judge() {
     msSay(`Just right! Now drag the cup to the bowl and hold it there to pour.`);
   } else if (diff < 0) {
     ready(false); msButtons(null);   // no spoon when there is too little
-    msSay(`A little more! Pour up to the ${goal} line.`);
+    msSay(`A little more. Pour up to the ${goal} line.`);
   } else {
     ready(false); msButtons(null, 'on');
-    msSay(`Too much! Take some out with the spoon.`);
+    msSay(`Too much. Take some out with the spoon.`);
   }
 }
 function ready(on) {
@@ -717,7 +779,7 @@ function dropCup() {
   document.getElementById('msCup').classList.remove('tip');
   document.getElementById('msStream').innerHTML = '';
   mv.style.transition = 'transform .35s'; mv.style.transform = 'translate(0px, 0px)';
-  if (ms.amount < pet.food - CLOSE_ENOUGH && ms.amount > 0) msSay('Keep the cup over the bowl until all the food is in!');
+  if (ms.amount < pet.food - CLOSE_ENOUGH && ms.amount > 0) msSay('Keep the cup over the bowl until all the food is in.');
 }
 stage.addEventListener('pointerup', dropCup);
 stage.addEventListener('pointercancel', dropCup);
@@ -759,8 +821,8 @@ stage.addEventListener('keyup', e => { if (e.target.closest('#msBin')) stopPour(
 function feedPet() {
   fed = true;
   room.querySelector('[data-t="food"]').classList.remove('on');
-  const left = EAT.cx - EAT.h * 647 / 440 / 2, top = RUG.bottom - EAT.h;
-  const nx = left + EAT.h * 647 / 440 * EAT.nose[0], ny = top + EAT.h * EAT.nose[1];
+  const EH = eatH(), left = EAT.cx - EH * 647 / 440 / 2, top = RUG.bottom - EH;
+  const nx = left + EH * 647 / 440 * EAT.nose[0], ny = top + EH * EAT.nose[1];
   // the bowl goes behind the pet, and a copy of its front rim goes in front, so the face dips into the bowl
   const bw = FLOOR_BOWL, bh = bw * 236 / 360, bx = nx - bw / 2 - 10, by = ny - bh * BOWL_OPEN.cy - 16;
   const ocy = by + bh * BOWL_OPEN.cy, ory = bh * BOWL_OPEN.ry;
@@ -770,7 +832,7 @@ function feedPet() {
   layer.insertAdjacentHTML('beforeend', `<g id="foodRim" class="bowlfood" clip-path="url(#rimClip)"><clipPath id="rimClip"><rect x="${bx - 5}" y="${ocy + ory * .55}" width="${bw + 10}" height="${bh}"/></clipPath>
     <image href="${ART.bowlFood}" x="${bx}" y="${by}" width="${bw}" height="${bh}"/></g>`);
   setPose('eat');
-  guide(`${pet.name} is eating!`);
+  guide(`${pet.name} is eating.`);
   busy = true;
   setTimeout(() => { document.getElementById('bowlKib').setAttribute('opacity', 0); }, 2600);
   setTimeout(() => {
@@ -782,11 +844,11 @@ function feedPet() {
 function setPose(p) {
   const img = document.querySelector('.petg image'), ring = document.querySelector('.petg .ring');
   if (p === 'eat') {
-    const w = EAT.h * 647 / 440;
-    img.setAttribute('href', ART[pet.eat]); img.setAttribute('x', EAT.cx - w / 2); img.setAttribute('y', RUG.bottom - EAT.h);
-    img.setAttribute('width', w); img.setAttribute('height', EAT.h);
+    const EH = eatH(), w = EH * 647 / 440;
+    img.setAttribute('href', ART[pet.eat]); img.setAttribute('x', EAT.cx - w / 2); img.setAttribute('y', RUG.bottom - EH);
+    img.setAttribute('width', w); img.setAttribute('height', EH);
   } else {
-    const h = RUG.h, w = h * 443 / 560;
+    const h = rugH(), w = h * 443 / 560;
     img.setAttribute('href', ART[pet.art]); img.setAttribute('x', RUG.cx - w / 2); img.setAttribute('y', RUG.bottom - h);
     img.setAttribute('width', w); img.setAttribute('height', h);
   }
@@ -806,7 +868,7 @@ function waterTime() {
     <ellipse id="wbWater" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#8fd0f5" style="transform-box: fill-box; transform-origin: center; transform: scale(0); transition: transform .9s ease-out"/>
     <ellipse id="wbShine" cx="${cx - rx * .35}" cy="${cy - ry * .25}" rx="${rx * .25}" ry="${ry * .2}" fill="#fff" opacity="0" style="transition: opacity .4s .6s"/></g>`);
   room.querySelector('[data-t="water"]').classList.add('on');
-  guide(`Drag the water bowl to the sink to fill it!`);
+  guide(`Drag the water bowl to the sink.`);
 }
 function wbMove(dx, dy, ms_, k = 1) {
   const g = document.getElementById('waterBowl');
@@ -829,7 +891,7 @@ room.addEventListener('pointermove', e => {
 });
 function atSink(dx, dy) {
   const cx = WB.x + FLOOR_BOWL / 2 + dx, by = WB.bottom + dy, s = TARGETS.water;
-  return cx > s.x - 60 && cx < s.x + s.w + 60 && by > s.y - 40 && by < s.y + s.h + 100;
+  return near(s, cx, by, 70);   // a little less eager than before
 }
 room.addEventListener('pointerup', () => {
   if (!wdrag) return;
@@ -855,7 +917,7 @@ function fillWater(fromDx, fromDy) {
   setTimeout(() => { const f = document.getElementById('faucetWater'); if (f) f.remove(); document.getElementById('sinkFront').style.opacity = 0; wbMove(0, 0, 600); }, 1600);   // back by the pet
   setTimeout(() => {
     watered = true; busy = false;
-    showToast(`Fresh water for ${pet.name}!`);
+    showToast(`Fresh water for ${pet.name}`);
     setTask(3);
   }, 2300);
 }
@@ -873,10 +935,10 @@ const TUB = { x: 230, w: 670 };                     // the tub reaches the showe
 const SHOWER_HOME = [858, 232];                     // where the shower head hangs
 const SPRAY = [-.6, .8];                            // which way the water sprays from the head (down and to the left)
 const BATH_STEPS = [
-  { id: 'soap',  name: 'Soap',  say: n => `Rub the soap on ${n} to make bubbles!`, ok: n => `Lots of bubbles! Keep scrubbing, or tap Rinse.` },
-  { id: 'rinse', name: 'Rinse', say: n => `Move the shower over ${n} to rinse off the bubbles!`, ok: n => `All rinsed! Keep rinsing, or tap Dry.` },
-  { id: 'towel', name: 'Dry',   say: n => `Rub the towel on ${n} to dry off!`, ok: n => `Nice and dry! Keep drying, or tap Brush.` },
-  { id: 'brush', name: 'Brush', say: n => `Brush ${n}'s fur!`, ok: n => '' },
+  { id: 'soap',  name: 'Soap',  say: n => `Rub the soap on ${n}.`, ok: n => '' },
+  { id: 'rinse', name: 'Rinse', say: n => `Rinse off the bubbles.`, ok: n => '' },
+  { id: 'towel', name: 'Dry',   say: n => `Dry ${n} with the towel.`, ok: n => '' },
+  { id: 'brush', name: 'Brush', say: n => `Brush ${n}'s fur.`, ok: n => '' },
 ];
 const RUB_DONE = .7;   // how much of the pet you have to rub
 let bt = null;
@@ -886,7 +948,7 @@ function poseBox(pose, cx, bottom, sitH) {
   return { x: cx - P.w * k / 2 + P.dx * k, y: bottom - P.h * k, w: P.w * k, h: P.h * k };
 }
 function poseImg(pose) {
-  const b = poseBox(pose, TUB_DOG.cx, TUB_DOG.bottom, TUB_DOG.h);
+  const b = poseBox(pose, TUB_DOG.cx, TUB_DOG.bottom, tubH());
   return `<image id="btDog" href="${ART[POSES[pose].art(pet)]}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`;
 }
 
@@ -961,7 +1023,7 @@ const TOOL_SIZE = { soap: 0, towel: 0, brush: 0 };   // height / width of each t
 async function openBath() {
   busy = true;
   bt = { step: 0, ready: false, cells: [], drag: null, bubbles: {} };
-  const box = poseBox('sit', TUB_DOG.cx, TUB_DOG.bottom, TUB_DOG.h);
+  const box = poseBox('sit', TUB_DOG.cx, TUB_DOG.bottom, tubH());
   bt.box = box;
   bt.cells = await petCells(pet.art, box, 7, 8);
   document.getElementById('btTitle').textContent = `${pet.name}'s bath`;
@@ -1041,6 +1103,7 @@ btStage.addEventListener('pointermove', e => {
 function dropTool() {
   if (!bt || !bt.drag) return;
   const d = bt.drag; bt.drag = null;
+  if (bt.brushEnd && BATH_STEPS[bt.step] && BATH_STEPS[bt.step].id === 'brush' && bt.ready) { clearTimeout(bt.brushEnd); bt.brushEnd = null; setTimeout(bathDone, 200); }
   if (d.head) {
     document.getElementById('btHead').classList.remove('raining');
     document.querySelector('#btHead .ring').style.display = '';
@@ -1079,7 +1142,7 @@ function stepReady(step) {
   if (step === 'soap') { const st = document.getElementById('btStink'); if (st) st.remove(); }
   if (step === 'rinse') setDogPose('bath');
   if (step === 'towel') setDogPose('sit');
-  if (step === 'brush') { dropTool(); return bathDone(); }
+  if (step === 'brush') { bt.brushEnd = setTimeout(() => { bt.brushEnd = null; dropTool(); bathDone(); }, 3000); return bathStep(); }
   bathStep();
 }
 function setDogPose(pose) {
@@ -1089,8 +1152,8 @@ function setDogPose(pose) {
 function bathDone() {
   bt.step = BATH_STEPS.length; bt.ready = false; bathStep();
   setDogPose('done');
-  document.getElementById('btSay').textContent = `${pet.name} is all clean!`;
-  const b = poseBox('done', TUB_DOG.cx, TUB_DOG.bottom, TUB_DOG.h), cx = b.x + b.w / 2, cy = b.y + b.h * .35;
+  document.getElementById('btSay').textContent = `${pet.name} is all clean.`;
+  const b = poseBox('done', TUB_DOG.cx, TUB_DOG.bottom, tubH()), cx = b.x + b.w / 2, cy = b.y + b.h * .35;
   let stars = '';
   for (let i = 0; i < 8; i++) {   // one small burst of stars, once
     const a = i / 8 * Math.PI * 2;
@@ -1100,7 +1163,7 @@ function bathDone() {
   setTimeout(() => {
     closeOverlay(document.getElementById('bath'));
     // back on the rug, happy
-    const img = document.querySelector('.petg image'), rb = poseBox('done', RUG.cx, RUG.bottom, RUG.h);
+    const img = document.querySelector('.petg image'), rb = poseBox('done', RUG.cx, RUG.bottom, rugH());
     img.setAttribute('href', ART[pet.done]); img.setAttribute('x', rb.x); img.setAttribute('y', rb.y); img.setAttribute('width', rb.w); img.setAttribute('height', rb.h);
     busy = false; setTask(4);
     document.getElementById('adTitle').textContent = `${pet.name} is all done!`;
