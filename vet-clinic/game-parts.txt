@@ -73,7 +73,7 @@
   .wt-col svg { width: 54px; height: 64px; }
   .wt-col.me { background: #fff8d6; box-shadow: 0 0 0 4px #f2c14e; color: #6b4329; }
   .wt-col b { font-size: 17px; }
-  .ok { margin-top: 6px; min-width: 140px; height: 54px; border: none; border-radius: 999px; background: #3bb273; color: #fff; font-size: 20px; font-weight: bold; box-shadow: 0 4px 0 #2a8a55; }
+  .ok { margin-top: 6px; min-width: 140px; height: 54px; padding: 0 30px; border: none; border-radius: 999px; background: #3bb273; color: #fff; font-size: 20px; font-weight: bold; box-shadow: 0 4px 0 #2a8a55; }
   .ok:hover { background: #35a468; }
   .ok:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a8a55; }
   @media (max-width: 600px) { .pk-next { width: 48px; height: 48px; } .pk-page { gap: 8px; } .pk-card { padding-bottom: 38px; } .wt-col { min-width: 64px; padding: 6px; } .wt-col svg { width: 40px; height: 48px; } }
@@ -101,11 +101,28 @@
   .ms-line .glow { opacity: 0; transition: opacity .25s; }
   .ms-line.goal .glow { opacity: 1; }
   .ms-cup { transition: transform .6s ease-in-out; transform-box: view-box; transform-origin: 520px 300px; }
-  .ms-cup.tip { transform: translate(-240px, -30px) rotate(-75deg); }   /* tips toward the bowl and pours from the lip */
+  .ms-cup.tip { transform: rotate(-70deg); }   /* tips toward the bowl and pours from the lip */
   .ms-cup.wiggle { animation: shake .47s; }
   .ms-cup .ms-line { transition: opacity .2s; }
   .ms-cup.tip .ms-line { opacity: 0; }
   .bowlfood { transition: opacity .4s; }
+  #msBinWrap, #msBowl { transition: opacity .3s; }
+  .away { opacity: 0; pointer-events: none; }
+  .ms-bin.on .ring, .ms-cup.on .ring { opacity: 1; }
+  .ms-cup.on { cursor: grab; }
+  .ms-cup.tip .ring { opacity: 0; }
+  .kib2 { animation: fall2 .45s linear infinite; }
+  @keyframes fall2 { from { transform: translate(0, 0); opacity: 1; } to { transform: translate(-6px, 70px); opacity: 1; } }
+  .wb { outline: none; }
+  .wb.drag { cursor: grab; }
+  .wb.drag .ring { opacity: 1; }
+  #room:has(.tgt:hover) .wb .ring { opacity: 0; }
+  .task.blink { cursor: pointer; border-color: #f2c14e; animation: blink 1.1s ease-in-out infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+  .stink { animation: stink 2.4s ease-in-out infinite; }
+  @keyframes stink { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  #btStink { transition: opacity .3s; }
+  .bt-head { cursor: grab; }
   .ms-bin:hover .ring, .ms-bowl:hover .ring { opacity: .75; }
 
   /* ---------- bath ---------- */
@@ -227,7 +244,7 @@ const TARGETS = {
 const TASKS = [
   { name: 'Pick a pet', icon: 'paw',     targets: ['dogs', 'cats'],  guide: 'Pick a pet to care for!' },
   { name: 'Weigh',      icon: 'scale',   targets: ['scale'],         guide: 'Put your pet on the scale!' },
-  { name: 'Food',       icon: 'bowl',    targets: ['food', 'water'], guide: 'Time for food and water!' },
+  { name: 'Food',       icon: 'bowl',    targets: ['food'],          guide: 'Time to feed your pet!' },   // water comes after eating
   { name: 'Bath',       icon: 'bubbles', targets: ['bath'],          guide: 'Time for a bath!' },
 ];
 const RUG = { cx: 992, bottom: 965, h: 400 };          // where the pet sits on the rug
@@ -306,7 +323,8 @@ function useTarget(g) {
   if (busy) return;
   const id = g.dataset.t;
   if (!TASKS[task]) return;
-  if (!TASKS[task].targets.includes(id)) return showToast(say(TASKS[task].guide));   // not this one yet
+  const allowed = TASKS[task].targets.includes(id) || (id === 'water' && fed && !watered);
+  if (!allowed) return showToast(id === 'water' && TASKS[task].icon === 'bowl' ? `Feed ${pet.name} first!` : say(TASKS[task].guide));   // not this one yet
   if (id === 'dogs' || id === 'cats') return openPicker(id === 'dogs' ? 'dog' : 'cat');
   if (id === 'scale') return weigh();
   if (id === 'food') return fed ? null : openMeasure();
@@ -455,16 +473,18 @@ document.getElementById('wtOk').addEventListener('click', () => {
 
 
 // ---------- Food and water ----------
-// Measuring: the player holds the food bin to pour into the measuring cup, lets go at the pet's line,
-// takes some out with the spoon if it is too much, then taps the bowl to pour it in.
+// Measuring: a short look at the measuring cup, then hold the food bin to pour and let go at the pet's line.
+// The bowl only shows up when the food is just right; then drag the cup to the bowl and hold it there to pour.
+// After eating, drag the empty water bowl to the sink to fill it.
 const POUR_RATE = .12;     // cups per second while holding the bin (1 cup takes about 8 seconds)
 const CLOSE_ENOUGH = .045; // how near the line counts as just right
-// The measuring cup picture (cup.webp, 360 x 307) sits at CUP.x, CUP.y. Inside the glass, empty is at y0 and 1 cup is at y1.
-// Layout (1100 wide): the bowl on the left (the cup's lip faces it), the cup in the middle, the food bin on the right,
-// with a gap between each so nothing overlaps.
+// Layout (1100 wide): the bowl on the left (the cup's lip faces it), the cup in the middle, the food bin on the right.
 const CUP = { x: 340, y: 150, w: 360, h: 307, y0: 404, y1: 228, left0: 410, left1: 382, right0: 578, right1: 596 };
+const CUP_C = [520, 300];                 // the cup turns around its middle when it pours
+const MS_BOWL = { x: 40, y: 360, w: 180 };
 const BOWL_OPEN = { cx: .53, cy: .30, rx: .35, ry: .18 };   // the bowl's opening, as parts of the bowl picture
 const EAT = { h: 330, cx: 1010, nose: [.15, .86] };       // the eating picture on the rug, and where its nose is
+const FLOOR_BOWL = 157.5;                                 // bowls on the floor (5% bigger than before)
 let ms = null, fed = false, watered = false;
 
 const cupY = c => CUP.y0 - (CUP.y0 - CUP.y1) * c;
@@ -499,15 +519,15 @@ function binSvg() {
 }
 
 function drawMeasure() {
-  const goal = pet.food, lines = [.25, .5, .75, 1];
-  let s = binSvg();
-  s += `<g class="ms-bowl" id="msBowl" role="button" tabindex="0" aria-label="Food bowl, tap to pour the food in">
-    ${ringSvg(20, 330, 220, 180)}
-    <image href="${ART.bowlFood}" x="40" y="360" width="180" height="${180 * 236 / 360}"/>
-    <ellipse class="bowlfood" id="msBowlFood" cx="${40 + 180 * BOWL_OPEN.cx}" cy="${360 + 118 * BOWL_OPEN.cy}" rx="${180 * BOWL_OPEN.rx * .9}" ry="${118 * BOWL_OPEN.ry * .9}" fill="#b98557" opacity="0"/></g>`;
-  s += `<g class="ms-cup" id="msCup"><image href="${ART.cup}" x="${CUP.x}" y="${CUP.y}" width="${CUP.w}" height="${CUP.h}"/>
+  const lines = [.25, .5, .75, 1], bh = MS_BOWL.w * 236 / 360;
+  let s = `<g id="msBinWrap" class="away">${binSvg()}</g>`;
+  s += `<g id="msBowl" class="away"><image href="${ART.bowlFood}" x="${MS_BOWL.x}" y="${MS_BOWL.y}" width="${MS_BOWL.w}" height="${bh}"/>
+    <ellipse id="msBowlFood" cx="${MS_BOWL.x + MS_BOWL.w * BOWL_OPEN.cx}" cy="${MS_BOWL.y + bh * BOWL_OPEN.cy}" rx="${MS_BOWL.w * BOWL_OPEN.rx * .9}" ry="${bh * BOWL_OPEN.ry * .9}" fill="#b98557" opacity="0"/></g>`;
+  s += `<g id="msCupMove"><g class="ms-cup" id="msCup" role="button" tabindex="0" aria-label="Measuring cup">
+    ${ringSvg(CUP.x - 4, CUP.y - 10, CUP.w + 8, CUP.h + 20)}
+    <image href="${ART.cup}" x="${CUP.x}" y="${CUP.y}" width="${CUP.w}" height="${CUP.h}"/>
     <g opacity=".88"><path id="msFood" d="" fill="#c98a5a"/><g id="msDots"></g></g>`;
-  lines.forEach((c, i) => {
+  lines.forEach(c => {
     const y = cupY(c), t = (CUP.y0 - y) / (CUP.y0 - CUP.y1), l = CUP.left0 + (CUP.left1 - CUP.left0) * t;
     s += `<g class="ms-line" data-c="${c}">
       <rect class="glow" x="${l - 6}" y="${y - 9}" width="86" height="18" rx="9" fill="#fff6b0"/>
@@ -515,7 +535,7 @@ function drawMeasure() {
       <g class="lbl"><rect x="${l - 112}" y="${y - 17}" width="96" height="34" rx="17" fill="#fff" stroke="#4f86b8" stroke-width="4"/>
       <text x="${l - 64}" y="${y + 8}" text-anchor="middle" font-size="22" font-weight="bold" fill="#2f6390">${CUPS[c]}</text></g></g>`;
   });
-  s += `</g>`;
+  s += `</g></g><g id="msStream"></g>`;
   document.getElementById('msStage').innerHTML = s;
   setCup(0);
 }
@@ -530,42 +550,37 @@ function msButtons(next, spoon) {
   n.hidden = !next; if (next) n.textContent = next;
   sp.hidden = !spoon; sp.classList.toggle('on', spoon === 'on');
 }
-function msLight(bin, bowl) {
-  document.getElementById('msBin').querySelector('.ring').style.opacity = bin ? 1 : '';
-  document.getElementById('msBowl').querySelector('.ring').style.opacity = bowl ? 1 : '';
-}
+const msShow = (id, on) => document.getElementById(id).classList.toggle('away', !on);
 
-// the short lesson, then measuring
 function openMeasure() {
-  ms = { step: 0, amount: 0, pouring: false, done: false };
+  ms = { step: 0, amount: 0, pouring: false, done: false, ready: false, drag: null };
   document.getElementById('msTitle').textContent = `Measure ${pet.name}'s food`;
   drawMeasure();
   openOverlay(document.getElementById('measure'));
   lessonStep();
 }
 function lessonStep() {
-  const lines = [...document.querySelectorAll('.ms-line')], goal = CUPS[pet.food];
-  if (ms.step === 0) {
-    lines.forEach((g, i) => setTimeout(() => g.classList.add('show'), 300 + i * 250));
+  const goal = CUPS[pet.food];
+  if (ms.step === 0) {   // just the cup first
+    document.querySelectorAll('.ms-line').forEach((g, i) => setTimeout(() => g.classList.add('show'), 300 + i * 250));
     msSay('This is a measuring cup. The lines show how much food is inside.');
     msButtons('Next');
-  } else if (ms.step === 1) {
+  } else {               // then the food bin, and the line to fill to
     document.querySelector(`.ms-line[data-c="${pet.food}"]`).classList.add('goal');
-    msSay(`${pet.name} needs <b>${goal}</b>. Fill the food up to the ${goal} line.`);
-    msButtons('Start');
-  } else {
-    msSay(`Hold the food bin to pour. Let go at the ${goal} line.`);
+    msShow('msBinWrap', true);
+    document.getElementById('msBin').classList.add('on');
+    msSay(`${pet.name} needs <b>${goal}</b>. Hold the food bin to pour, and let go at the ${goal} line.`);
     msButtons(null);
-    msLight(true, false);
   }
 }
 document.getElementById('msNext').addEventListener('click', () => { ms.step++; lessonStep(); });
 document.getElementById('msClose').addEventListener('click', () => { stopPour(); closeOverlay(document.getElementById('measure')); });
 
 function startPour(e) {
-  if (!ms || ms.step < 2 || ms.done || ms.pouring) return;
+  if (!ms || ms.step < 1 || ms.done || ms.pouring) return;
   if (e) e.preventDefault();
   ms.pouring = true; ms.last = performance.now();
+  ready(false);
   document.getElementById('msBin').classList.add('pour');
   document.getElementById('msStage').classList.add('pouring');
   requestAnimationFrame(pourTick);
@@ -580,46 +595,99 @@ function stopPour() {
   ms.pouring = false;
   document.getElementById('msBin').classList.remove('pour');
   document.getElementById('msStage').classList.remove('pouring');
-  if (ms.amount > 0) {
-    msSay(`When the food is at the ${CUPS[pet.food]} line, tap the bowl to pour it in.`);
-    msLight(true, true);
-    msButtons(null, ms.amount > pet.food + CLOSE_ENOUGH ? 'on' : 'show');
+  judge();
+}
+// is the food at the line? Only then does the bowl show up.
+function judge() {
+  const goal = CUPS[pet.food], diff = ms.amount - pet.food;
+  if (ms.amount <= 0) { ready(false); msButtons(null); msSay(`Hold the food bin to pour, and let go at the ${goal} line.`); return; }
+  if (Math.abs(diff) <= CLOSE_ENOUGH) {
+    ready(true); msButtons(null);
+    msSay(`Just right! Now drag the cup to the bowl and hold it there to pour.`);
+  } else if (diff < 0) {
+    ready(false); msButtons(null, 'show');
+    msSay(`A little more! Pour up to the ${goal} line.`);
+  } else {
+    ready(false); msButtons(null, 'on');
+    msSay(`Too much! Take some out with the spoon.`);
   }
+}
+function ready(on) {
+  ms.ready = on;
+  msShow('msBowl', on);
+  document.getElementById('msCup').classList.toggle('on', on);
+  document.getElementById('msBin').classList.toggle('on', !on && !ms.done);
 }
 const stage = document.getElementById('msStage');
-stage.addEventListener('pointerdown', e => { if (e.target.closest('#msBin')) { stage.setPointerCapture(e.pointerId); startPour(e); } });
-stage.addEventListener('pointerup', stopPour);
-stage.addEventListener('pointercancel', stopPour);
-stage.addEventListener('keydown', e => { if (e.target.closest('#msBin') && (e.key === 'Enter' || e.key === ' ')) startPour(e); });
-stage.addEventListener('keyup', e => { if (e.target.closest('#msBin')) stopPour(); });
-document.getElementById('msSpoon').addEventListener('click', () => {
-  setCup(ms.amount - .05);
-  msButtons(null, ms.amount > pet.food + CLOSE_ENOUGH ? 'on' : ms.amount > 0 ? 'show' : null);
-  if (ms.amount <= 0) { msLight(true, false); msSay(`Hold the food bin to pour. Let go at the ${CUPS[pet.food]} line.`); }
-});
-stage.addEventListener('click', e => { if (e.target.closest('#msBowl')) checkFood(); });
-
-function checkFood() {
-  if (!ms || ms.step < 2 || ms.done || ms.amount <= 0) return;
-  const cup = document.getElementById('msCup'), goal = CUPS[pet.food], diff = ms.amount - pet.food;
-  if (Math.abs(diff) > CLOSE_ENOUGH) {
-    cup.classList.remove('wiggle'); void cup.getBBox(); cup.classList.add('wiggle');
-    setTimeout(() => cup.classList.remove('wiggle'), 500);
-    if (diff < 0) msSay(`Not enough yet. The food is under the ${goal} line. Pour a little more.`);
-    else { msSay(`Too much! The food is over the ${goal} line. Take some out.`); msButtons(null, 'on'); }
-    return;
+stage.addEventListener('pointerdown', e => {
+  if (e.target.closest('#msBin')) { stage.setPointerCapture(e.pointerId); return startPour(e); }
+  if (e.target.closest('#msCup') && ms && ms.ready && !ms.done) {   // pick up the cup
+    e.preventDefault();
+    const p = msPoint(e);
+    ms.drag = { sx: p.x, sy: p.y, dx: 0, dy: 0 };
+    document.getElementById('msCupMove').style.transition = 'none';
+    stage.setPointerCapture(e.pointerId);
+    ms.last = performance.now(); requestAnimationFrame(pourOutTick);
   }
-  // just right: pour it into the bowl
-  ms.done = true; msLight(false, false); msButtons(null);
-  msSay(`Just right! That's ${goal}.`);
-  cup.classList.add('tip');
-  setTimeout(() => { setCup(0); document.getElementById('msBowlFood').setAttribute('opacity', 1); }, 600);
+});
+stage.addEventListener('pointermove', e => {
+  if (!ms || !ms.drag) return;
+  const p = msPoint(e), d = ms.drag;
+  d.dx = p.x - d.sx; d.dy = p.y - d.sy;
+  document.getElementById('msCupMove').setAttribute('transform', `translate(${d.dx} ${d.dy})`);
+  // the lip of the tipped cup: is it over the bowl?
+  const lx = CUP_C[0] + d.dx - 158, ly = CUP_C[1] + d.dy + 113, bx = MS_BOWL.x, bw = MS_BOWL.w;
+  d.over = lx > bx && lx < bx + bw && ly > MS_BOWL.y - 90 && ly < MS_BOWL.y + 50;
+  document.getElementById('msCup').classList.toggle('tip', d.over);
+  d.lip = [lx, ly];
+});
+function dropCup() {
+  if (!ms) return;
+  stopPour();
+  if (!ms.drag) return;
+  ms.drag = null;
+  if (ms.done) return;
+  const mv = document.getElementById('msCupMove');
+  document.getElementById('msCup').classList.remove('tip');
+  document.getElementById('msStream').innerHTML = '';
+  mv.style.transition = 'transform .35s'; mv.setAttribute('transform', 'translate(0 0)');
+  if (ms.amount < pet.food - CLOSE_ENOUGH && ms.amount > 0) msSay('Keep the cup over the bowl until all the food is in!');
+}
+stage.addEventListener('pointerup', dropCup);
+stage.addEventListener('pointercancel', dropCup);
+function msPoint(e) {
+  const p = stage.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+  return p.matrixTransform(stage.getScreenCTM().inverse());
+}
+const BOWL_FILL = .45;   // cups per second out of the cup while it is tipped over the bowl
+function pourOutTick(t) {
+  if (!ms || !ms.drag || ms.done) return;
+  const d = ms.drag, dt = (t - ms.last) / 1000; ms.last = t;
+  const stream = document.getElementById('msStream');
+  if (d.over && ms.amount > 0) {
+    setCup(ms.amount - BOWL_FILL * dt);
+    document.getElementById('msBowlFood').setAttribute('opacity', Math.min(1, 1 - ms.amount / pet.food));
+    if (!stream.innerHTML) stream.innerHTML = [0, 1, 2, 3, 4].map(i =>
+      `<circle class="kib2" cx="${d.lip[0] + (i % 2) * 8}" cy="${d.lip[1]}" r="${6 - (i % 3)}" fill="#a86d43" style="animation-delay:${i * .07}s"/>`).join('');
+    else stream.querySelectorAll('circle').forEach((c, i) => { c.setAttribute('cx', d.lip[0] + (i % 2) * 8); c.setAttribute('cy', d.lip[1]); });
+    if (ms.amount <= 0) return foodInBowl();
+  } else stream.innerHTML = '';
+  requestAnimationFrame(pourOutTick);
+}
+function foodInBowl() {
+  ms.done = true; ms.drag = null;
+  document.getElementById('msStream').innerHTML = '';
+  document.getElementById('msBowlFood').setAttribute('opacity', 1);
+  document.getElementById('msCup').classList.remove('on');
+  msSay(`Just right! That's ${CUPS[pet.food]} of food for ${pet.name}.`);
   setTimeout(() => {
     closeOverlay(document.getElementById('measure'));
-    cup.classList.remove('tip');
     feedPet();
-  }, 1700);
+  }, 1200);
 }
+document.getElementById('msSpoon').addEventListener('click', () => { setCup(ms.amount - .05); judge(); });
+stage.addEventListener('keydown', e => { if (e.target.closest('#msBin') && (e.key === 'Enter' || e.key === ' ')) startPour(e); });
+stage.addEventListener('keyup', e => { if (e.target.closest('#msBin')) stopPour(); });
 
 // in the room: the bowl goes in front of the pet and it eats
 function feedPet() {
@@ -628,7 +696,7 @@ function feedPet() {
   const left = EAT.cx - EAT.h * 647 / 440 / 2, top = RUG.bottom - EAT.h;
   const nx = left + EAT.h * 647 / 440 * EAT.nose[0], ny = top + EAT.h * EAT.nose[1];
   // the bowl goes behind the pet, and a copy of its front rim goes in front, so the face dips into the bowl
-  const bw = 150, bh = bw * 236 / 360, bx = nx - bw / 2 - 10, by = ny - bh * BOWL_OPEN.cy - 16;
+  const bw = FLOOR_BOWL, bh = bw * 236 / 360, bx = nx - bw / 2 - 10, by = ny - bh * BOWL_OPEN.cy - 16;
   const ocy = by + bh * BOWL_OPEN.cy, ory = bh * BOWL_OPEN.ry;
   const layer = document.getElementById('petLayer');
   layer.insertAdjacentHTML('afterbegin', `<g id="foodBowl" class="bowlfood"><image href="${ART.bowlFood}" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>
@@ -642,7 +710,7 @@ function feedPet() {
   setTimeout(() => {
     setPose('sit');
     ['foodBowl', 'foodRim'].forEach(id => { const fb = document.getElementById(id); fb.style.opacity = 0; setTimeout(() => fb.remove(), 450); });
-    busy = false; afterFoodOrWater();
+    busy = false; waterTime();
   }, 3200);
 }
 function setPose(p) {
@@ -659,38 +727,82 @@ function setPose(p) {
   ring.style.display = 'none';
 }
 
-function fillWater() {
-  if (watered || busy) return;
-  watered = true;
+// water: after eating, an empty bowl sits by the pet; drag it to the sink (or tap the sink) and it fills
+const WB = { x: 1180, bottom: RUG.bottom + 12 }, SINK_SPOT = { cx: 1493, bottom: 498 };
+function waterTime() {
+  const bw = FLOOR_BOWL, bh = bw * 236 / 360, x = WB.x, y = WB.bottom - bh;
+  const cx = x + bw * BOWL_OPEN.cx, cy = y + bh * BOWL_OPEN.cy, rx = bw * BOWL_OPEN.rx * .85, ry = bh * BOWL_OPEN.ry * .8;
+  document.getElementById('petLayer').insertAdjacentHTML('afterbegin', `<g id="waterBowl" class="wb drag" role="button" tabindex="0" aria-label="Water bowl, drag it to the sink">
+    ${ringSvg(x - 18, y - 18, bw + 36, bh + 36)}
+    <image href="${ART.bowlWater}" x="${x}" y="${y}" width="${bw}" height="${bh}"/>
+    <ellipse id="wbWater" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#8fd0f5" style="transform-box: fill-box; transform-origin: center; transform: scale(0); transition: transform .9s ease-out"/>
+    <ellipse id="wbShine" cx="${cx - rx * .35}" cy="${cy - ry * .25}" rx="${rx * .25}" ry="${ry * .2}" fill="#fff" opacity="0" style="transition: opacity .4s .6s"/></g>`);
+  room.querySelector('[data-t="water"]').classList.add('on');
+  guide(`Drag the water bowl to the sink to fill it!`);
+}
+function wbMove(dx, dy, ms_) {
+  const g = document.getElementById('waterBowl');
+  g.style.transition = ms_ ? `transform ${ms_}ms ease-in-out` : 'none';
+  g.style.transform = `translate(${dx}px, ${dy}px)`;
+}
+let wdrag = null;
+room.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.wb.drag');
+  if (!g || busy || watered) return;
+  wdrag = { start: svgPoint(e), dx: 0, dy: 0 };
+  room.setPointerCapture(e.pointerId);
+});
+room.addEventListener('pointermove', e => {
+  if (!wdrag) return;
+  const p = svgPoint(e); wdrag.dx = p.x - wdrag.start.x; wdrag.dy = p.y - wdrag.start.y;
+  wbMove(wdrag.dx, wdrag.dy, 0);
+});
+room.addEventListener('pointerup', () => {
+  if (!wdrag) return;
+  const d = wdrag; wdrag = null;
+  const bw = FLOOR_BOWL, cx = WB.x + bw / 2 + d.dx, by = WB.bottom + d.dy, s = TARGETS.water;
+  if (cx > s.x - 40 && cx < s.x + s.w + 40 && by > s.y && by < s.y + s.h + 80) fillWater(d.dx, d.dy);
+  else wbMove(0, 0, 350);   // not at the sink: back by the pet
+});
+function fillWater(fromDx, fromDy) {
+  if (watered || busy || !fed) return;
+  busy = true;
+  const g = document.getElementById('waterBowl'); g.classList.remove('drag');
   room.querySelector('[data-t="water"]').classList.remove('on');
-  const bw = 150, bh = bw * 236 / 360, bx = 1190, by = RUG.bottom + 10 - bh;
-  const cx = bx + bw * BOWL_OPEN.cx, cy = by + bh * BOWL_OPEN.cy, rx = bw * BOWL_OPEN.rx * .85, ry = bh * BOWL_OPEN.ry * .8;
-  document.getElementById('petLayer').insertAdjacentHTML('afterbegin', `<g id="waterBowl"><image href="${ART.bowlWater}" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>
-    <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#8fd0f5"><animate attributeName="rx" from="0" to="${rx}" dur=".8s"/><animate attributeName="ry" from="0" to="${ry}" dur=".8s"/></ellipse>
-    <ellipse cx="${cx - rx * .35}" cy="${cy - ry * .25}" rx="${rx * .25}" ry="${ry * .2}" fill="#fff" opacity=".7"/></g>`);
-  showToast(`Fresh water for ${pet.name}!`);
-  afterFoodOrWater();
+  guideEl.classList.add('hide');
+  const bw = FLOOR_BOWL, tx = SINK_SPOT.cx - (WB.x + bw / 2), ty = SINK_SPOT.bottom - WB.bottom;
+  if (fromDx !== undefined) wbMove(fromDx, fromDy, 0);
+  requestAnimationFrame(() => wbMove(tx, ty, 450));   // under the faucet
+  setTimeout(() => {   // water runs and the bowl fills
+    room.insertAdjacentHTML('beforeend', `<rect id="faucetWater" x="${SINK_SPOT.cx + 22}" y="410" width="10" height="${SINK_SPOT.bottom - 430}" rx="5" fill="#8fd0f5" opacity=".9"/>`);
+    document.getElementById('wbWater').style.transform = 'scale(1)';
+    document.getElementById('wbShine').setAttribute('opacity', .7);
+  }, 500);
+  setTimeout(() => { const f = document.getElementById('faucetWater'); if (f) f.remove(); wbMove(0, 0, 600); }, 1600);   // back by the pet
+  setTimeout(() => {
+    watered = true; busy = false;
+    showToast(`Fresh water for ${pet.name}!`);
+    setTask(3);
+  }, 2300);
 }
-function afterFoodOrWater() {
-  if (fed && watered) return setTask(3);
-  guide(fed ? `Now fill ${pet.name}'s water bowl at the sink!` : `Tap the food bin to measure ${pet.name}'s food!`);
-}
-
 
 // ---------- Bath ----------
-// In the tub: rub the soap on the pet (bubbles cover the mud spots), tap the shower to rinse,
-// rub the towel to dry, then rub the brush to finish. Rubbing counts the parts of the pet you have touched.
+// In the tub: rub the soap on the pet (bubbles, and the stinky lines go away), move the shower over the pet to rinse,
+// rub the towel to dry, then brush. You can keep going as long as you like; when a step is done the next one blinks.
 const POSES = {   // the sitting pictures at the same scale (560 = the sitting pose's height), lined up by the paws
   sit:  { art: p => p.art,  w: 443, h: 560, dx: 0 },
   bath: { art: p => p.bath, w: 464, h: 580, dx: 10 },
   done: { art: p => p.done, w: 452, h: 560, dx: 4 },
 };
 const TUB_DOG = { cx: 560, bottom: 470, h: 380 };   // the pet in the tub (sitting height), its paws hidden by the tub
+const TUB = { x: 230, w: 670 };                     // the tub reaches the shower pipe at x 900
+const SHOWER_HOME = [858, 232];                     // where the shower head hangs
+const SPRAY = [-.6, .8];                            // which way the water sprays from the head (down and to the left)
 const BATH_STEPS = [
-  { id: 'soap',  name: 'Soap',  say: n => `Rub the soap on ${n} to make bubbles!` },
-  { id: 'rinse', name: 'Rinse', say: n => `Tap the shower to rinse off the bubbles!` },
-  { id: 'towel', name: 'Dry',   say: n => `Rub the towel on ${n} to dry off!` },
-  { id: 'brush', name: 'Brush', say: n => `Brush ${n}'s fur!` },
+  { id: 'soap',  name: 'Soap',  say: n => `Rub the soap on ${n} to make bubbles!`, ok: n => `Lots of bubbles! Keep scrubbing, or tap Rinse.` },
+  { id: 'rinse', name: 'Rinse', say: n => `Move the shower over ${n} to rinse off the bubbles!`, ok: n => `All rinsed! Keep rinsing, or tap Dry.` },
+  { id: 'towel', name: 'Dry',   say: n => `Rub the towel on ${n} to dry off!`, ok: n => `Nice and dry! Keep drying, or tap Brush.` },
+  { id: 'brush', name: 'Brush', say: n => `Brush ${n}'s fur!`, ok: n => '' },
 ];
 const RUB_DONE = .7;   // how much of the pet you have to rub
 let bt = null;
@@ -726,64 +838,90 @@ function petCells(artKey, box, cols, rows) {
 function bathStepsHtml() {
   const icons = { soap: 'bubbles', rinse: 'drop', towel: 'towel', brush: 'brush' };
   return BATH_STEPS.map((s, i) => {
-    const done = i < bt.step, cur = i === bt.step;
-    return `<div class="task${cur ? ' cur' : ''}${done ? ' done' : ''}">${icon(done ? 'check' : icons[s.id])}<span>${s.name}</span></div>`;
+    const done = i < bt.step, cur = i === bt.step, next = bt.ready && i === bt.step + 1;
+    return `<div class="task${cur ? ' cur' : ''}${done ? ' done' : ''}${next ? ' blink' : ''}" data-i="${i}"${next ? ' role="button" tabindex="0"' : ''}>${icon(done ? 'check' : icons[s.id])}<span>${s.name}</span></div>`;
   }).join('');
 }
 
 function tubSvg() {
-  return `<g><rect x="250" y="360" width="620" height="40" rx="20" fill="#dfe7ee"/>
-    <rect x="250" y="380" width="620" height="140" rx="44" fill="#f1f5f8"/>
-    <rect x="290" y="404" width="540" height="12" rx="6" fill="#ffffff" opacity=".7"/></g>`;
+  return `<g><rect x="${TUB.x}" y="360" width="${TUB.w}" height="40" rx="20" fill="#dfe7ee"/>
+    <rect x="${TUB.x}" y="380" width="${TUB.w}" height="140" rx="44" fill="#f1f5f8"/>
+    <rect x="${TUB.x + 40}" y="404" width="${TUB.w - 80}" height="12" rx="6" fill="#ffffff" opacity=".7"/></g>`;
+}
+function stinkSvg(box) {   // three wavy "stinky" lines rising beside the pet's head
+  const top = box.y + box.h * .12, l = box.x + box.w * .05, r = box.x + box.w * .95;
+  const wave = (x, y) => `<path class="stink" d="M${x} ${y} q-14 -18 0 -36 q14 -18 0 -36 q-14 -18 0 -36" fill="none" stroke="#9cb36b" stroke-width="7" stroke-linecap="round"/>`;
+  return `<g id="btStink">${wave(l - 20, top + 60)}${wave(l + 30, top + 10)}${wave(r - 10, top + 30)}${wave(r + 30, top + 80)}</g>`;
 }
 function showerSvg() {
-  return `<g class="bt-shower" id="btShower" role="button" tabindex="0" aria-label="Shower, tap to rinse">
-    ${ringSvg(780, 70, 220, 260)}
-    <rect x="900" y="110" width="22" height="270" rx="11" fill="#b7c0ca"/>
-    <rect x="830" y="98" width="92" height="22" rx="11" fill="#b7c0ca"/>
-    <ellipse cx="830" cy="118" rx="48" ry="26" fill="#9aa6b2"/><ellipse cx="830" cy="124" rx="38" ry="16" fill="#c9d3dc"/>
-    ${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<rect class="rain" x="${790 + (i % 4) * 22}" y="${140 + Math.floor(i / 4) * 30}" width="8" height="26" rx="4" fill="#8fd0f5" style="animation-delay:${i * .06}s"/>`).join('')}
-  </g>`;
+  // the shower: a pipe on the tub's right edge, a hose, and a hand shower you can pick up
+  return `<rect x="900" y="110" width="22" height="290" rx="11" fill="#b7c0ca"/>
+    <rect x="884" y="102" width="54" height="22" rx="11" fill="#9aa6b2"/>
+    <path id="btHose" d="" fill="none" stroke="#a7b2bd" stroke-width="10" stroke-linecap="round"/>
+    <g class="bt-tool bt-head" id="btHead" data-tool="rinse" role="button" tabindex="0" aria-label="Shower, move it over the pet to rinse">
+      <circle class="ring" cx="40" cy="-50" r="105" fill="rgba(255,246,176,.18)" stroke="#fff6b0" stroke-width="12"/>
+      <path d="M8 -12 L88 -122" stroke="#c9d3dc" stroke-width="26" stroke-linecap="round"/>
+      <path d="M14 -20 L80 -110" stroke="#e8eef3" stroke-width="7" stroke-linecap="round"/>
+      <ellipse cx="0" cy="0" rx="44" ry="24" fill="#b7c0ca" transform="rotate(37)"/>
+      <ellipse cx="-6" cy="8" rx="34" ry="11" fill="#e3e9ee" transform="rotate(37)"/>
+      <g class="spray">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => {
+        const side = (i % 3 - 1) * 16, sx = -6 + side * .8, sy = 12 + side * .6;
+        return `<rect class="rain" x="${sx}" y="${sy}" width="7" height="22" rx="3.5" fill="#8fd0f5" style="animation-delay:${i * .05}s"/>`;
+      }).join('')}</g>
+    </g>`;
+}
+function setHead(x, y) {
+  bt.head = [x, y];
+  document.getElementById('btHead').setAttribute('transform', `translate(${x} ${y})`);
+  const ex = x + 92, ey = y - 128;   // the end of the handle
+  document.getElementById('btHose').setAttribute('d', `M911 398 C 990 470, ${ex + 120} ${ey + 60}, ${ex} ${ey}`);
 }
 function toolSvg(id, x, y, w) {
   const art = { soap: ART.soap, towel: ART.towel, brush: ART.brush }[id], h = w * TOOL_SIZE[id];
   return `<g class="bt-tool" id="bt-${id}" data-tool="${id}" role="button" tabindex="0" aria-label="${id}">
     ${ringSvg(x - 14, y - 14, w + 28, h + 28)}<image href="${art}" x="${x}" y="${y}" width="${w}" height="${h}"/></g>`;
 }
-
-async function openBath() {
-  busy = true;
-  bt = { step: 0, cells: [], drag: null, last: null };
-  const box = poseBox('sit', TUB_DOG.cx, TUB_DOG.bottom, TUB_DOG.h);
-  bt.cells = await petCells(pet.art, box, 7, 8);
-  // mud spots on some of the squares
-  const mud = bt.cells.filter((c, i) => i % 3 === 1).map(c =>
-    `<ellipse class="mud" cx="${c.x + 6}" cy="${c.y}" rx="22" ry="15" fill="#8b5a32" opacity=".55"/>`).join('');
-  document.getElementById('btTitle').textContent = `${pet.name}'s bath`;
-  document.getElementById('btStage').innerHTML = `
-    <rect x="0" y="0" width="1100" height="520" fill="#f3fbf6" rx="20"/>
-    ${showerSvg()}
-    <g id="btDogLayer">${poseImg('sit')}<g id="btMud">${mud}</g><g id="btFx"></g></g>
-    ${tubSvg()}
-    ${toolSvg('soap', 40, 70, 150)}${toolSvg('towel', 30, 220, 170)}${toolSvg('brush', 40, 370, 160)}
-    <g id="btTop"></g>`;
-  openOverlay(document.getElementById('bath'));
-  bathStep();
-}
 const TOOL_SIZE = { soap: 0, towel: 0, brush: 0 };   // height / width of each tool picture, filled in below
 ['soap', 'towel', 'brush'].forEach(k => { const im = new Image(); im.onload = () => { TOOL_SIZE[k] = im.height / im.width; }; im.src = ART[k]; });
 
-function bathStep() {
-  const s = BATH_STEPS[bt.step];
-  document.getElementById('btSteps').innerHTML = bathStepsHtml();
-  document.getElementById('btSay').textContent = s ? s.say(pet.name) : '';
-  document.querySelectorAll('.bt-tool').forEach(g => {
-    g.classList.toggle('on', s && g.dataset.tool === s.id);
-    g.classList.toggle('used', BATH_STEPS.findIndex(x => x.id === g.dataset.tool) < bt.step);
-  });
-  document.getElementById('btShower').classList.toggle('on', s && s.id === 'rinse');
-  bt.cells.forEach(c => c.done = false);
+async function openBath() {
+  busy = true;
+  bt = { step: 0, ready: false, cells: [], drag: null, bubbles: {} };
+  const box = poseBox('sit', TUB_DOG.cx, TUB_DOG.bottom, TUB_DOG.h);
+  bt.box = box;
+  bt.cells = await petCells(pet.art, box, 7, 8);
+  document.getElementById('btTitle').textContent = `${pet.name}'s bath`;
+  document.getElementById('btStage').innerHTML = `
+    <rect x="0" y="0" width="1100" height="520" fill="#f3fbf6" rx="20"/>
+    <g id="btDogLayer">${poseImg('sit')}${stinkSvg(box)}<g id="btFx"></g></g>
+    ${tubSvg()}
+    ${showerSvg()}
+    ${toolSvg('soap', 40, 70, 150)}${toolSvg('towel', 30, 220, 170)}${toolSvg('brush', 40, 370, 160)}
+    <g id="btTop"></g>`;
+  setHead(...SHOWER_HOME);
+  openOverlay(document.getElementById('bath'));
+  bathStep();
 }
+
+function bathStep() {
+  const s = BATH_STEPS[bt.step], next = BATH_STEPS[bt.step + 1];
+  document.getElementById('btSteps').innerHTML = bathStepsHtml();
+  document.getElementById('btSay').textContent = !s ? '' : bt.ready ? s.ok(pet.name) : s.say(pet.name);
+  document.querySelectorAll('.bt-tool').forEach(g => {
+    const i = BATH_STEPS.findIndex(x => x.id === g.dataset.tool);
+    g.classList.toggle('on', !!s && (i === bt.step || (bt.ready && i === bt.step + 1)));
+    g.classList.toggle('used', i < bt.step);
+  });
+}
+function nextBathStep() {
+  if (!bt.ready || bt.step >= BATH_STEPS.length - 1) return;
+  bt.step++; bt.ready = false;
+  bt.cells.forEach(c => c.done = false);
+  document.querySelectorAll('#btFx .puff').forEach(p => p.remove());
+  if (BATH_STEPS[bt.step].id === 'towel') document.querySelectorAll('#btFx .bub').forEach(b => b.remove());
+  bathStep();
+}
+document.getElementById('btSteps').addEventListener('click', e => { if (e.target.closest('.task.blink')) nextBathStep(); });
 
 const btStage = document.getElementById('btStage');
 function btPoint(e) {
@@ -792,77 +930,90 @@ function btPoint(e) {
 }
 btStage.addEventListener('pointerdown', e => {
   const t = e.target.closest('.bt-tool');
-  if (!bt || !t || t.dataset.tool !== (BATH_STEPS[bt.step] || {}).id) return;
-  const img = t.querySelector('image'), p = btPoint(e);
-  bt.drag = { el: t, img, ox: p.x - +img.getAttribute('x'), oy: p.y - +img.getAttribute('y'), home: [img.getAttribute('x'), img.getAttribute('y')] };
+  if (!bt || !t) return;
+  const i = BATH_STEPS.findIndex(x => x.id === t.dataset.tool);
+  if (bt.ready && i === bt.step + 1) nextBathStep();   // picking up the next tool moves on
+  if (i !== bt.step) return;
+  e.preventDefault();
+  const p = btPoint(e);
+  if (t.id === 'btHead') {
+    bt.drag = { head: true, ox: p.x - bt.head[0], oy: p.y - bt.head[1] };
+    t.classList.add('raining');
+  } else {
+    const img = t.querySelector('image');
+    bt.drag = { el: t, img, ox: p.x - +img.getAttribute('x'), oy: p.y - +img.getAttribute('y'), home: [img.getAttribute('x'), img.getAttribute('y')] };
+    document.getElementById('btTop').appendChild(t);   // carry it over the pet
+  }
   t.querySelector('.ring').style.display = 'none';
-  document.getElementById('btTop').appendChild(t);   // carry it over the pet
   btStage.setPointerCapture(e.pointerId);
 });
 btStage.addEventListener('pointermove', e => {
   if (!bt || !bt.drag) return;
   const p = btPoint(e), d = bt.drag;
-  d.img.setAttribute('x', p.x - d.ox); d.img.setAttribute('y', p.y - d.oy);
-  rubAt(p.x, p.y);
+  if (d.head) {   // the shower sprays down and to the left of the head
+    setHead(p.x - d.ox, p.y - d.oy);
+    return rubAt(bt.head[0] + SPRAY[0] * 120, bt.head[1] + SPRAY[1] * 120, 70);
+  }
+  const x = p.x - d.ox, y = p.y - d.oy;
+  d.img.setAttribute('x', x); d.img.setAttribute('y', y);
+  if (d.el.dataset.tool === 'brush') {   // turn the bristles toward the pet
+    const w = +d.img.getAttribute('width'), h = +d.img.getAttribute('height'), cx = x + w * .3, cy = y + h * .35;
+    const dogX = bt.box.x + bt.box.w / 2, dogY = bt.box.y + bt.box.h * .4;
+    const a = Math.atan2(dogY - cy, dogX - cx) * 180 / Math.PI + 90;   // the bristles point up in the picture
+    d.img.setAttribute('transform', `rotate(${a} ${cx} ${cy})`);
+  }
+  rubAt(p.x, p.y, 46);
 });
 function dropTool() {
   if (!bt || !bt.drag) return;
   const d = bt.drag; bt.drag = null;
-  d.img.setAttribute('x', d.home[0]); d.img.setAttribute('y', d.home[1]);
+  if (d.head) {
+    document.getElementById('btHead').classList.remove('raining');
+    document.querySelector('#btHead .ring').style.display = '';
+    return setHead(...SHOWER_HOME);   // back on its hook
+  }
+  d.img.setAttribute('x', d.home[0]); d.img.setAttribute('y', d.home[1]); d.img.removeAttribute('transform');
   d.el.querySelector('.ring').style.display = '';
 }
 btStage.addEventListener('pointerup', dropTool);
 btStage.addEventListener('pointercancel', dropTool);
 
-function rubAt(x, y) {
+function rubAt(x, y, reach) {
   const step = BATH_STEPS[bt.step].id, fx = document.getElementById('btFx');
   let hit = false;
   bt.cells.forEach((c, i) => {
-    if (!c.done && Math.hypot(c.x - x, c.y - y) < 46) {
-      c.done = true; hit = true;
-      if (step === 'soap') {
-        const jx = (i * 37) % 23 - 11, jy = (i * 53) % 19 - 9, r = 15 + (i * 7) % 9;   // a little uneven, like real bubbles
-        fx.insertAdjacentHTML('beforeend', `<g class="bub"><circle cx="${c.x - 8 + jx}" cy="${c.y + jy}" r="${r}" fill="#fff" opacity=".92"/><circle cx="${c.x + 12 + jx}" cy="${c.y - 12 + jy}" r="${r * .6}" fill="#fff" opacity=".92"/><circle cx="${c.x - 12 + jx}" cy="${c.y - 6 + jy}" r="4" fill="#d7eefc"/></g>`);
-        const m = document.querySelectorAll('#btMud .mud')[Math.floor(i / 3)];
-        if (m && i % 3 === 1) m.style.opacity = 0;
-      } else {
-        const col = step === 'towel' ? '#c8f0da' : '#fff6b0';
-        fx.insertAdjacentHTML('beforeend', `<circle class="puff" cx="${c.x}" cy="${c.y}" r="16" fill="${col}"/>`);
-      }
+    if (c.done || Math.hypot(c.x - x, c.y - y) > reach) return;
+    c.done = true; hit = true;
+    if (step === 'soap') {
+      const jx = (i * 37) % 23 - 11, jy = (i * 53) % 19 - 9, r = 15 + (i * 7) % 9;   // a little uneven, like real bubbles
+      fx.insertAdjacentHTML('beforeend', `<g class="bub" data-cell="${i}"><circle cx="${c.x - 8 + jx}" cy="${c.y + jy}" r="${r}" fill="#fff" opacity=".92"/><circle cx="${c.x + 12 + jx}" cy="${c.y - 12 + jy}" r="${r * .6}" fill="#fff" opacity=".92"/><circle cx="${c.x - 12 + jx}" cy="${c.y - 6 + jy}" r="4" fill="#d7eefc"/></g>`);
+    } else if (step === 'rinse') {
+      fx.querySelectorAll(`.bub[data-cell="${i}"]`).forEach(b => { b.style.opacity = 0; setTimeout(() => b.remove(), 400); });
+    } else {
+      const col = step === 'towel' ? '#c8f0da' : '#fff6b0';
+      fx.insertAdjacentHTML('beforeend', `<circle class="puff" cx="${c.x}" cy="${c.y}" r="16" fill="${col}"/>`);
     }
   });
-  if (hit && bt.cells.filter(c => c.done).length >= bt.cells.length * RUB_DONE) finishRub(step);
+  if (!hit) return;
+  const part = bt.cells.filter(c => c.done).length / bt.cells.length;
+  if (step === 'soap') { const st = document.getElementById('btStink'); if (st) st.style.opacity = Math.max(0, 1 - part / RUB_DONE); }
+  if (!bt.ready && part >= RUB_DONE) stepReady(step);
 }
 
-function finishRub(step) {
-  dropTool();
-  const fx = document.getElementById('btFx');
-  if (step === 'soap') document.querySelectorAll('#btMud .mud').forEach(m => m.style.opacity = 0);
+function stepReady(step) {
+  bt.ready = true;
+  if (step === 'soap') { const st = document.getElementById('btStink'); if (st) st.remove(); }
+  if (step === 'rinse') setDogPose('bath');
   if (step === 'towel') setDogPose('sit');
-  if (step === 'brush') return bathDone();
-  setTimeout(() => { fx.querySelectorAll('.puff').forEach(p => p.remove()); bt.step++; bathStep(); }, 400);
+  if (step === 'brush') { dropTool(); return bathDone(); }
+  bathStep();
 }
 function setDogPose(pose) {
   document.getElementById('btDog').outerHTML = poseImg(pose);
 }
 
-btStage.addEventListener('click', e => {
-  if (!bt || !e.target.closest('#btShower') || BATH_STEPS[bt.step].id !== 'rinse' || bt.rinsing) return;
-  bt.rinsing = true;
-  const sh = document.getElementById('btShower'); sh.classList.remove('on'); sh.classList.add('raining');
-  setTimeout(() => {
-    document.querySelectorAll('#btFx .bub').forEach(b => b.style.opacity = 0);
-    setDogPose('bath');
-  }, 700);
-  setTimeout(() => {
-    sh.classList.remove('raining'); bt.rinsing = false;
-    document.getElementById('btFx').innerHTML = '';
-    bt.step++; bathStep();
-  }, 1500);
-});
-
 function bathDone() {
-  bt.step = BATH_STEPS.length; bathStep();
+  bt.step = BATH_STEPS.length; bt.ready = false; bathStep();
   setDogPose('done');
   document.getElementById('btSay').textContent = `${pet.name} is all clean!`;
   const b = poseBox('done', TUB_DOG.cx, TUB_DOG.bottom, TUB_DOG.h), cx = b.x + b.w / 2, cy = b.y + b.h * .35;
