@@ -83,6 +83,7 @@
   .ms-stage { flex: 1; min-height: 0; width: 100%; touch-action: none; }
   .ms-bar { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 60px; flex-wrap: wrap; }
   .ms-say { font-size: clamp(14px, 2.3vw, 21px); font-weight: bold; color: #2b6e47; text-align: center; max-width: 640px; }
+  .ms-top { margin: 4px auto 0; min-height: 2.6em; display: flex; align-items: center; justify-content: center; }   /* the words sit above the cup */
   .ms-btn { min-height: 52px; padding: 0 22px; border: none; border-radius: 999px; background: #3bb273; color: #fff; font-size: 18px; font-weight: bold; box-shadow: 0 4px 0 #2a8a55; display: flex; align-items: center; gap: 8px; }
   .ms-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a8a55; }
   .ms-btn.soft { background: #fff; color: #6b4329; border: 3px solid #c9a27f; box-shadow: 0 4px 0 #e2cdb8; }
@@ -106,6 +107,7 @@
   .ms-cup .ms-line { transition: opacity .2s; }
   .ms-cup.tip .ms-line { opacity: 0; }
   .bowlfood { transition: opacity .4s; }
+  .extra { transition: opacity .4s; pointer-events: none; }
   #msBinWrap, #msBowl { transition: opacity .3s; }
   .away { opacity: 0; pointer-events: none; }
   .ms-bin.on .ring, .ms-cup.on .ring { opacity: 1; }
@@ -185,9 +187,9 @@
           <h3 id="msTitle">Measure the food</h3>
           <button class="pk-close" id="msClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#3bb273" stroke-width="4" stroke-linecap="round"/></svg></button>
         </div>
+        <div class="ms-say ms-top" id="msSay"></div>
         <svg class="ms-stage" id="msStage" viewBox="0 0 1100 520" preserveAspectRatio="xMidYMid meet"></svg>
         <div class="ms-bar">
-          <div class="ms-say" id="msSay"></div>
           <button class="ms-btn soft" id="msSpoon" hidden><svg viewBox="0 0 40 40" width="28" height="28"><ellipse cx="13" cy="13" rx="9" ry="7" fill="#c9cfd6" transform="rotate(-40 13 13)"/><rect x="17" y="17" width="20" height="6" rx="3" fill="#c9cfd6" transform="rotate(45 20 20)"/></svg>Take some out</button>
           <button class="ms-btn" id="msNext" hidden>Next</button>
         </div>
@@ -247,6 +249,22 @@ const TASKS = [
   { name: 'Food',       icon: 'bowl',    targets: ['food'],          guide: 'Time to feed your pet!' },   // water comes after eating
   { name: 'Bath',       icon: 'bubbles', targets: ['bath'],          guide: 'Time for a bath!' },
 ];
+// Things in the room when you come in (same numbers as vet-clinic/room_extras.py, which makes the town's picture):
+// Ralphie sitting in the blue bed in the dog crate, and the two bowls on the shelves under the food bin.
+// Each one leaves when it is used: the pet when you pick it, the food bowl when you measure, the water bowl at water time.
+const EXTRAS = {
+  pet: { id: 'ralphie', cx: 362, bottom: 692, h: 165, bedFront: 'M266 684 L314 694 L362 698 L410 694 L457 684 L457 712 L266 712 Z' },
+  bowls: [ { id: 'shelfFood', art: 'bowlFood', cx: 1115, bottom: 596, w: 110 }, { id: 'shelfWater', art: 'bowlWater', cx: 1115, bottom: 696, w: 110 } ],
+};
+function extrasSvg() {
+  const p = EXTRAS.pet, w = p.h * 443 / 560;
+  let s = `<g id="cratePet" class="extra"><image href="${ART.dachshundSit}" x="${p.cx - w / 2}" y="${p.bottom - p.h}" width="${w}" height="${p.h}"/>
+    <clipPath id="bedFrontClip"><path d="${p.bedFront}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#bedFrontClip)"/></g>`;
+  EXTRAS.bowls.forEach(b => { const h = b.w * 236 / 360;
+    s += `<image id="${b.id}" class="extra" href="${ART[b.art]}" x="${b.cx - b.w / 2}" y="${b.bottom - h}" width="${b.w}" height="${h}"/>`; });
+  return s;
+}
+const hideExtra = id => { const e = document.getElementById(id); if (e) e.style.opacity = 0; };
 const RUG = { cx: 992, bottom: 965, h: 400 };          // where the pet sits on the rug
 const ON_SCALE = { cx: 1322, bottom: 726, k: .7 };      // where it sits on the scale, a little smaller
 
@@ -283,7 +301,7 @@ function tagSvg(t) {
 const ringSvg = (x, y, w, h) => `<rect class="ring" x="${x}" y="${y}" width="${w}" height="${h}" rx="40" fill="rgba(255,246,176,.18)" stroke="#fff6b0" stroke-width="14"/>`;
 
 function drawRoom() {
-  let s = `<image href="${ART.room}" x="0" y="0" width="1984" height="1116"/>`;
+  let s = `<image href="${ART.room}" x="0" y="0" width="1984" height="1116"/><g id="extras">${extrasSvg()}</g>`;
   for (const [id, t] of Object.entries(TARGETS)) {
     s += `<g class="tgt" data-t="${id}" tabindex="0" role="button" aria-label="${t.name}">
       <rect x="${t.x}" y="${t.y}" width="${t.w}" height="${t.h}" rx="40" fill="rgba(255,255,255,0)"/>
@@ -376,6 +394,7 @@ picker.addEventListener('click', e => {
 
 function choosePet(a) {
   pet = Object.assign({}, a); closeOverlay(picker);
+  if (a.id === EXTRAS.pet.id) hideExtra('cratePet');   // out of the crate
   const pic = new Image();
   pic.onload = () => {
     const h = RUG.h, w = h * pic.width / pic.height, x = RUG.cx - w / 2, y = RUG.bottom - h;
@@ -553,19 +572,31 @@ function msButtons(next, spoon) {
 const msShow = (id, on) => document.getElementById(id).classList.toggle('away', !on);
 
 function openMeasure() {
+  hideExtra('shelfFood');   // the bowl comes off the shelf
   ms = { step: 0, amount: 0, pouring: false, done: false, ready: false, drag: null };
   document.getElementById('msTitle').textContent = `Measure ${pet.name}'s food`;
   drawMeasure();
   openOverlay(document.getElementById('measure'));
   lessonStep();
 }
+const MS_VIEW = { full: [0, 0, 1100, 520], cup: [190, 120, 660, 360] };
+function msView(to, ms_) {   // move the measuring screen's view smoothly (bigger cup at first)
+  const st = document.getElementById('msStage'), from = (st.getAttribute('viewBox') || '').split(' ').map(Number);
+  if (!ms_ || from.length !== 4) return st.setAttribute('viewBox', to.join(' '));
+  const t0 = performance.now();
+  const step = t => { const k = Math.min(1, (t - t0) / ms_), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    st.setAttribute('viewBox', from.map((v, i) => v + (to[i] - v) * e).join(' ')); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
 function lessonStep() {
   const goal = CUPS[pet.food];
-  if (ms.step === 0) {   // just the cup first
+  if (ms.step === 0) {   // just the cup first, big
+    msView(MS_VIEW.cup);
     document.querySelectorAll('.ms-line').forEach((g, i) => setTimeout(() => g.classList.add('show'), 300 + i * 250));
     msSay('This is a measuring cup. The lines show how much food is inside.');
     msButtons('Next');
   } else {               // then the food bin, and the line to fill to
+    msView(MS_VIEW.full, 500);
     document.querySelector(`.ms-line[data-c="${pet.food}"]`).classList.add('goal');
     msShow('msBinWrap', true);
     document.getElementById('msBin').classList.add('on');
@@ -605,7 +636,7 @@ function judge() {
     ready(true); msButtons(null);
     msSay(`Just right! Now drag the cup to the bowl and hold it there to pour.`);
   } else if (diff < 0) {
-    ready(false); msButtons(null, 'show');
+    ready(false); msButtons(null);   // no spoon when there is too little
     msSay(`A little more! Pour up to the ${goal} line.`);
   } else {
     ready(false); msButtons(null, 'on');
@@ -730,6 +761,7 @@ function setPose(p) {
 // water: after eating, an empty bowl sits by the pet; drag it to the sink (or tap the sink) and it fills
 const WB = { x: 1180, bottom: RUG.bottom + 12 }, SINK_SPOT = { cx: 1493, bottom: 498 };
 function waterTime() {
+  hideExtra('shelfWater');
   const bw = FLOOR_BOWL, bh = bw * 236 / 360, x = WB.x, y = WB.bottom - bh;
   const cx = x + bw * BOWL_OPEN.cx, cy = y + bh * BOWL_OPEN.cy, rx = bw * BOWL_OPEN.rx * .85, ry = bh * BOWL_OPEN.ry * .8;
   document.getElementById('petLayer').insertAdjacentHTML('afterbegin', `<g id="waterBowl" class="wb drag" role="button" tabindex="0" aria-label="Water bowl, drag it to the sink">
@@ -1044,6 +1076,7 @@ document.getElementById('adAgain').addEventListener('click', () => {
   closeOverlay(document.getElementById('allDone'));
   pet = null; fed = false; watered = false;
   document.getElementById('petLayer').innerHTML = '';
+  document.getElementById('extras').innerHTML = extrasSvg();   // everything back in its place
   setTask(0);
 });
 
