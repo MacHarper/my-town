@@ -38,6 +38,8 @@
   /* the guide: one short line that says what to do next */
   .guide { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 3; background: #fff; border: 4px solid #3bb273; border-radius: 999px; padding: 8px 20px; font-size: clamp(14px, 2.4vw, 22px); font-weight: bold; color: #2b6e47; white-space: nowrap; transition: opacity .3s; pointer-events: none; }
   .guide.hide { opacity: 0; }
+  .guide.nudge { animation: nudge .45s ease-out; }
+  @keyframes nudge { 0%, 100% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12); } }
   #toast { position: fixed; z-index: 60; left: 50%; top: 14px; transform: translate(-50%, -30px); background: #fff; border: 3px solid #3bb273; border-radius: 14px; padding: 10px 18px; font-size: clamp(13px, 2.6vw, 18px); font-weight: bold; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
   /* panels (pet picker and the weight card) */
@@ -173,6 +175,7 @@
   .pk-close:active { box-shadow: 0 1px 0 #7a6a8c; }
   .pk-next:active { box-shadow: 0 1px 0 #2a6db3; }
   .pk-next:hover, .ok:hover { filter: brightness(1.05); }
+  @media (max-width: 980px) { .backtown .back-words { display: none; } .backtown { padding: 0 10px; } }   /* room for the task list */
 @@HEADER@@
     <div class="tasks" id="tasks" aria-label="Things to do"></div>
 @@HTML@@
@@ -286,7 +289,7 @@ function extrasSvg() {
 }
 const hideExtra = id => { const e = document.getElementById(id); if (e) e.style.opacity = 0; };
 const RUG = { cx: 992, bottom: 965, h: 400 };          // where the pet sits on the rug
-const ON_SCALE = { cx: 1322, bottom: 726, k: .7 };      // where it sits on the scale, a little smaller
+const ON_SCALE = { cx: 1322, bottom: 726, k: .63 };     // where it sits on the scale, smaller (it is farther back)
 
 let task = 0, pet = null, kind = 'dog', page = 0, busy = false;
 const room = document.getElementById('room');
@@ -354,6 +357,10 @@ function guide(text) {
   setTimeout(() => { guideEl.textContent = text; guideEl.classList.remove('hide'); }, 250);
 }
 
+function nudgeGuide() {   // a little bounce on the line that already says what to do
+  guideEl.classList.remove('nudge'); void guideEl.offsetWidth; guideEl.classList.add('nudge');
+  const a = document.getElementById('pickArrow'); if (a && a.style.display !== 'none') { a.classList.remove('nudge'); void a.getBBox(); a.classList.add('nudge'); }
+}
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -366,7 +373,7 @@ function useTarget(g) {
   const id = g.dataset.t;
   if (!TASKS[task]) return;
   const allowed = TASKS[task].targets.includes(id) || (id === 'water' && fed && !watered);
-  if (!allowed) return showToast(id === 'water' && TASKS[task].icon === 'bowl' ? `Feed ${pet.name} first!` : say(TASKS[task].guide));   // not this one yet
+  if (!allowed) return id === 'water' && TASKS[task].icon === 'bowl' && !fed ? showToast(`Feed ${pet.name} first!`) : nudgeGuide();   // not this one yet
   if (id === 'dogs' || id === 'cats') return openPicker(id === 'dogs' ? 'dog' : 'cat');
   if (id === 'scale') return weigh();
   if (id === 'food') return fed ? null : openMeasure();
@@ -689,13 +696,16 @@ stage.addEventListener('pointermove', e => {
   if (!ms || !ms.drag) return;
   const p = msPoint(e), d = ms.drag;
   d.dx = p.x - d.sx; d.dy = p.y - d.sy;
-  document.getElementById('msCupMove').setAttribute('transform', `translate(${d.dx} ${d.dy})`);
-  // the lip of the tipped cup: is it over the bowl?
+  // anywhere near the bowl counts; then the cup snaps so its lip is right over the bowl and the food lands in it
   const cx = CUP_C[0] + d.dx, cy = CUP_C[1] + d.dy, bcx = MS_BOWL.x + MS_BOWL.w / 2;
-  const lx = cx - 158, ly = cy + 113;   // where the lip is once the cup tips
-  d.over = cx > bcx + 20 && cx < bcx + 300 && cy > MS_BOWL.y - 320 && cy < MS_BOWL.y + 120;   // anywhere near the bowl counts
+  d.over = cx > bcx + 10 && cx < bcx + 340 && cy > MS_BOWL.y - 360 && cy < MS_BOWL.y + 160;
+  const mv = document.getElementById('msCupMove');
+  let tx = d.dx, ty = d.dy;
+  if (d.over) { tx = bcx + 10 + 158 - CUP_C[0]; ty = MS_BOWL.y - 28 - 113 - CUP_C[1]; }
+  mv.style.transition = d.over ? 'transform .18s ease-out' : 'none';
+  mv.style.transform = `translate(${tx}px, ${ty}px)`;
   document.getElementById('msCup').classList.toggle('tip', d.over);
-  d.lip = [lx, ly];
+  d.lip = [CUP_C[0] + tx - 158, CUP_C[1] + ty + 113];   // where the lip is once the cup tips
 });
 function dropCup() {
   if (!ms) return;
@@ -706,7 +716,7 @@ function dropCup() {
   const mv = document.getElementById('msCupMove');
   document.getElementById('msCup').classList.remove('tip');
   document.getElementById('msStream').innerHTML = '';
-  mv.style.transition = 'transform .35s'; mv.setAttribute('transform', 'translate(0 0)');
+  mv.style.transition = 'transform .35s'; mv.style.transform = 'translate(0px, 0px)';
   if (ms.amount < pet.food - CLOSE_ENOUGH && ms.amount > 0) msSay('Keep the cup over the bowl until all the food is in!');
 }
 stage.addEventListener('pointerup', dropCup);
@@ -815,12 +825,16 @@ room.addEventListener('pointermove', e => {
   if (!wdrag) return;
   const p = svgPoint(e); wdrag.dx = p.x - wdrag.start.x; wdrag.dy = p.y - wdrag.start.y;
   wbMove(wdrag.dx, wdrag.dy, 0);
+  if (atSink(wdrag.dx, wdrag.dy)) { const d = wdrag; wdrag = null; fillWater(d.dx, d.dy); }   // no need to let go
 });
+function atSink(dx, dy) {
+  const cx = WB.x + FLOOR_BOWL / 2 + dx, by = WB.bottom + dy, s = TARGETS.water;
+  return cx > s.x - 60 && cx < s.x + s.w + 60 && by > s.y - 40 && by < s.y + s.h + 100;
+}
 room.addEventListener('pointerup', () => {
   if (!wdrag) return;
   const d = wdrag; wdrag = null;
-  const bw = FLOOR_BOWL, cx = WB.x + bw / 2 + d.dx, by = WB.bottom + d.dy, s = TARGETS.water;
-  if (cx > s.x - 40 && cx < s.x + s.w + 40 && by > s.y && by < s.y + s.h + 80) fillWater(d.dx, d.dy);
+  if (atSink(d.dx, d.dy)) fillWater(d.dx, d.dy);
   else wbMove(0, 0, 350);   // not at the sink: back by the pet
 });
 function fillWater(fromDx, fromDy) {
@@ -969,7 +983,7 @@ function bathStep() {
   document.getElementById('btSay').textContent = !s ? '' : bt.ready ? s.ok(pet.name) : s.say(pet.name);
   document.querySelectorAll('.bt-tool').forEach(g => {
     const i = BATH_STEPS.findIndex(x => x.id === g.dataset.tool);
-    g.classList.toggle('on', !!s && (i === bt.step || (bt.ready && i === bt.step + 1)));
+    g.classList.toggle('on', !!s && ((i === bt.step && !bt.ready) || (bt.ready && i === bt.step + 1)));
     g.classList.toggle('used', i < bt.step);
   });
 }
@@ -1120,4 +1134,4 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay
 drawRoom();
 setTask(0, true);
 // coming from the town's crates: open that picker right away
-if (location.hash === '#dog' || location.hash === '#cat') openPicker(location.hash.slice(1));
+if (location.hash === '#dog' || location.hash === '#cat') { openPicker(location.hash.slice(1)); history.replaceState(null, '', location.pathname); }   // only once
