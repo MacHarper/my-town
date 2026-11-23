@@ -1,0 +1,911 @@
+@@CSS@@
+  /* ---------- Vet Clinic ---------- */
+  .play { position: relative; overflow: hidden; background: #cdebd9; padding: 0; }
+  #room { width: 100%; height: 100%; display: block; touch-action: none; }
+  /* task list in the header: slides out once when you come in; the current task is the biggest */
+  .tasks { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; animation: tasksIn .5s .3s ease-out backwards; }
+  @keyframes tasksIn { from { transform: translateX(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .task { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px 0 5px; border: 3px solid #b9dcc6; border-radius: 999px; background: #fff; font-size: 14px; font-weight: bold; color: #7d9a88; }
+  .task svg { width: 28px; height: 28px; flex: 0 0 auto; }
+  .task.cur { height: 54px; padding: 0 18px 0 7px; border: 4px solid #3bb273; font-size: 19px; color: #2b6e47; }
+  .task.cur svg { width: 40px; height: 40px; }
+  .task.done { background: #e3f6ea; color: #6f9f80; }
+  .task.pop { animation: popSoft .35s ease-out; }
+  @keyframes popSoft { from { transform: scale(.85); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+  @media (max-width: 760px) { .task:not(.cur) span { display: none; } .task:not(.cur) { padding: 0 5px; } .task.cur { font-size: 15px; } }
+  /* tap targets: a soft ring shows only when it is your turn to tap it, or while you hover right on it.
+     While you hover one thing, only that thing lights up. */
+  .tgt { cursor: pointer; outline: none; }
+  .petg { outline: none; }
+  .petg.drag { cursor: grab; }
+  .petg.dragging { cursor: grabbing; }
+  .ring, .tag { opacity: 0; transition: opacity .15s; }
+  .tag { pointer-events: none; }
+  .tgt:hover .ring, .tgt:focus-visible .ring { opacity: .75; }
+  .tgt.on .ring, .petg.drag .ring { opacity: 1; }
+  .tgt.on .tag, .tgt:hover .tag, .tgt:focus-visible .tag { opacity: 1; }
+  #room:has(.tgt:hover, .petg.drag:hover) .tgt:not(:hover) .ring,
+  #room:has(.tgt:hover, .petg.drag:hover) .tgt:not(:hover) .tag,
+  #room:has(.tgt:hover) .petg .ring { opacity: 0; }
+  .tgt.shake { animation: shake .47s; transform-box: fill-box; transform-origin: center; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+  .petg { transform-box: view-box; }
+  .pet.in { animation: popSoft .4s ease-out; transform-box: fill-box; transform-origin: 50% 100%; }
+  .readout { opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .readout.show { opacity: 1; }
+  /* the guide: one short line that says what to do next */
+  .guide { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 3; background: #fff; border: 4px solid #3bb273; border-radius: 999px; padding: 8px 20px; font-size: clamp(14px, 2.4vw, 22px); font-weight: bold; color: #2b6e47; white-space: nowrap; transition: opacity .3s; pointer-events: none; }
+  .guide.hide { opacity: 0; }
+  #toast { position: fixed; z-index: 60; left: 50%; top: 14px; transform: translate(-50%, -30px); background: #fff; border: 3px solid #3bb273; border-radius: 14px; padding: 10px 18px; font-size: clamp(13px, 2.6vw, 18px); font-weight: bold; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; white-space: nowrap; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  /* panels (pet picker and the weight card) */
+  .overlay { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: rgba(43, 35, 64, .25); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .panel { background: #fff; border-radius: 28px; box-shadow: 0 12px 34px rgba(40, 90, 60, .25); display: flex; flex-direction: column; padding: 12px 16px 16px; transform: scale(.94); transition: transform .25s ease-out; }
+  .overlay.open .panel { transform: none; }
+  .pk-panel { width: 94%; height: 90%; }
+  .pk-head { display: flex; align-items: center; justify-content: center; position: relative; min-height: 52px; }
+  .panel h3 { margin: 0; font-size: clamp(18px, 3vw, 28px); color: #3bb273; text-align: center; }
+  .pk-close { position: absolute; right: 0; top: 0; width: 48px; height: 48px; border: none; border-radius: 50%; background: #e7f6ed; display: flex; align-items: center; justify-content: center; }
+  .pk-close:hover { background: #d3efdf; }
+  .pk-close svg { width: 22px; height: 22px; }
+  .pk-body { flex: 1; min-height: 0; display: flex; align-items: center; gap: 12px; }
+  .pk-window { flex: 1; height: 100%; overflow: hidden; }
+  .pk-strip { display: flex; height: 100%; transition: transform .45s ease-in-out; }
+  .pk-page { flex: 0 0 100%; height: 100%; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 6px; }
+  .pk-card { position: relative; min-height: 0; border: none; border-radius: 22px; background: #eaf7ef; display: flex; align-items: flex-end; justify-content: center; padding: 8px 8px 46px; transition: transform .15s, box-shadow .15s; }
+  .pk-card img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
+  .pk-card:not(.empty):hover, .pk-card:not(.empty):focus-visible { transform: translateY(-4px); box-shadow: 0 0 0 5px #fff6b0, 0 8px 18px rgba(40, 90, 60, .2); outline: none; }
+  .pk-card.empty { background: #f4f8f5; cursor: default; align-items: center; }
+  .pk-card.empty svg { width: 38%; max-height: 60%; opacity: .25; }
+  .pk-name { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); background: #fff; border: 3px solid #8a5a3b; border-radius: 999px; padding: 4px 14px; font-size: clamp(11px, 1.6vw, 16px); font-weight: bold; color: #6b4329; white-space: nowrap; }
+  .pk-card.empty .pk-name { border-color: #c9d6cd; color: #9aaba0; }
+  .pk-next { flex: 0 0 auto; width: 64px; height: 64px; border: none; border-radius: 50%; background: #3d8fe0; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #2a6db3; transition: transform .15s; }
+  .pk-next:hover { transform: scale(1.06); }
+  .pk-next:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a6db3; }
+  .pk-next:disabled { opacity: .35; cursor: default; transform: none; }
+  .pk-next svg { width: 30px; height: 30px; }
+  /* the weight card: the weight, and how much food that means (the same card comes back when you measure food) */
+  .wt-panel { width: min(92%, 640px); max-height: 92%; align-items: center; gap: 10px; padding: 18px 20px 20px; }
+  .wt-big { font-size: clamp(30px, 6vw, 52px); font-weight: bold; color: #2b6e47; }
+  .wt-chart { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .wt-col { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 10px; border-radius: 18px; background: #f4f8f5; font-size: 13px; color: #7d9a88; font-weight: bold; min-width: 88px; }
+  .wt-col svg { width: 54px; height: 64px; }
+  .wt-col.me { background: #fff8d6; box-shadow: 0 0 0 4px #f2c14e; color: #6b4329; }
+  .wt-col b { font-size: 17px; }
+  .ok { margin-top: 6px; min-width: 140px; height: 54px; border: none; border-radius: 999px; background: #3bb273; color: #fff; font-size: 20px; font-weight: bold; box-shadow: 0 4px 0 #2a8a55; }
+  .ok:hover { background: #35a468; }
+  .ok:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a8a55; }
+  @media (max-width: 600px) { .pk-next { width: 48px; height: 48px; } .pk-page { gap: 8px; } .pk-card { padding-bottom: 38px; } .wt-col { min-width: 64px; padding: 6px; } .wt-col svg { width: 40px; height: 48px; } }
+
+  /* ---------- measuring food ---------- */
+  .ms-panel { width: 94%; height: 92%; padding: 10px 16px 14px; }
+  .ms-stage { flex: 1; min-height: 0; width: 100%; touch-action: none; }
+  .ms-bar { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 60px; flex-wrap: wrap; }
+  .ms-say { font-size: clamp(14px, 2.3vw, 21px); font-weight: bold; color: #2b6e47; text-align: center; max-width: 640px; }
+  .ms-btn { min-height: 52px; padding: 0 22px; border: none; border-radius: 999px; background: #3bb273; color: #fff; font-size: 18px; font-weight: bold; box-shadow: 0 4px 0 #2a8a55; display: flex; align-items: center; gap: 8px; }
+  .ms-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a8a55; }
+  .ms-btn.soft { background: #fff; color: #6b4329; border: 3px solid #c9a27f; box-shadow: 0 4px 0 #e2cdb8; }
+  .ms-btn.soft.on { box-shadow: 0 0 0 5px #fff6b0, 0 4px 0 #e2cdb8; }
+  .ms-btn[hidden] { display: none; }
+  .ms-bin, .ms-bowl { cursor: pointer; }
+  .ms-bin .lid { transition: transform .3s; transform-box: fill-box; transform-origin: 100% 100%; }
+  .ms-bin .tilt { transition: transform .35s ease-in-out; transform-box: view-box; transform-origin: 70px 470px; }
+  .ms-bin.pour .tilt { transform: rotate(-16deg); }
+  .ms-bin.pour .lid { transform: rotate(35deg); }
+  .kib { opacity: 0; }
+  .pouring .kib { animation: fall .5s linear infinite; }
+  @keyframes fall { 0% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 1; transform: translate(var(--dx), var(--dy)); } }
+  .ms-line .lbl { opacity: 0; transition: opacity .3s; }
+  .ms-line.show .lbl { opacity: 1; }
+  .ms-line .glow { opacity: 0; transition: opacity .25s; }
+  .ms-line.goal .glow { opacity: 1; }
+  .ms-cup { transition: transform .6s ease-in-out; transform-box: view-box; transform-origin: 520px 300px; }
+  .ms-cup.tip { transform: translate(-240px, -30px) rotate(-75deg); }   /* tips toward the bowl and pours from the lip */
+  .ms-cup.wiggle { animation: shake .47s; }
+  .ms-cup .ms-line { transition: opacity .2s; }
+  .ms-cup.tip .ms-line { opacity: 0; }
+  .bowlfood { transition: opacity .4s; }
+  .ms-bin:hover .ring, .ms-bowl:hover .ring { opacity: .75; }
+
+  /* ---------- bath ---------- */
+  .bt-panel { width: 94%; height: 92%; padding: 10px 16px 14px; }
+  .bt-steps { display: flex; gap: 8px; justify-content: center; }
+  .bt-steps .task { height: 36px; font-size: 13px; }
+  .bt-steps .task.cur { height: 46px; font-size: 16px; }
+  .bt-steps .task svg { width: 24px; height: 24px; }
+  .bt-steps .task.cur svg { width: 32px; height: 32px; }
+  .bt-tool { cursor: grab; }
+  .bt-tool .ring { opacity: 0; transition: opacity .15s; }
+  .bt-tool.on .ring { opacity: 1; }
+  .bt-tool:hover .ring { opacity: .75; }
+  .bt-tool.used { opacity: .35; cursor: default; }
+  .bt-shower { cursor: pointer; }
+  .bt-shower .ring { opacity: 0; transition: opacity .15s; }
+  .bt-shower.on .ring { opacity: 1; }
+  .bt-shower.on:hover .ring { opacity: .75; }
+  .mud, .bub { transition: opacity .35s; }
+  .puff { animation: puff .5s ease-out forwards; }
+  @keyframes puff { from { opacity: .9; } to { opacity: 0; transform: translateY(-14px); } }
+  .rain { opacity: 0; }
+  .raining .rain { animation: rain .45s linear infinite; }
+  @keyframes rain { 0% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 1; transform: translate(-60px, 150px); } }
+  .burst polygon { transform-box: fill-box; transform-origin: center; animation: burst .8s ease-out forwards; }
+  @keyframes burst { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--bx), var(--by)) scale(1); } }
+  .done-panel { width: min(90%, 520px); align-items: center; gap: 12px; padding: 22px; }
+  #allDone { align-items: flex-start; padding-top: 2%; background: rgba(43, 35, 64, .08); }   /* high up, so the happy pet shows below */
+@@HEADER@@
+    <div class="tasks" id="tasks" aria-label="Things to do"></div>
+@@HTML@@
+  <div class="play" id="play">
+    <svg id="room" viewBox="0 0 1984 1116" preserveAspectRatio="xMidYMid meet" aria-label="Inside the Vet Clinic"></svg>
+    <div class="guide" id="guide"></div>
+    <div class="overlay" id="picker" aria-hidden="true">
+      <div class="panel pk-panel" role="dialog" aria-labelledby="pkTitle">
+        <div class="pk-head">
+          <h3 id="pkTitle">Pick a dog</h3>
+          <button class="pk-close" id="pkClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#3bb273" stroke-width="4" stroke-linecap="round"/></svg></button>
+        </div>
+        <div class="pk-body">
+          <div class="pk-window"><div class="pk-strip" id="pkStrip"></div></div>
+          <button class="pk-next" id="pkNext" aria-label="More pets"><svg viewBox="0 0 26 26"><path d="M10 5 L18 13 L10 21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="overlay" id="weightCard" aria-hidden="true">
+      <div class="panel wt-panel" role="dialog" aria-labelledby="wtTitle">
+        <h3 id="wtTitle"></h3>
+        <div class="wt-big" id="wtBig"></div>
+        <div id="wtSays"></div>
+        <div class="wt-chart" id="wtChart"></div>
+        <button class="ok" id="wtOk">Got it!</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="measure" aria-hidden="true">
+      <div class="panel ms-panel" role="dialog" aria-labelledby="msTitle">
+        <div class="pk-head">
+          <h3 id="msTitle">Measure the food</h3>
+          <button class="pk-close" id="msClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#3bb273" stroke-width="4" stroke-linecap="round"/></svg></button>
+        </div>
+        <svg class="ms-stage" id="msStage" viewBox="0 0 1100 520" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="ms-bar">
+          <div class="ms-say" id="msSay"></div>
+          <button class="ms-btn soft" id="msSpoon" hidden><svg viewBox="0 0 40 40" width="28" height="28"><ellipse cx="13" cy="13" rx="9" ry="7" fill="#c9cfd6" transform="rotate(-40 13 13)"/><rect x="17" y="17" width="20" height="6" rx="3" fill="#c9cfd6" transform="rotate(45 20 20)"/></svg>Take some out</button>
+          <button class="ms-btn" id="msNext" hidden>Next</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="bath" aria-hidden="true">
+      <div class="panel bt-panel" role="dialog" aria-labelledby="btTitle">
+        <div class="pk-head">
+          <h3 id="btTitle">Bath time</h3>
+          <button class="pk-close" id="btClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#3bb273" stroke-width="4" stroke-linecap="round"/></svg></button>
+        </div>
+        <div class="bt-steps" id="btSteps"></div>
+        <svg class="ms-stage" id="btStage" viewBox="0 0 1100 520" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="ms-bar"><div class="ms-say" id="btSay"></div></div>
+      </div>
+    </div>
+    <div class="overlay" id="allDone" aria-hidden="true">
+      <div class="panel done-panel" role="dialog" aria-labelledby="adTitle">
+        <h3 id="adTitle"></h3>
+        <div class="ms-say" id="adSay"></div>
+        <button class="ok" id="adAgain">Care for another pet</button>
+      </div>
+    </div>
+  </div>
+  <div id="toast"></div>
+@@JS@@
+// The room picture is 1984 x 1116; everything on it uses those numbers.
+// To add a pet: put its picture in ART, then add a line to PETS (its own name, never the breed; weight in pounds). The picker fills 8 a page.
+const PETS = {
+  dog: [ { id: 'ralphie', name: 'Ralphie', art: 'dachshundSit', eat: 'ralphieEat', bath: 'ralphieBath', done: 'ralphieDone', weight: 16 } ],
+  cat: [],
+};
+// How much food a pet gets for its weight. The weigh step shows this card, and the food step will
+// ask the player to measure this much in the measuring cup (lines at 1/4, 1/2, 3/4 and 1 cup).
+const FOOD = {
+  dog: [ { upTo: 10, cups: .25, label: 'up to 10 lb' }, { upTo: 20, cups: .5, label: '11 to 20 lb' },
+         { upTo: 40, cups: .75, label: '21 to 40 lb' }, { upTo: Infinity, cups: 1, label: 'over 40 lb' } ],
+  cat: [ { upTo: 10, cups: .25, label: 'up to 10 lb' }, { upTo: Infinity, cups: .5, label: 'over 10 lb' } ],
+};
+const CUPS = { .25: '¼ cup', .5: '½ cup', .75: '¾ cup', 1: '1 cup' };
+function foodFor(p, k) { return FOOD[k].find(r => p.weight <= r.upTo); }
+
+// Places you can tap in the room
+const TARGETS = {
+  cats:  { name: 'Cats',      x: 205,  y: 240, w: 575, h: 222, tag: 'top' },
+  dogs:  { name: 'Dogs',      x: 154,  y: 462, w: 680, h: 285, tag: 'bottom' },
+  food:  { name: 'Food',      x: 1012, y: 332, w: 203, h: 387, tag: 'top' },
+  scale: { name: 'Scale',     x: 1226, y: 672, w: 192, h: 86,  tag: 'bottom' },
+  water: { name: 'Water',     x: 1379, y: 372, w: 228, h: 362, tag: 'top' },
+  bath:  { name: 'Bath time', x: 1607, y: 342, w: 357, h: 437, tag: 'top' },
+};
+// The tasks, in order; the room parts for the current task are the ones that light up
+const TASKS = [
+  { name: 'Pick a pet', icon: 'paw',     targets: ['dogs', 'cats'],  guide: 'Pick a pet to care for!' },
+  { name: 'Weigh',      icon: 'scale',   targets: ['scale'],         guide: 'Put your pet on the scale!' },
+  { name: 'Food',       icon: 'bowl',    targets: ['food', 'water'], guide: 'Time for food and water!' },
+  { name: 'Bath',       icon: 'bubbles', targets: ['bath'],          guide: 'Time for a bath!' },
+];
+const RUG = { cx: 992, bottom: 965, h: 400 };          // where the pet sits on the rug
+const ON_SCALE = { cx: 1322, bottom: 726, k: .7 };      // where it sits on the scale, a little smaller
+
+let task = 0, pet = null, kind = 'dog', page = 0, busy = false;
+const room = document.getElementById('room');
+
+const ICONS = {
+  paw: `<ellipse cx="0" cy="8" rx="13" ry="11" fill="#8a5a3b"/><ellipse cx="-14" cy="-6" rx="5.5" ry="7" fill="#8a5a3b"/><ellipse cx="-5" cy="-15" rx="5.5" ry="7" fill="#8a5a3b"/><ellipse cx="6" cy="-15" rx="5.5" ry="7" fill="#8a5a3b"/><ellipse cx="15" cy="-6" rx="5.5" ry="7" fill="#8a5a3b"/>`,
+  scale: `<rect x="-20" y="2" width="40" height="14" rx="5" fill="#8f98a3"/><rect x="-17" y="-1" width="34" height="8" rx="4" fill="#b7c0ca"/><rect x="-7" y="1" width="14" height="5" rx="2" fill="#dff3ff"/>`,
+  bowl: `<path d="M-22 -2 H22 Q20 18 0 18 Q-20 18 -22 -2 Z" fill="#f28fb0"/><ellipse cx="0" cy="-2" rx="22" ry="6" fill="#f7b6cc"/><ellipse cx="0" cy="-4" rx="12" ry="3.5" fill="#c98a5a"/>`,
+  bubbles: `<circle cx="-8" cy="6" r="11" fill="#bfe3fb"/><circle cx="10" cy="-4" r="9" fill="#d7eefc"/><circle cx="4" cy="14" r="6" fill="#a9d8f8"/><circle cx="-11" cy="2" r="3" fill="#fff"/>`,
+  drop: `<path d="M0 -18 C8 -6 14 2 14 8 A14 14 0 0 1 -14 8 C-14 2 -8 -6 0 -18Z" fill="#8fd0f5"/><ellipse cx="-5" cy="6" rx="3" ry="5" fill="#fff" opacity=".7"/>`,
+  towel: `<rect x="-20" y="-12" width="40" height="26" rx="10" fill="#9fdcbc"/><rect x="-20" y="-12" width="40" height="10" rx="5" fill="#c8f0da"/>`,
+  brush: `<rect x="-4" y="-2" width="26" height="9" rx="4.5" fill="#d8a067" transform="rotate(-30)"/><ellipse cx="-9" cy="6" rx="13" ry="9" fill="#c98a5a"/><ellipse cx="-9" cy="3" rx="10" ry="6" fill="#f2d3a8"/>`,
+  check: `<circle r="19" fill="#3bb273"/><path d="M-9 0 L-2 7 L10 -7" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
+};
+const icon = k => `<svg viewBox="-24 -24 48 48">${ICONS[k]}</svg>`;
+const say = text => text.replace('your pet', pet ? pet.name : 'your pet');
+
+function drawTasks(popCur) {
+  document.getElementById('tasks').innerHTML = TASKS.map((t, i) => {
+    const done = i < task, cur = i === task;
+    const words = done && t.icon === 'scale' && pet ? `${pet.weight} lb` : t.name;
+    return `<div class="task${cur ? ' cur' : ''}${done ? ' done' : ''}${cur && popCur ? ' pop' : ''}">${icon(done ? 'check' : t.icon)}<span>${words}</span></div>`;
+  }).join('');
+}
+
+function tagSvg(t) {
+  const w = Math.max(120, t.name.length * 20 + 44), cx = t.x + t.w / 2;
+  const y = t.tag === 'top' ? t.y - 58 : t.y + t.h - 6;
+  return `<g class="tag"><rect x="${cx - w / 2}" y="${y}" width="${w}" height="48" rx="24" fill="#fff" stroke="#8a5a3b" stroke-width="4"/>
+    <text x="${cx}" y="${y + 33}" text-anchor="middle" font-size="27" font-weight="bold" fill="#6b4329">${t.name}</text></g>`;
+}
+const ringSvg = (x, y, w, h) => `<rect class="ring" x="${x}" y="${y}" width="${w}" height="${h}" rx="40" fill="rgba(255,246,176,.18)" stroke="#fff6b0" stroke-width="14"/>`;
+
+function drawRoom() {
+  let s = `<image href="${ART.room}" x="0" y="0" width="1984" height="1116"/>`;
+  for (const [id, t] of Object.entries(TARGETS)) {
+    s += `<g class="tgt" data-t="${id}" tabindex="0" role="button" aria-label="${t.name}">
+      <rect x="${t.x}" y="${t.y}" width="${t.w}" height="${t.h}" rx="40" fill="rgba(255,255,255,0)"/>
+      ${ringSvg(t.x + 6, t.y + 6, t.w - 12, t.h - 12)}${tagSvg(t)}</g>`;
+  }
+  s += `<g id="petLayer"></g>
+    <g class="readout" id="readout"><rect x="${ON_SCALE.cx - 95}" y="300" width="190" height="72" rx="36" fill="#fff" stroke="#3bb273" stroke-width="6"/>
+      <text id="readNum" x="${ON_SCALE.cx}" y="350" text-anchor="middle" font-size="40" font-weight="bold" fill="#2b6e47"></text></g>`;
+  room.innerHTML = s;
+}
+
+function setTask(i, quiet) {
+  task = i;
+  const t = TASKS[task];   // after the last task there is none: everything is done
+  drawTasks(!quiet);
+  room.querySelectorAll('.tgt').forEach(g => g.classList.toggle('on', !!t && t.targets.includes(g.dataset.t)));
+  const pg = document.querySelector('.petg');
+  if (pg) pg.classList.toggle('drag', !!t && (t.icon === 'scale' || t.icon === 'bubbles'));   // drag the pet to the scale or the tub
+  guide(t ? say(t.guide) : `${pet.name} is all clean and happy!`);
+}
+
+const guideEl = document.getElementById('guide');
+function guide(text) {
+  if (!guideEl.textContent) { guideEl.textContent = text; return; }
+  guideEl.classList.add('hide');
+  setTimeout(() => { guideEl.textContent = text; guideEl.classList.remove('hide'); }, 250);
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900);
+}
+
+function useTarget(g) {
+  if (busy) return;
+  const id = g.dataset.t;
+  if (!TASKS[task]) return;
+  if (!TASKS[task].targets.includes(id)) return showToast(say(TASKS[task].guide));   // not this one yet
+  if (id === 'dogs' || id === 'cats') return openPicker(id === 'dogs' ? 'dog' : 'cat');
+  if (id === 'scale') return weigh();
+  if (id === 'food') return fed ? null : openMeasure();
+  if (id === 'water') return fillWater();
+  if (id === 'bath') return openBath();
+  g.classList.remove('shake'); void g.getBBox(); g.classList.add('shake');   // not built yet
+  setTimeout(() => g.classList.remove('shake'), 500);
+  showToast(`${TARGETS[id].name}: coming soon!`);
+}
+
+// ---------- Picker ----------
+const picker = document.getElementById('picker'), strip = document.getElementById('pkStrip'), nextBtn = document.getElementById('pkNext');
+const EMPTY_PAW = `<svg viewBox="-24 -26 48 48">${ICONS.paw.replace(/#8a5a3b/g, '#3bb273')}</svg>`;
+function openOverlay(el) { el.classList.add('open'); el.setAttribute('aria-hidden', 'false'); }
+function closeOverlay(el) { el.classList.remove('open'); el.setAttribute('aria-hidden', 'true'); }
+
+function openPicker(k) {
+  kind = k; page = 0;
+  const list = PETS[k], pages = Math.max(1, Math.ceil(list.length / 8));
+  document.getElementById('pkTitle').textContent = k === 'dog' ? 'Pick a dog' : 'Pick a cat';
+  let s = '';
+  for (let p = 0; p < pages; p++) {
+    s += '<div class="pk-page">';
+    for (let i = p * 8; i < p * 8 + 8; i++) {
+      const a = list[i];
+      s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt=""><span class="pk-name">${a.name}</span></button>`
+             : `<div class="pk-card empty" aria-hidden="true">${EMPTY_PAW}<span class="pk-name">Coming soon</span></div>`;
+    }
+    s += '</div>';
+  }
+  strip.innerHTML = s;
+  strip.style.transition = 'none'; strip.style.transform = 'translateX(0)'; void strip.offsetWidth; strip.style.transition = '';
+  nextBtn.disabled = pages < 2;
+  openOverlay(picker);
+}
+
+nextBtn.addEventListener('click', () => {
+  const pages = strip.children.length;
+  if (pages < 2) return;
+  page = (page + 1) % pages;
+  strip.style.transform = `translateX(${-100 * page}%)`;
+});
+document.getElementById('pkClose').addEventListener('click', () => closeOverlay(picker));
+picker.addEventListener('click', e => {
+  if (e.target === picker) return closeOverlay(picker);
+  const c = e.target.closest('.pk-card[data-pet]');
+  if (c) choosePet(PETS[kind].find(a => a.id === c.dataset.pet));
+});
+
+function choosePet(a) {
+  pet = Object.assign({}, a); closeOverlay(picker);
+  const pic = new Image();
+  pic.onload = () => {
+    const h = RUG.h, w = h * pic.width / pic.height, x = RUG.cx - w / 2, y = RUG.bottom - h;
+    document.getElementById('petLayer').innerHTML =
+      `<g class="petg" role="button" tabindex="0" aria-label="${a.name}">${ringSvg(x - 24, y - 20, w + 48, h + 36)}
+        <image class="pet in" href="${ART[a.art]}" x="${x}" y="${y}" width="${w}" height="${h}"/></g>`;
+    setTask(1);
+  };
+  pic.src = ART[a.art];
+}
+
+// ---------- Weigh: drag the pet onto the scale (or tap the scale) ----------
+function petMove(dx, dy, k, ms) {
+  const g = document.querySelector('.petg');
+  g.style.transition = ms ? `transform ${ms}ms ease-in-out` : 'none';
+  g.style.transformOrigin = `${RUG.cx}px ${RUG.bottom}px`;
+  g.style.transform = `translate(${dx}px, ${dy}px) scale(${k})`;
+}
+function svgPoint(e) {
+  const p = room.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+  return p.matrixTransform(room.getScreenCTM().inverse());
+}
+let drag = null;
+room.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.petg.drag');
+  if (!g || busy) return;
+  drag = { start: svgPoint(e), moved: false, dx: 0, dy: 0 }; g.classList.add('dragging');
+  room.setPointerCapture(e.pointerId);
+});
+room.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const p = svgPoint(e), dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+  if (Math.hypot(dx, dy) > 8) drag.moved = true;
+  petMove(dx, dy, 1, 0);
+  drag.dx = dx; drag.dy = dy;
+});
+room.addEventListener('pointerup', () => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  document.querySelector('.petg').classList.remove('dragging');
+  if (!d.moved) return;
+  const fx = RUG.cx + d.dx, fy = RUG.bottom + d.dy;   // where the pet's feet are
+  const s = TARGETS.scale, b = TARGETS.bath, bathing = TASKS[task] && TASKS[task].icon === 'bubbles';
+  if (!bathing && fx > s.x - 140 && fx < s.x + s.w + 140 && fy > s.y - 260 && fy < s.y + s.h + 120) weigh();
+  else if (bathing && fx > b.x - 60 && fx < b.x + b.w + 60 && fy > b.y - 60 && fy < b.y + b.h + 160) { petMove(0, 0, 1, 0); openBath(); }
+  else petMove(0, 0, 1, 350);   // not on the right spot: back to the rug
+});
+
+function weigh() {
+  if (busy || TASKS[task].icon !== 'scale') return;
+  busy = true;
+  document.querySelector('.petg').classList.remove('drag');
+  room.querySelector('[data-t="scale"]').classList.remove('on');
+  guideEl.classList.add('hide');
+  petMove(ON_SCALE.cx - RUG.cx, ON_SCALE.bottom - RUG.bottom, ON_SCALE.k, 600);
+  const ro = document.getElementById('readout'), num = document.getElementById('readNum');
+  num.textContent = '0 lb';
+  setTimeout(() => {
+    ro.classList.add('show');
+    let n = 0; const steps = 12;
+    const tick = setInterval(() => {
+      n++; num.textContent = `${Math.round(pet.weight * n / steps)} lb`;
+      if (n >= steps) { clearInterval(tick); setTimeout(showWeightCard, 450); }
+    }, 55);
+  }, 650);
+}
+
+function cupSvg(cups) {
+  // a glass measuring cup with lines at 1/4, 1/2, 3/4 and 1 cup, filled with food to this much
+  const top = 12, bot = 74, fillY = bot - (bot - top) * cups;
+  let lines = '';
+  for (const q of [.25, .5, .75, 1]) { const y = bot - (bot - top) * q; lines += `<rect x="12" y="${y - 1.5}" width="12" height="3" rx="1.5" fill="#7aa6c8"/>`; }
+  return `<svg viewBox="0 0 64 80"><rect x="8" y="6" width="44" height="70" rx="10" fill="#e6f2fb"/>
+    <rect x="8" y="${fillY}" width="44" height="${bot - fillY + 2}" rx="${cups === 1 ? 10 : 4}" fill="#c98a5a"/>
+    <circle cx="20" cy="${fillY + 8}" r="3" fill="#a86d43"/><circle cx="34" cy="${fillY + 12}" r="3" fill="#a86d43"/>
+    ${lines}<path d="M52 22 h6 a6 6 0 0 1 6 6 v18 a6 6 0 0 1 -6 6 h-6" fill="none" stroke="#e6f2fb" stroke-width="6"/></svg>`;
+}
+
+function showWeightCard() {
+  const rule = foodFor(pet, kind);
+  pet.food = rule.cups;   // the food step will use this
+  document.getElementById('wtTitle').textContent = `${pet.name} weighs`;
+  document.getElementById('wtBig').textContent = `${pet.weight} pounds`;
+  document.getElementById('wtSays').innerHTML = `So ${pet.name} eats <b>${CUPS[rule.cups]}</b> of food.`;
+  document.getElementById('wtChart').innerHTML = FOOD[kind].map(r =>
+    `<div class="wt-col${r === rule ? ' me' : ''}">${cupSvg(r.cups)}<b>${CUPS[r.cups]}</b><span>${r.label}</span></div>`).join('');
+  openOverlay(document.getElementById('weightCard'));
+}
+document.getElementById('wtOk').addEventListener('click', () => {
+  closeOverlay(document.getElementById('weightCard'));
+  document.getElementById('readout').classList.remove('show');
+  petMove(0, 0, 1, 600);   // back to the rug
+  setTimeout(() => { busy = false; setTask(2); }, 650);
+});
+
+
+// ---------- Food and water ----------
+// Measuring: the player holds the food bin to pour into the measuring cup, lets go at the pet's line,
+// takes some out with the spoon if it is too much, then taps the bowl to pour it in.
+const POUR_RATE = .12;     // cups per second while holding the bin (1 cup takes about 8 seconds)
+const CLOSE_ENOUGH = .045; // how near the line counts as just right
+// The measuring cup picture (cup.webp, 360 x 307) sits at CUP.x, CUP.y. Inside the glass, empty is at y0 and 1 cup is at y1.
+// Layout (1100 wide): the bowl on the left (the cup's lip faces it), the cup in the middle, the food bin on the right,
+// with a gap between each so nothing overlaps.
+const CUP = { x: 340, y: 150, w: 360, h: 307, y0: 404, y1: 228, left0: 410, left1: 382, right0: 578, right1: 596 };
+const BOWL_OPEN = { cx: .53, cy: .30, rx: .35, ry: .18 };   // the bowl's opening, as parts of the bowl picture
+const EAT = { h: 330, cx: 1010, nose: [.15, .86] };       // the eating picture on the rug, and where its nose is
+let ms = null, fed = false, watered = false;
+
+const cupY = c => CUP.y0 - (CUP.y0 - CUP.y1) * c;
+function cupInside(c) {   // the glass's inside from the bottom up to c cups (it is a little wider at the top)
+  const y = cupY(c), t = (CUP.y0 - y) / (CUP.y0 - CUP.y1);
+  const l = CUP.left0 + (CUP.left1 - CUP.left0) * t, r = CUP.right0 + (CUP.right1 - CUP.right0) * t;
+  return `M${CUP.left0},${CUP.y0 - 10} Q${CUP.left0 + 8},${CUP.y0 + 4} ${(CUP.left0 + CUP.right0) / 2},${CUP.y0 + 5} Q${CUP.right0 - 8},${CUP.y0 + 4} ${CUP.right0},${CUP.y0 - 10} L${r},${y} Q${(l + r) / 2},${y - 6} ${l},${y} Z`;
+}
+function kibbleDots(c) {
+  let s = '';
+  if (c <= 0) return s;
+  const top = cupY(c);
+  for (let i = 0; i < 26; i++) {
+    const y = CUP.y0 - 10 - ((i * 37) % 100) / 100 * (CUP.y0 - 10 - top), x = CUP.left0 + 16 + ((i * 53) % (CUP.right0 - CUP.left0 - 32));
+    if (y > top + 6) s += `<circle cx="${x}" cy="${y}" r="5" fill="#a86d43"/>`;
+  }
+  return s;
+}
+
+function binSvg() {
+  return `<g class="ms-bin" id="msBin" role="button" tabindex="0" aria-label="Food bin, hold to pour" transform="translate(760 0)">
+    ${ringSvg(40, 70, 290, 420)}
+    <g class="tilt">
+      <rect x="70" y="150" width="230" height="320" rx="34" fill="#e3eef0"/>
+      <path d="M78 250 Q120 232 160 250 T240 248 T292 250 V440 Q292 462 270 462 H100 Q78 462 78 440 Z" fill="#b98557"/>
+      <circle cx="120" cy="300" r="7" fill="#9a6a42"/><circle cx="190" cy="340" r="7" fill="#9a6a42"/><circle cx="245" cy="290" r="7" fill="#9a6a42"/><circle cx="150" cy="400" r="7" fill="#9a6a42"/><circle cx="230" cy="410" r="7" fill="#9a6a42"/>
+      <rect x="92" y="170" width="22" height="270" rx="11" fill="#fff" opacity=".45"/>
+      <g class="lid"><rect x="58" y="118" width="254" height="44" rx="20" fill="#c4a690"/><rect x="160" y="96" width="50" height="30" rx="14" fill="#b39581"/></g>
+    </g>
+    ${[0, 1, 2, 3, 4, 5].map(i => `<circle class="kib" cx="60" cy="${150 + i * 4}" r="${7 - (i % 3)}" fill="#a86d43" style="--dx:${-300 - i * 10}px;--dy:${110 + i * 16}px;animation-delay:${i * .08}s"/>`).join('')}
+  </g>`;
+}
+
+function drawMeasure() {
+  const goal = pet.food, lines = [.25, .5, .75, 1];
+  let s = binSvg();
+  s += `<g class="ms-bowl" id="msBowl" role="button" tabindex="0" aria-label="Food bowl, tap to pour the food in">
+    ${ringSvg(20, 330, 220, 180)}
+    <image href="${ART.bowlFood}" x="40" y="360" width="180" height="${180 * 236 / 360}"/>
+    <ellipse class="bowlfood" id="msBowlFood" cx="${40 + 180 * BOWL_OPEN.cx}" cy="${360 + 118 * BOWL_OPEN.cy}" rx="${180 * BOWL_OPEN.rx * .9}" ry="${118 * BOWL_OPEN.ry * .9}" fill="#b98557" opacity="0"/></g>`;
+  s += `<g class="ms-cup" id="msCup"><image href="${ART.cup}" x="${CUP.x}" y="${CUP.y}" width="${CUP.w}" height="${CUP.h}"/>
+    <g opacity=".88"><path id="msFood" d="" fill="#c98a5a"/><g id="msDots"></g></g>`;
+  lines.forEach((c, i) => {
+    const y = cupY(c), t = (CUP.y0 - y) / (CUP.y0 - CUP.y1), l = CUP.left0 + (CUP.left1 - CUP.left0) * t;
+    s += `<g class="ms-line" data-c="${c}">
+      <rect class="glow" x="${l - 6}" y="${y - 9}" width="86" height="18" rx="9" fill="#fff6b0"/>
+      <rect x="${l + 4}" y="${y - 3}" width="66" height="6" rx="3" fill="#4f86b8"/>
+      <g class="lbl"><rect x="${l - 112}" y="${y - 17}" width="96" height="34" rx="17" fill="#fff" stroke="#4f86b8" stroke-width="4"/>
+      <text x="${l - 64}" y="${y + 8}" text-anchor="middle" font-size="22" font-weight="bold" fill="#2f6390">${CUPS[c]}</text></g></g>`;
+  });
+  s += `</g>`;
+  document.getElementById('msStage').innerHTML = s;
+  setCup(0);
+}
+function setCup(c) {
+  ms.amount = Math.max(0, Math.min(1.12, c));
+  document.getElementById('msFood').setAttribute('d', ms.amount > 0 ? cupInside(ms.amount) : '');
+  document.getElementById('msDots').innerHTML = kibbleDots(ms.amount);
+}
+const msSay = t => { document.getElementById('msSay').innerHTML = t; };
+function msButtons(next, spoon) {
+  const n = document.getElementById('msNext'), sp = document.getElementById('msSpoon');
+  n.hidden = !next; if (next) n.textContent = next;
+  sp.hidden = !spoon; sp.classList.toggle('on', spoon === 'on');
+}
+function msLight(bin, bowl) {
+  document.getElementById('msBin').querySelector('.ring').style.opacity = bin ? 1 : '';
+  document.getElementById('msBowl').querySelector('.ring').style.opacity = bowl ? 1 : '';
+}
+
+// the short lesson, then measuring
+function openMeasure() {
+  ms = { step: 0, amount: 0, pouring: false, done: false };
+  document.getElementById('msTitle').textContent = `Measure ${pet.name}'s food`;
+  drawMeasure();
+  openOverlay(document.getElementById('measure'));
+  lessonStep();
+}
+function lessonStep() {
+  const lines = [...document.querySelectorAll('.ms-line')], goal = CUPS[pet.food];
+  if (ms.step === 0) {
+    lines.forEach((g, i) => setTimeout(() => g.classList.add('show'), 300 + i * 250));
+    msSay('This is a measuring cup. The lines show how much food is inside.');
+    msButtons('Next');
+  } else if (ms.step === 1) {
+    document.querySelector(`.ms-line[data-c="${pet.food}"]`).classList.add('goal');
+    msSay(`${pet.name} needs <b>${goal}</b>. Fill the food up to the ${goal} line.`);
+    msButtons('Start');
+  } else {
+    msSay(`Hold the food bin to pour. Let go at the ${goal} line.`);
+    msButtons(null);
+    msLight(true, false);
+  }
+}
+document.getElementById('msNext').addEventListener('click', () => { ms.step++; lessonStep(); });
+document.getElementById('msClose').addEventListener('click', () => { stopPour(); closeOverlay(document.getElementById('measure')); });
+
+function startPour(e) {
+  if (!ms || ms.step < 2 || ms.done || ms.pouring) return;
+  if (e) e.preventDefault();
+  ms.pouring = true; ms.last = performance.now();
+  document.getElementById('msBin').classList.add('pour');
+  document.getElementById('msStage').classList.add('pouring');
+  requestAnimationFrame(pourTick);
+}
+function pourTick(t) {
+  if (!ms || !ms.pouring) return;
+  setCup(ms.amount + POUR_RATE * (t - ms.last) / 1000); ms.last = t;
+  requestAnimationFrame(pourTick);
+}
+function stopPour() {
+  if (!ms || !ms.pouring) return;
+  ms.pouring = false;
+  document.getElementById('msBin').classList.remove('pour');
+  document.getElementById('msStage').classList.remove('pouring');
+  if (ms.amount > 0) {
+    msSay(`When the food is at the ${CUPS[pet.food]} line, tap the bowl to pour it in.`);
+    msLight(true, true);
+    msButtons(null, ms.amount > pet.food + CLOSE_ENOUGH ? 'on' : 'show');
+  }
+}
+const stage = document.getElementById('msStage');
+stage.addEventListener('pointerdown', e => { if (e.target.closest('#msBin')) { stage.setPointerCapture(e.pointerId); startPour(e); } });
+stage.addEventListener('pointerup', stopPour);
+stage.addEventListener('pointercancel', stopPour);
+stage.addEventListener('keydown', e => { if (e.target.closest('#msBin') && (e.key === 'Enter' || e.key === ' ')) startPour(e); });
+stage.addEventListener('keyup', e => { if (e.target.closest('#msBin')) stopPour(); });
+document.getElementById('msSpoon').addEventListener('click', () => {
+  setCup(ms.amount - .05);
+  msButtons(null, ms.amount > pet.food + CLOSE_ENOUGH ? 'on' : ms.amount > 0 ? 'show' : null);
+  if (ms.amount <= 0) { msLight(true, false); msSay(`Hold the food bin to pour. Let go at the ${CUPS[pet.food]} line.`); }
+});
+stage.addEventListener('click', e => { if (e.target.closest('#msBowl')) checkFood(); });
+
+function checkFood() {
+  if (!ms || ms.step < 2 || ms.done || ms.amount <= 0) return;
+  const cup = document.getElementById('msCup'), goal = CUPS[pet.food], diff = ms.amount - pet.food;
+  if (Math.abs(diff) > CLOSE_ENOUGH) {
+    cup.classList.remove('wiggle'); void cup.getBBox(); cup.classList.add('wiggle');
+    setTimeout(() => cup.classList.remove('wiggle'), 500);
+    if (diff < 0) msSay(`Not enough yet. The food is under the ${goal} line. Pour a little more.`);
+    else { msSay(`Too much! The food is over the ${goal} line. Take some out.`); msButtons(null, 'on'); }
+    return;
+  }
+  // just right: pour it into the bowl
+  ms.done = true; msLight(false, false); msButtons(null);
+  msSay(`Just right! That's ${goal}.`);
+  cup.classList.add('tip');
+  setTimeout(() => { setCup(0); document.getElementById('msBowlFood').setAttribute('opacity', 1); }, 600);
+  setTimeout(() => {
+    closeOverlay(document.getElementById('measure'));
+    cup.classList.remove('tip');
+    feedPet();
+  }, 1700);
+}
+
+// in the room: the bowl goes in front of the pet and it eats
+function feedPet() {
+  fed = true;
+  room.querySelector('[data-t="food"]').classList.remove('on');
+  const left = EAT.cx - EAT.h * 647 / 440 / 2, top = RUG.bottom - EAT.h;
+  const nx = left + EAT.h * 647 / 440 * EAT.nose[0], ny = top + EAT.h * EAT.nose[1];
+  // the bowl goes behind the pet, and a copy of its front rim goes in front, so the face dips into the bowl
+  const bw = 150, bh = bw * 236 / 360, bx = nx - bw / 2 - 10, by = ny - bh * BOWL_OPEN.cy - 16;
+  const ocy = by + bh * BOWL_OPEN.cy, ory = bh * BOWL_OPEN.ry;
+  const layer = document.getElementById('petLayer');
+  layer.insertAdjacentHTML('afterbegin', `<g id="foodBowl" class="bowlfood"><image href="${ART.bowlFood}" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>
+    <ellipse id="bowlKib" cx="${bx + bw * BOWL_OPEN.cx}" cy="${ocy}" rx="${bw * BOWL_OPEN.rx * .85}" ry="${ory * .8}" fill="#b98557"/></g>`);
+  layer.insertAdjacentHTML('beforeend', `<g id="foodRim" class="bowlfood" clip-path="url(#rimClip)"><clipPath id="rimClip"><rect x="${bx - 5}" y="${ocy + ory * .55}" width="${bw + 10}" height="${bh}"/></clipPath>
+    <image href="${ART.bowlFood}" x="${bx}" y="${by}" width="${bw}" height="${bh}"/></g>`);
+  setPose('eat');
+  guide(`${pet.name} is eating!`);
+  busy = true;
+  setTimeout(() => { document.getElementById('bowlKib').setAttribute('opacity', 0); }, 2600);
+  setTimeout(() => {
+    setPose('sit');
+    ['foodBowl', 'foodRim'].forEach(id => { const fb = document.getElementById(id); fb.style.opacity = 0; setTimeout(() => fb.remove(), 450); });
+    busy = false; afterFoodOrWater();
+  }, 3200);
+}
+function setPose(p) {
+  const img = document.querySelector('.petg image'), ring = document.querySelector('.petg .ring');
+  if (p === 'eat') {
+    const w = EAT.h * 647 / 440;
+    img.setAttribute('href', ART[pet.eat]); img.setAttribute('x', EAT.cx - w / 2); img.setAttribute('y', RUG.bottom - EAT.h);
+    img.setAttribute('width', w); img.setAttribute('height', EAT.h);
+  } else {
+    const h = RUG.h, w = h * 443 / 560;
+    img.setAttribute('href', ART[pet.art]); img.setAttribute('x', RUG.cx - w / 2); img.setAttribute('y', RUG.bottom - h);
+    img.setAttribute('width', w); img.setAttribute('height', h);
+  }
+  ring.style.display = 'none';
+}
+
+function fillWater() {
+  if (watered || busy) return;
+  watered = true;
+  room.querySelector('[data-t="water"]').classList.remove('on');
+  const bw = 150, bh = bw * 236 / 360, bx = 1190, by = RUG.bottom + 10 - bh;
+  const cx = bx + bw * BOWL_OPEN.cx, cy = by + bh * BOWL_OPEN.cy, rx = bw * BOWL_OPEN.rx * .85, ry = bh * BOWL_OPEN.ry * .8;
+  document.getElementById('petLayer').insertAdjacentHTML('afterbegin', `<g id="waterBowl"><image href="${ART.bowlWater}" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>
+    <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#8fd0f5"><animate attributeName="rx" from="0" to="${rx}" dur=".8s"/><animate attributeName="ry" from="0" to="${ry}" dur=".8s"/></ellipse>
+    <ellipse cx="${cx - rx * .35}" cy="${cy - ry * .25}" rx="${rx * .25}" ry="${ry * .2}" fill="#fff" opacity=".7"/></g>`);
+  showToast(`Fresh water for ${pet.name}!`);
+  afterFoodOrWater();
+}
+function afterFoodOrWater() {
+  if (fed && watered) return setTask(3);
+  guide(fed ? `Now fill ${pet.name}'s water bowl at the sink!` : `Tap the food bin to measure ${pet.name}'s food!`);
+}
+
+
+// ---------- Bath ----------
+// In the tub: rub the soap on the pet (bubbles cover the mud spots), tap the shower to rinse,
+// rub the towel to dry, then rub the brush to finish. Rubbing counts the parts of the pet you have touched.
+const POSES = {   // the sitting pictures at the same scale (560 = the sitting pose's height), lined up by the paws
+  sit:  { art: p => p.art,  w: 443, h: 560, dx: 0 },
+  bath: { art: p => p.bath, w: 464, h: 580, dx: 10 },
+  done: { art: p => p.done, w: 452, h: 560, dx: 4 },
+};
+const TUB_DOG = { cx: 560, bottom: 470, h: 380 };   // the pet in the tub (sitting height), its paws hidden by the tub
+const BATH_STEPS = [
+  { id: 'soap',  name: 'Soap',  say: n => `Rub the soap on ${n} to make bubbles!` },
+  { id: 'rinse', name: 'Rinse', say: n => `Tap the shower to rinse off the bubbles!` },
+  { id: 'towel', name: 'Dry',   say: n => `Rub the towel on ${n} to dry off!` },
+  { id: 'brush', name: 'Brush', say: n => `Brush ${n}'s fur!` },
+];
+const RUB_DONE = .7;   // how much of the pet you have to rub
+let bt = null;
+
+function poseBox(pose, cx, bottom, sitH) {
+  const P = POSES[pose], k = sitH / 560;
+  return { x: cx - P.w * k / 2 + P.dx * k, y: bottom - P.h * k, w: P.w * k, h: P.h * k };
+}
+function poseImg(pose) {
+  const b = poseBox(pose, TUB_DOG.cx, TUB_DOG.bottom, TUB_DOG.h);
+  return `<image id="btDog" href="${ART[POSES[pose].art(pet)]}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`;
+}
+
+// which parts of the pet can be rubbed: a grid over the picture, keeping only squares where the pet is
+function petCells(artKey, box, cols, rows) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = 60; c.height = 76;
+      const g = c.getContext('2d'); g.drawImage(im, 0, 0, 60, 76);
+      const d = g.getImageData(0, 0, 60, 76).data, cells = [];
+      for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+        const px = Math.floor((q + .5) / cols * 60), py = Math.floor((r + .5) / rows * 76);
+        if (d[(py * 60 + px) * 4 + 3] > 200 && r < rows * .75)   // the bottom part is inside the tub
+          cells.push({ x: box.x + (q + .5) / cols * box.w, y: box.y + (r + .5) / rows * box.h, done: false });
+      }
+      res(cells);
+    };
+    im.src = ART[artKey];
+  });
+}
+
+function bathStepsHtml() {
+  const icons = { soap: 'bubbles', rinse: 'drop', towel: 'towel', brush: 'brush' };
+  return BATH_STEPS.map((s, i) => {
+    const done = i < bt.step, cur = i === bt.step;
+    return `<div class="task${cur ? ' cur' : ''}${done ? ' done' : ''}">${icon(done ? 'check' : icons[s.id])}<span>${s.name}</span></div>`;
+  }).join('');
+}
+
+function tubSvg() {
+  return `<g><rect x="250" y="360" width="620" height="40" rx="20" fill="#dfe7ee"/>
+    <rect x="250" y="380" width="620" height="140" rx="44" fill="#f1f5f8"/>
+    <rect x="290" y="404" width="540" height="12" rx="6" fill="#ffffff" opacity=".7"/></g>`;
+}
+function showerSvg() {
+  return `<g class="bt-shower" id="btShower" role="button" tabindex="0" aria-label="Shower, tap to rinse">
+    ${ringSvg(780, 70, 220, 260)}
+    <rect x="900" y="110" width="22" height="270" rx="11" fill="#b7c0ca"/>
+    <rect x="830" y="98" width="92" height="22" rx="11" fill="#b7c0ca"/>
+    <ellipse cx="830" cy="118" rx="48" ry="26" fill="#9aa6b2"/><ellipse cx="830" cy="124" rx="38" ry="16" fill="#c9d3dc"/>
+    ${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<rect class="rain" x="${790 + (i % 4) * 22}" y="${140 + Math.floor(i / 4) * 30}" width="8" height="26" rx="4" fill="#8fd0f5" style="animation-delay:${i * .06}s"/>`).join('')}
+  </g>`;
+}
+function toolSvg(id, x, y, w) {
+  const art = { soap: ART.soap, towel: ART.towel, brush: ART.brush }[id], h = w * TOOL_SIZE[id];
+  return `<g class="bt-tool" id="bt-${id}" data-tool="${id}" role="button" tabindex="0" aria-label="${id}">
+    ${ringSvg(x - 14, y - 14, w + 28, h + 28)}<image href="${art}" x="${x}" y="${y}" width="${w}" height="${h}"/></g>`;
+}
+
+async function openBath() {
+  busy = true;
+  bt = { step: 0, cells: [], drag: null, last: null };
+  const box = poseBox('sit', TUB_DOG.cx, TUB_DOG.bottom, TUB_DOG.h);
+  bt.cells = await petCells(pet.art, box, 7, 8);
+  // mud spots on some of the squares
+  const mud = bt.cells.filter((c, i) => i % 3 === 1).map(c =>
+    `<ellipse class="mud" cx="${c.x + 6}" cy="${c.y}" rx="22" ry="15" fill="#8b5a32" opacity=".55"/>`).join('');
+  document.getElementById('btTitle').textContent = `${pet.name}'s bath`;
+  document.getElementById('btStage').innerHTML = `
+    <rect x="0" y="0" width="1100" height="520" fill="#f3fbf6" rx="20"/>
+    ${showerSvg()}
+    <g id="btDogLayer">${poseImg('sit')}<g id="btMud">${mud}</g><g id="btFx"></g></g>
+    ${tubSvg()}
+    ${toolSvg('soap', 40, 70, 150)}${toolSvg('towel', 30, 220, 170)}${toolSvg('brush', 40, 370, 160)}
+    <g id="btTop"></g>`;
+  openOverlay(document.getElementById('bath'));
+  bathStep();
+}
+const TOOL_SIZE = { soap: 0, towel: 0, brush: 0 };   // height / width of each tool picture, filled in below
+['soap', 'towel', 'brush'].forEach(k => { const im = new Image(); im.onload = () => { TOOL_SIZE[k] = im.height / im.width; }; im.src = ART[k]; });
+
+function bathStep() {
+  const s = BATH_STEPS[bt.step];
+  document.getElementById('btSteps').innerHTML = bathStepsHtml();
+  document.getElementById('btSay').textContent = s ? s.say(pet.name) : '';
+  document.querySelectorAll('.bt-tool').forEach(g => {
+    g.classList.toggle('on', s && g.dataset.tool === s.id);
+    g.classList.toggle('used', BATH_STEPS.findIndex(x => x.id === g.dataset.tool) < bt.step);
+  });
+  document.getElementById('btShower').classList.toggle('on', s && s.id === 'rinse');
+  bt.cells.forEach(c => c.done = false);
+}
+
+const btStage = document.getElementById('btStage');
+function btPoint(e) {
+  const p = btStage.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+  return p.matrixTransform(btStage.getScreenCTM().inverse());
+}
+btStage.addEventListener('pointerdown', e => {
+  const t = e.target.closest('.bt-tool');
+  if (!bt || !t || t.dataset.tool !== (BATH_STEPS[bt.step] || {}).id) return;
+  const img = t.querySelector('image'), p = btPoint(e);
+  bt.drag = { el: t, img, ox: p.x - +img.getAttribute('x'), oy: p.y - +img.getAttribute('y'), home: [img.getAttribute('x'), img.getAttribute('y')] };
+  t.querySelector('.ring').style.display = 'none';
+  document.getElementById('btTop').appendChild(t);   // carry it over the pet
+  btStage.setPointerCapture(e.pointerId);
+});
+btStage.addEventListener('pointermove', e => {
+  if (!bt || !bt.drag) return;
+  const p = btPoint(e), d = bt.drag;
+  d.img.setAttribute('x', p.x - d.ox); d.img.setAttribute('y', p.y - d.oy);
+  rubAt(p.x, p.y);
+});
+function dropTool() {
+  if (!bt || !bt.drag) return;
+  const d = bt.drag; bt.drag = null;
+  d.img.setAttribute('x', d.home[0]); d.img.setAttribute('y', d.home[1]);
+  d.el.querySelector('.ring').style.display = '';
+}
+btStage.addEventListener('pointerup', dropTool);
+btStage.addEventListener('pointercancel', dropTool);
+
+function rubAt(x, y) {
+  const step = BATH_STEPS[bt.step].id, fx = document.getElementById('btFx');
+  let hit = false;
+  bt.cells.forEach((c, i) => {
+    if (!c.done && Math.hypot(c.x - x, c.y - y) < 46) {
+      c.done = true; hit = true;
+      if (step === 'soap') {
+        const jx = (i * 37) % 23 - 11, jy = (i * 53) % 19 - 9, r = 15 + (i * 7) % 9;   // a little uneven, like real bubbles
+        fx.insertAdjacentHTML('beforeend', `<g class="bub"><circle cx="${c.x - 8 + jx}" cy="${c.y + jy}" r="${r}" fill="#fff" opacity=".92"/><circle cx="${c.x + 12 + jx}" cy="${c.y - 12 + jy}" r="${r * .6}" fill="#fff" opacity=".92"/><circle cx="${c.x - 12 + jx}" cy="${c.y - 6 + jy}" r="4" fill="#d7eefc"/></g>`);
+        const m = document.querySelectorAll('#btMud .mud')[Math.floor(i / 3)];
+        if (m && i % 3 === 1) m.style.opacity = 0;
+      } else {
+        const col = step === 'towel' ? '#c8f0da' : '#fff6b0';
+        fx.insertAdjacentHTML('beforeend', `<circle class="puff" cx="${c.x}" cy="${c.y}" r="16" fill="${col}"/>`);
+      }
+    }
+  });
+  if (hit && bt.cells.filter(c => c.done).length >= bt.cells.length * RUB_DONE) finishRub(step);
+}
+
+function finishRub(step) {
+  dropTool();
+  const fx = document.getElementById('btFx');
+  if (step === 'soap') document.querySelectorAll('#btMud .mud').forEach(m => m.style.opacity = 0);
+  if (step === 'towel') setDogPose('sit');
+  if (step === 'brush') return bathDone();
+  setTimeout(() => { fx.querySelectorAll('.puff').forEach(p => p.remove()); bt.step++; bathStep(); }, 400);
+}
+function setDogPose(pose) {
+  document.getElementById('btDog').outerHTML = poseImg(pose);
+}
+
+btStage.addEventListener('click', e => {
+  if (!bt || !e.target.closest('#btShower') || BATH_STEPS[bt.step].id !== 'rinse' || bt.rinsing) return;
+  bt.rinsing = true;
+  const sh = document.getElementById('btShower'); sh.classList.remove('on'); sh.classList.add('raining');
+  setTimeout(() => {
+    document.querySelectorAll('#btFx .bub').forEach(b => b.style.opacity = 0);
+    setDogPose('bath');
+  }, 700);
+  setTimeout(() => {
+    sh.classList.remove('raining'); bt.rinsing = false;
+    document.getElementById('btFx').innerHTML = '';
+    bt.step++; bathStep();
+  }, 1500);
+});
+
+function bathDone() {
+  bt.step = BATH_STEPS.length; bathStep();
+  setDogPose('done');
+  document.getElementById('btSay').textContent = `${pet.name} is all clean!`;
+  const b = poseBox('done', TUB_DOG.cx, TUB_DOG.bottom, TUB_DOG.h), cx = b.x + b.w / 2, cy = b.y + b.h * .35;
+  let stars = '';
+  for (let i = 0; i < 8; i++) {   // one small burst of stars, once
+    const a = i / 8 * Math.PI * 2;
+    stars += `<polygon points="${starPts(cx, cy, 22, 9)}" fill="#ffd34d" style="--bx:${Math.cos(a) * 190}px;--by:${Math.sin(a) * 150}px"/>`;
+  }
+  document.getElementById('btFx').innerHTML = `<g class="burst">${stars}</g>`;
+  setTimeout(() => {
+    closeOverlay(document.getElementById('bath'));
+    // back on the rug, happy
+    const img = document.querySelector('.petg image'), rb = poseBox('done', RUG.cx, RUG.bottom, RUG.h);
+    img.setAttribute('href', ART[pet.done]); img.setAttribute('x', rb.x); img.setAttribute('y', rb.y); img.setAttribute('width', rb.w); img.setAttribute('height', rb.h);
+    busy = false; setTask(4);
+    document.getElementById('adTitle').textContent = `${pet.name} is all done!`;
+    document.getElementById('adSay').textContent = `You weighed, fed and bathed ${pet.name}. Great job!`;
+    setTimeout(() => openOverlay(document.getElementById('allDone')), 700);
+  }, 1600);
+}
+function starPts(cx, cy, R, r) {
+  let p = [];
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R; p.push(`${cx + Math.cos(a) * rr},${cy + Math.sin(a) * rr}`); }
+  return p.join(' ');
+}
+document.getElementById('btClose').addEventListener('click', () => { dropTool(); busy = false; closeOverlay(document.getElementById('bath')); });
+document.getElementById('adAgain').addEventListener('click', () => {
+  closeOverlay(document.getElementById('allDone'));
+  pet = null; fed = false; watered = false;
+  document.getElementById('petLayer').innerHTML = '';
+  setTask(0);
+});
+
+// ---------- Taps and keys ----------
+room.addEventListener('click', e => { const g = e.target.closest('.tgt'); if (g) useTarget(g); });
+room.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const g = e.target.closest('.tgt'), p = e.target.closest('.petg.drag');
+  if (g || p) { e.preventDefault(); g ? useTarget(g) : TASKS[task].icon === 'bubbles' ? openBath() : weigh(); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(picker); });
+
+drawRoom();
+setTask(0, true);
+// coming from the town's crates: open that picker right away
+if (location.hash === '#dog' || location.hash === '#cat') openPicker(location.hash.slice(1));
