@@ -1,15 +1,15 @@
 @@CSS@@
   /* ---------- Vet Clinic ---------- */
-  .play { position: relative; overflow: hidden; background: #cdebd9; padding: 0; }
+  .play { position: relative; overflow: hidden; background: #e5f4ea; padding: 0; }
   #room { width: 100%; height: 100%; display: block; touch-action: none; }
   /* task list in the header: slides out once when you come in; the current task is the biggest */
   .tasks { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; animation: tasksIn .5s .3s ease-out backwards; }
   @keyframes tasksIn { from { transform: translateX(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
-  .task { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px 0 6px; border: 3px solid #b9dcc6; border-radius: 999px; background: #fff; font-size: 16px; font-weight: bold; color: #7d9a88; }
+  .task { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px 0 6px; border: 3px solid #bae5ca; border-radius: 999px; background: #fff; font-size: 16px; font-weight: bold; color: #6b5a80; }
   .task svg { width: 32px; height: 32px; flex: 0 0 auto; }
-  .task.cur { height: 62px; padding: 0 20px 0 8px; border: 4px solid #3bb273; font-size: 22px; color: #2b6e47; }
+  .task.cur { height: 62px; padding: 0 20px 0 8px; border: 4px solid #5fae7a; font-size: 22px; color: #3e6e4b; }
   .task.cur svg { width: 46px; height: 46px; }
-  .task.done { background: #e3f6ea; color: #6f9f80; }
+  .task.done { background: #e5f4ea; color: #6b5a80; }
   .task.pop { animation: popSoft .35s ease-out; }
   @keyframes popSoft { from { transform: scale(.85); opacity: .4; } to { transform: scale(1); opacity: 1; } }
   @media (max-width: 760px) { .task:not(.cur) span { display: none; } .task:not(.cur) { padding: 0 5px; } .task.cur { font-size: 15px; } }
@@ -42,7 +42,7 @@
   .guide.hide { opacity: 0; }
   .guide.nudge { animation: nudge .45s ease-out; }
   @keyframes nudge { 0%, 100% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12); } }
-  #toast { position: fixed; z-index: 60; left: 50%; top: 14px; transform: translate(-50%, -30px); background: #fff; border: 3px solid #3bb273; border-radius: 14px; padding: 10px 18px; font-size: clamp(13px, 2.6vw, 18px); font-weight: bold; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; white-space: nowrap; }
+  #toast { position: fixed; z-index: 60; left: 50%; top: 14px; transform: translate(-50%, -30px); background: #fff; border: 3px solid #5fae7a; border-radius: 14px; padding: 10px 18px; font-size: clamp(13px, 2.6vw, 18px); font-weight: bold; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
   /* panels (pet picker and the weight card) */
   .overlay { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: rgba(43, 35, 64, .25); opacity: 0; pointer-events: none; transition: opacity .25s; }
@@ -51,21 +51,21 @@
   .overlay.open .panel { transform: none; }
   .pk-panel { width: 94%; height: 90%; }
   .pk-head { display: flex; align-items: center; justify-content: center; position: relative; min-height: 52px; }
-  .panel h3 { margin: 0; font-size: clamp(18px, 3vw, 28px); color: #3bb273; text-align: center; }
-  .pk-close { position: absolute; right: 0; top: 0; width: 48px; height: 48px; border: none; border-radius: 50%; background: #e7f6ed; display: flex; align-items: center; justify-content: center; }
-  .pk-close:hover { background: #d3efdf; }
+  .panel h3 { margin: 0; font-size: clamp(18px, 3vw, 28px); color: #5fae7a; text-align: center; }
+  .pk-close { position: absolute; right: 0; top: 0; width: 48px; height: 48px; border: none; border-radius: 50%; background: #e5f4ea; display: flex; align-items: center; justify-content: center; }
+  .pk-close:hover { background: #bae5ca; }
   .pk-close svg { width: 22px; height: 22px; }
   .pk-body { flex: 1; min-height: 0; display: flex; align-items: center; gap: 12px; }
   .pk-window { flex: 1; height: 100%; overflow: hidden; }
   .pk-strip { display: flex; height: 100%; transition: transform .45s ease-in-out; }
   .pk-page { flex: 0 0 100%; height: 100%; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 6px; }
-  .pk-card { position: relative; min-height: 0; border: none; border-radius: 22px; background: #eaf7ef; display: flex; align-items: flex-end; justify-content: center; padding: 8px 8px 46px; transition: transform .15s, box-shadow .15s; }
+  .pk-card { position: relative; min-height: 0; border: none; border-radius: 22px; background: #e5f4ea; display: flex; align-items: flex-end; justify-content: center; padding: 8px 8px 46px; transition: transform .15s, box-shadow .15s; }
   .pk-card img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
   .pk-card:not(.empty):hover, .pk-card:not(.empty):focus-visible { transform: translateY(-4px); box-shadow: 0 0 0 5px #fff6b0, 0 8px 18px rgba(40, 90, 60, .2); outline: none; }
-  .pk-card.empty { background: #f4f8f5; cursor: default; align-items: center; }
+  .pk-card.empty { background: #f6f3f9; cursor: default; align-items: center; }
   .pk-card.empty svg { width: 38%; max-height: 60%; opacity: .25; }
   .pk-name { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); background: #fff; border: 3px solid #8a5a3b; border-radius: 999px; padding: 4px 14px; font-size: clamp(11px, 1.6vw, 16px); font-weight: bold; color: #6b4329; white-space: nowrap; }
-  .pk-card.empty .pk-name { border-color: #c9d6cd; color: #9aaba0; }
+  .pk-card.empty .pk-name { border-color: #d8d0e2; color: #9b90a8; }
   .pk-next { flex: 0 0 auto; width: 64px; height: 64px; border: none; border-radius: 50%; background: #3d8fe0; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #2a6db3; transition: transform .15s; }
   .pk-next:hover { transform: scale(1.06); }
   .pk-next:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a6db3; }
@@ -73,15 +73,15 @@
   .pk-next svg { width: 30px; height: 30px; }
   /* the weight card: the weight, and how much food that means (the same card comes back when you measure food) */
   .wt-panel { width: min(92%, 640px); max-height: 92%; align-items: center; gap: 10px; padding: 18px 20px 20px; }
-  .wt-big { font-size: clamp(30px, 6vw, 52px); font-weight: bold; color: #2b6e47; }
+  .wt-big { font-size: clamp(30px, 6vw, 52px); font-weight: bold; color: #3e6e4b; }
   .wt-chart { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  .wt-col { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 10px; border-radius: 18px; background: #f4f8f5; font-size: 13px; color: #7d9a88; font-weight: bold; min-width: 88px; }
+  .wt-col { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 10px; border-radius: 18px; background: #f6f3f9; font-size: 13px; color: #6b5a80; font-weight: bold; min-width: 88px; }
   .wt-col svg { width: 54px; height: 64px; }
   .wt-col.me { background: #fff8d6; box-shadow: 0 0 0 4px #f2c14e; color: #6b4329; }
   .wt-col b { font-size: 17px; }
-  .ok { margin-top: 6px; min-width: 140px; height: 54px; padding: 0 30px; border: none; border-radius: 999px; background: #3bb273; color: #fff; font-size: 20px; font-weight: bold; box-shadow: 0 4px 0 #2a8a55; }
-  .ok:hover { background: #35a468; }
-  .ok:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a8a55; }
+  .ok { margin-top: 6px; min-width: 140px; height: 54px; padding: 0 30px; border: none; border-radius: 999px; background: #5fae7a; color: #fff; font-size: 20px; font-weight: bold; box-shadow: 0 4px 0 #468a5e; }
+  .ok:hover { background: #569e6e; }
+  .ok:active { transform: translateY(3px); box-shadow: 0 1px 0 #468a5e; }
   @media (max-width: 600px) { .pk-next { width: 48px; height: 48px; } .pk-page { gap: 8px; } .pk-card { padding-bottom: 38px; } .wt-col { min-width: 64px; padding: 6px; } .wt-col svg { width: 40px; height: 48px; } }
 
   /* ---------- measuring food ---------- */
@@ -90,8 +90,8 @@
   .ms-bar { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 60px; flex-wrap: wrap; }
   .ms-say { font-size: clamp(14px, 2.3vw, 21px); font-weight: bold; color: #4a3b5c; text-align: center; max-width: 640px; }
   .ms-top { margin: 4px auto 0; min-height: 2.6em; display: block; }   /* the words sit above the cup */
-  .ms-btn { min-height: 52px; padding: 0 22px; border: none; border-radius: 999px; background: #3bb273; color: #fff; font-size: 18px; font-weight: bold; box-shadow: 0 4px 0 #2a8a55; display: flex; align-items: center; gap: 8px; }
-  .ms-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a8a55; }
+  .ms-btn { min-height: 52px; padding: 0 22px; border: none; border-radius: 999px; background: #5fae7a; color: #fff; font-size: 18px; font-weight: bold; box-shadow: 0 4px 0 #468a5e; display: flex; align-items: center; gap: 8px; }
+  .ms-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #468a5e; }
   .ms-btn.soft { background: #fff; color: #6b4329; border: 3px solid #c9a27f; box-shadow: 0 4px 0 #e2cdb8; }
   .ms-btn.soft.on { box-shadow: 0 0 0 5px #fff6b0, 0 4px 0 #e2cdb8; }
   .ms-btn[hidden] { display: none; }
@@ -119,6 +119,8 @@
   .ms-bin.on .ring, .ms-cup.on .ring { opacity: 1; }
   .ms-cup.on { cursor: grab; }
   .ms-cup.tip .ring { opacity: 0; }
+  .ms-cup .spill { opacity: 0; transition: opacity .15s; }   /* food piles up at the lip, a little above it, while pouring */
+  .ms-cup.tip .spill { opacity: .95; }
   .kib2 { animation: fall2 .45s linear infinite; }
   @keyframes fall2 { from { transform: translate(0, 0); opacity: 1; } to { transform: translate(-6px, 70px); opacity: 1; } }
   .wb { outline: none; }
@@ -163,7 +165,7 @@
   /* ---------- one button style everywhere (like Dress Up's trash can and All Done):
      rounded corners, a solid color, and a darker shadow along the bottom that presses in when tapped ---------- */
   .ok, .ms-btn, .pk-close, .pk-next { border: none; border-radius: 16px; font-weight: bold; transition: transform .1s, box-shadow .1s; }
-  .ok, .ms-btn { min-height: 54px; padding: 0 30px; background: #3bb273; color: #fff; font-size: 20px; box-shadow: 0 5px 0 #2a8a55; }
+  .ok, .ms-btn { min-height: 54px; padding: 0 30px; background: #5fae7a; color: #fff; font-size: 20px; box-shadow: 0 5px 0 #468a5e; }
   .ms-btn.soft { background: #4a9be0; color: #fff; border: none; box-shadow: 0 5px 0 #3479b8; }
   .ms-btn.soft.on { box-shadow: 0 5px 0 #3479b8, 0 0 0 6px #fff6b0; }
   .ms-btn.soft svg ellipse, .ms-btn.soft svg rect { fill: #fff; }
@@ -172,7 +174,7 @@
   .pk-close:hover { background: #6b6678; }
   .pk-next { width: 64px; height: 64px; background: #4a9be0; box-shadow: 0 5px 0 #3479b8; }
   .ok:active, .ms-btn:active, .pk-close:active, .pk-next:active { transform: translateY(4px); }
-  .ok:active, .ms-btn:active { box-shadow: 0 1px 0 #2a8a55; }
+  .ok:active, .ms-btn:active { box-shadow: 0 1px 0 #468a5e; }
   .ms-btn.soft:active { box-shadow: 0 1px 0 #3479b8; }
   .pk-close:active { box-shadow: 0 1px 0 #46424f; }
   .pk-next:active { box-shadow: 0 1px 0 #3479b8; }
@@ -181,7 +183,7 @@
   /* a pet's card: grows out of its picture; boy or girl as a blue or pink paw; weight is a blank you find by weighing */
   .pk-info { position: absolute; inset: 8px; z-index: 4; background: #fff; border-radius: 24px; box-shadow: 0 10px 30px rgba(74, 59, 92, .2); display: flex; align-items: center; gap: 28px; padding: 22px 30px; transform: scale(.2); opacity: 0; transition: transform .3s cubic-bezier(.3, 1.3, .5, 1), opacity .2s; }
   .pk-info.open { transform: none; opacity: 1; }
-  .pi-pic { flex: 0 0 auto; height: min(100%, 360px); max-width: 45%; object-fit: contain; background: #eaf7ef; border-radius: 22px; padding: 12px; }
+  .pi-pic { flex: 0 0 auto; height: min(100%, 360px); max-width: 45%; object-fit: contain; background: #e5f4ea; border-radius: 22px; padding: 12px; }
   .pi-body { flex: 1; display: flex; flex-direction: column; gap: 14px; }
   .pi-name { margin: 0; font-size: clamp(28px, 4.5vw, 44px); color: #4a3b5c; }
   .pi-facts { display: flex; flex-direction: column; gap: 10px; font-size: clamp(16px, 2.4vw, 22px); color: #4a3b5c; }
@@ -208,7 +210,7 @@
         </div>
         <div class="pk-head">
           <h3 id="pkTitle">Pick a dog</h3>
-          <button class="pk-close" id="pkClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#3bb273" stroke-width="4" stroke-linecap="round"/></svg></button>
+          <button class="pk-close" id="pkClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#5fae7a" stroke-width="4" stroke-linecap="round"/></svg></button>
         </div>
         <div class="pk-body">
           <div class="pk-window"><div class="pk-strip" id="pkStrip"></div></div>
@@ -230,7 +232,7 @@
       <div class="panel ms-panel" role="dialog" aria-labelledby="msTitle">
         <div class="pk-head">
           <h3 id="msTitle">Measure the food</h3>
-          <button class="pk-close" id="msClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#3bb273" stroke-width="4" stroke-linecap="round"/></svg></button>
+          <button class="pk-close" id="msClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#5fae7a" stroke-width="4" stroke-linecap="round"/></svg></button>
         </div>
         <div class="ms-say ms-top" id="msSay"></div>
         <svg class="ms-stage" id="msStage" viewBox="0 0 1100 520" preserveAspectRatio="xMidYMid meet"></svg>
@@ -245,7 +247,7 @@
       <div class="panel bt-panel" role="dialog" aria-labelledby="btTitle">
         <div class="pk-head">
           <h3 id="btTitle">Bath time</h3>
-          <button class="pk-close" id="btClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#3bb273" stroke-width="4" stroke-linecap="round"/></svg></button>
+          <button class="pk-close" id="btClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#5fae7a" stroke-width="4" stroke-linecap="round"/></svg></button>
         </div>
         <div class="bt-steps" id="btSteps"></div>
         <svg class="ms-stage" id="btStage" viewBox="0 0 1100 520" preserveAspectRatio="xMidYMid meet"></svg>
@@ -327,9 +329,9 @@ const ICONS = {
   bowl: `<path d="M-22 -2 H22 Q20 18 0 18 Q-20 18 -22 -2 Z" fill="#f28fb0"/><ellipse cx="0" cy="-2" rx="22" ry="6" fill="#f7b6cc"/><ellipse cx="0" cy="-4" rx="12" ry="3.5" fill="#c98a5a"/>`,
   bubbles: `<circle cx="-8" cy="6" r="11" fill="#bfe3fb"/><circle cx="10" cy="-4" r="9" fill="#d7eefc"/><circle cx="4" cy="14" r="6" fill="#a9d8f8"/><circle cx="-11" cy="2" r="3" fill="#fff"/>`,
   drop: `<path d="M0 -18 C8 -6 14 2 14 8 A14 14 0 0 1 -14 8 C-14 2 -8 -6 0 -18Z" fill="#8fd0f5"/><ellipse cx="-5" cy="6" rx="3" ry="5" fill="#fff" opacity=".7"/>`,
-  towel: `<rect x="-20" y="-12" width="40" height="26" rx="10" fill="#9fdcbc"/><rect x="-20" y="-12" width="40" height="10" rx="5" fill="#c8f0da"/>`,
+  towel: `<rect x="-20" y="-12" width="40" height="26" rx="10" fill="#9fdcbc"/><rect x="-20" y="-12" width="40" height="10" rx="5" fill="#bae5ca"/>`,
   brush: `<rect x="-4" y="-2" width="26" height="9" rx="4.5" fill="#d8a067" transform="rotate(-30)"/><ellipse cx="-9" cy="6" rx="13" ry="9" fill="#c98a5a"/><ellipse cx="-9" cy="3" rx="10" ry="6" fill="#f2d3a8"/>`,
-  check: `<circle r="19" fill="#3bb273"/><path d="M-9 0 L-2 7 L10 -7" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
+  check: `<circle r="19" fill="#5fae7a"/><path d="M-9 0 L-2 7 L10 -7" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
 };
 const icon = k => `<svg viewBox="-24 -24 48 48">${ICONS[k]}</svg>`;
 const say = text => text.replace('your pet', pet ? pet.name : 'your pet');
@@ -359,9 +361,9 @@ function drawRoom() {
   }
   s += `<g id="petLayer"></g>
     <g id="sinkFront" style="opacity:0; pointer-events:none"><clipPath id="sinkClip"><path d="${SINK_FRONT}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#sinkClip)"/></g>
-    <g id="pickArrow" class="pick-arrow"><path d="M490 92 L490 136" stroke="#3bb273" stroke-width="16" stroke-linecap="round"/><path d="M462 128 L490 164 L518 128 Z" fill="#3bb273" stroke="#3bb273" stroke-width="10" stroke-linejoin="round"/></g>
-    <g class="readout" id="readout"><rect x="${ON_SCALE.cx - 95}" y="300" width="190" height="72" rx="36" fill="#fff" stroke="#3bb273" stroke-width="6"/>
-      <text id="readNum" x="${ON_SCALE.cx}" y="350" text-anchor="middle" font-size="40" font-weight="bold" fill="#2b6e47"></text></g>`;
+    <g id="pickArrow" class="pick-arrow"><path d="M490 92 L490 136" stroke="#5fae7a" stroke-width="16" stroke-linecap="round"/><path d="M462 128 L490 164 L518 128 Z" fill="#5fae7a" stroke="#5fae7a" stroke-width="10" stroke-linejoin="round"/></g>
+    <g class="readout" id="readout"><rect x="${ON_SCALE.cx - 95}" y="300" width="190" height="72" rx="36" fill="#fff" stroke="#5fae7a" stroke-width="6"/>
+      <text id="readNum" x="${ON_SCALE.cx}" y="350" text-anchor="middle" font-size="40" font-weight="bold" fill="#3e6e4b"></text></g>`;
   room.innerHTML = s;
 }
 
@@ -416,7 +418,7 @@ function useTarget(g) {
 
 // ---------- Picker ----------
 const picker = document.getElementById('picker'), strip = document.getElementById('pkStrip'), nextBtn = document.getElementById('pkNext');
-const EMPTY_PAW = `<svg viewBox="-24 -26 48 48">${ICONS.paw.replace(/#8a5a3b/g, '#3bb273')}</svg>`;
+const EMPTY_PAW = `<svg viewBox="-24 -26 48 48">${ICONS.paw.replace(/#8a5a3b/g, '#5fae7a')}</svg>`;
 function openOverlay(el) { el.classList.add('open'); el.setAttribute('aria-hidden', 'false'); }
 function closeOverlay(el) { el.classList.remove('open'); el.setAttribute('aria-hidden', 'true'); }
 
@@ -517,11 +519,11 @@ room.addEventListener('pointermove', e => {
 });
 // Drag and drop rule for the whole game: a drop counts when it is within SNAP of the target (in room units),
 // and the thing snaps into place as soon as it gets there.
-const SNAP = 45;
+const SNAP = 15;   // you have to bring it close (Mac, Nov 23)
 const near = (t, x, y, below = SNAP) => x > t.x - SNAP && x < t.x + t.w + SNAP && y > t.y - SNAP && y < t.y + t.h + below;
 function petDropSpot(dx, dy) {
   const fx = RUG.cx + dx, fy = RUG.bottom + dy, t = TASKS[task];   // where the pet's feet are
-  if (t && t.icon === 'scale' && near(TARGETS.scale, fx, fy, 160)) return 'scale';
+  if (t && t.icon === 'scale' && near(TARGETS.scale, fx, fy, 60)) return 'scale';
   if (t && t.icon === 'bubbles' && near(TARGETS.bath, fx, fy, 160)) return 'bath';
   return null;
 }
@@ -638,7 +640,9 @@ function drawMeasure() {
   s += `<g id="msCupMove"><g class="ms-cup" id="msCup" role="button" tabindex="0" aria-label="Measuring cup">
     ${ringSvg(CUP.x - 4, CUP.y - 10, CUP.w + 8, CUP.h + 20)}
     <image href="${ART.cup}" x="${CUP.x}" y="${CUP.y}" width="${CUP.w}" height="${CUP.h}"/>
-    <g opacity=".88"><path id="msFood" d="" fill="#c98a5a"/><g id="msDots"></g></g>`;
+    <g opacity=".88"><path id="msFood" d="" fill="#c98a5a"/><g id="msDots"></g></g>
+    <path class="spill" d="M${CUP.x + 6} ${CUP.y + 52} Q${CUP.x + 10} ${CUP.y + 22} ${CUP.x + 44} ${CUP.y + 26} Q${CUP.x + 80} ${CUP.y + 30} ${CUP.x + 96} ${CUP.y + 58} Q${CUP.x + 60} ${CUP.y + 74} ${CUP.x + 6} ${CUP.y + 52} Z" fill="#c98a5a"/>
+    <circle class="spill" cx="${CUP.x + 30}" cy="${CUP.y + 38}" r="5" fill="#a86d43"/><circle class="spill" cx="${CUP.x + 58}" cy="${CUP.y + 42}" r="5" fill="#a86d43"/>`;
   lines.forEach(c => {
     const y = cupY(c), t = (CUP.y0 - y) / (CUP.y0 - CUP.y1), l = CUP.left0 + (CUP.left1 - CUP.left0) * t;
     s += `<g class="ms-line" data-c="${c}">
@@ -891,7 +895,7 @@ room.addEventListener('pointermove', e => {
 });
 function atSink(dx, dy) {
   const cx = WB.x + FLOOR_BOWL / 2 + dx, by = WB.bottom + dy, s = TARGETS.water;
-  return near(s, cx, by, 70);   // a little less eager than before
+  return near(s, cx, by, 30);
 }
 room.addEventListener('pointerup', () => {
   if (!wdrag) return;
@@ -1127,7 +1131,7 @@ function rubAt(x, y, reach) {
     } else if (step === 'rinse') {
       fx.querySelectorAll(`.bub[data-cell="${i}"]`).forEach(b => { b.style.opacity = 0; setTimeout(() => b.remove(), 400); });
     } else {
-      const col = step === 'towel' ? '#c8f0da' : '#fff6b0';
+      const col = step === 'towel' ? '#bae5ca' : '#fff6b0';
       fx.insertAdjacentHTML('beforeend', `<circle class="puff" cx="${c.x}" cy="${c.y}" r="16" fill="${col}"/>`);
     }
   });

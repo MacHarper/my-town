@@ -6,7 +6,7 @@ T = "tools/"
 page = open(T + "game-starter.html").read()
 toolbar = open(T + "toolbar.html").read().replace('data-root="ROOT_HERE"', 'data-root="../"')
 loading = open(T + "loading.html").read().replace('Getting ready...', 'Getting the pets ready...')
-for k, v in {'TITLE': 'Vet Clinic', 'BUILDING': 'vet', 'BUILDING_NAME': 'Vet Clinic', 'COLOR': '#3bb273', 'SAVEKEY': 'vetClinic',
+for k, v in {'TITLE': 'Vet Clinic', 'BUILDING': 'vet', 'BUILDING_NAME': 'Vet Clinic', 'COLOR': '#5fae7a', 'SAVEKEY': 'vetClinic',
              'LOADING': loading, 'TOOLBAR': toolbar}.items():
     page = page.replace('{{%s}}' % k, v)
 parts = open("vet-clinic/game-parts.txt").read()
