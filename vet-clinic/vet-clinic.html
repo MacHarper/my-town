@@ -52,7 +52,9 @@
   .tag { pointer-events: none; }
   .tgt:hover .ring, .tgt:focus-visible .ring { opacity: .75; }
   .tgt.on .ring, .petg.drag .ring { opacity: 1; }
-  .tgt.on .tag, .tgt:hover .tag, .tgt:focus-visible .tag { opacity: 1; }
+  .tgt.on .tag, .tgt.named .tag, .tgt:hover .tag, .tgt:focus-visible .tag { opacity: 1; }
+  .pick-arrow { pointer-events: none; animation: bob 1.2s ease-in-out infinite; }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(14px); } }
   #room:has(.tgt:hover, .petg.drag:hover) .tgt:not(:hover) .ring,
   #room:has(.tgt:hover, .petg.drag:hover) .tgt:not(:hover) .tag,
   #room:has(.tgt:hover) .petg .ring { opacity: 0; }
@@ -112,7 +114,7 @@
   .ms-stage { flex: 1; min-height: 0; width: 100%; touch-action: none; }
   .ms-bar { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 60px; flex-wrap: wrap; }
   .ms-say { font-size: clamp(14px, 2.3vw, 21px); font-weight: bold; color: #2b6e47; text-align: center; max-width: 640px; }
-  .ms-top { margin: 4px auto 0; min-height: 2.6em; display: flex; align-items: center; justify-content: center; }   /* the words sit above the cup */
+  .ms-top { margin: 4px auto 0; min-height: 2.6em; display: block; }   /* the words sit above the cup */
   .ms-btn { min-height: 52px; padding: 0 22px; border: none; border-radius: 999px; background: #3bb273; color: #fff; font-size: 18px; font-weight: bold; box-shadow: 0 4px 0 #2a8a55; display: flex; align-items: center; gap: 8px; }
   .ms-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a8a55; }
   .ms-btn.soft { background: #fff; color: #6b4329; border: 3px solid #c9a27f; box-shadow: 0 4px 0 #e2cdb8; }
@@ -182,6 +184,24 @@
   @keyframes burst { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--bx), var(--by)) scale(1); } }
   .done-panel { width: min(90%, 520px); align-items: center; gap: 12px; padding: 22px; }
   #allDone { align-items: flex-start; padding-top: 2%; background: rgba(43, 35, 64, .08); }   /* high up, so the happy pet shows below */
+
+  /* ---------- one button style everywhere (like Dress Up's trash can and All Done):
+     rounded corners, a solid color, and a darker shadow along the bottom that presses in when tapped ---------- */
+  .ok, .ms-btn, .pk-close, .pk-next { border: none; border-radius: 16px; font-weight: bold; transition: transform .1s, box-shadow .1s; }
+  .ok, .ms-btn { min-height: 54px; padding: 0 30px; background: #3bb273; color: #fff; font-size: 20px; box-shadow: 0 5px 0 #2a8a55; }
+  .ms-btn.soft { background: #c98a5a; color: #fff; border: none; box-shadow: 0 5px 0 #9c6740; }
+  .ms-btn.soft.on { box-shadow: 0 5px 0 #9c6740, 0 0 0 6px #fff6b0; }
+  .ms-btn.soft svg ellipse, .ms-btn.soft svg rect { fill: #fff; }
+  .pk-close { width: 52px; height: 52px; background: #9b8aad; box-shadow: 0 5px 0 #7a6a8c; }
+  .pk-close svg path { stroke: #fff; }
+  .pk-close:hover { background: #8f7ea2; }
+  .pk-next { width: 64px; height: 64px; background: #3d8fe0; box-shadow: 0 5px 0 #2a6db3; }
+  .ok:active, .ms-btn:active, .pk-close:active, .pk-next:active { transform: translateY(4px); }
+  .ok:active, .ms-btn:active { box-shadow: 0 1px 0 #2a8a55; }
+  .ms-btn.soft:active { box-shadow: 0 1px 0 #9c6740; }
+  .pk-close:active { box-shadow: 0 1px 0 #7a6a8c; }
+  .pk-next:active { box-shadow: 0 1px 0 #2a6db3; }
+  .pk-next:hover, .ok:hover { filter: brightness(1.05); }
 </style>
 </head>
 <body>
@@ -335,7 +355,7 @@
 
 <div id="game">
   <header>
-    <a class="back" href="../index.html#vet" aria-label="Back to the Vet Clinic"><svg viewBox="0 0 26 26"><path d="M16 5 L8 13 L16 21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <a class="back" href="../index.html#town" aria-label="Back to town"><svg viewBox="0 0 26 26"><path d="M16 5 L8 13 L16 21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <h2>Vet Clinic</h2>
 
     <div class="tasks" id="tasks" aria-label="Things to do"></div>
@@ -516,6 +536,8 @@ function drawRoom() {
       ${ringSvg(t.x + 6, t.y + 6, t.w - 12, t.h - 12)}${tagSvg(t)}</g>`;
   }
   s += `<g id="petLayer"></g>
+    <g id="sinkFront" style="opacity:0; pointer-events:none"><clipPath id="sinkClip"><path d="${SINK_FRONT}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#sinkClip)"/></g>
+    <g id="pickArrow" class="pick-arrow"><path d="M490 92 L490 136" stroke="#3bb273" stroke-width="16" stroke-linecap="round"/><path d="M462 128 L490 164 L518 128 Z" fill="#3bb273" stroke="#3bb273" stroke-width="10" stroke-linejoin="round"/></g>
     <g class="readout" id="readout"><rect x="${ON_SCALE.cx - 95}" y="300" width="190" height="72" rx="36" fill="#fff" stroke="#3bb273" stroke-width="6"/>
       <text id="readNum" x="${ON_SCALE.cx}" y="350" text-anchor="middle" font-size="40" font-weight="bold" fill="#2b6e47"></text></g>`;
   room.innerHTML = s;
@@ -525,7 +547,9 @@ function setTask(i, quiet) {
   task = i;
   const t = TASKS[task];   // after the last task there is none: everything is done
   drawTasks(!quiet);
-  room.querySelectorAll('.tgt').forEach(g => g.classList.toggle('on', !!t && t.targets.includes(g.dataset.t)));
+  const pickTime = task === 0;   // picking a pet: an arrow points at the crates instead of a glow
+  room.querySelectorAll('.tgt').forEach(g => { const mine = !!t && t.targets.includes(g.dataset.t); g.classList.toggle('on', mine && !pickTime); g.classList.toggle('named', mine && pickTime); });
+  document.getElementById('pickArrow').style.display = pickTime ? '' : 'none';
   const pg = document.querySelector('.petg');
   if (pg) pg.classList.toggle('drag', !!t && (t.icon === 'scale' || t.icon === 'bubbles'));   // drag the pet to the scale or the tub
   guide(t ? say(t.guide) : `${pet.name} is all clean and happy!`);
@@ -875,8 +899,9 @@ stage.addEventListener('pointermove', e => {
   d.dx = p.x - d.sx; d.dy = p.y - d.sy;
   document.getElementById('msCupMove').setAttribute('transform', `translate(${d.dx} ${d.dy})`);
   // the lip of the tipped cup: is it over the bowl?
-  const lx = CUP_C[0] + d.dx - 158, ly = CUP_C[1] + d.dy + 113, bx = MS_BOWL.x, bw = MS_BOWL.w;
-  d.over = lx > bx && lx < bx + bw && ly > MS_BOWL.y - 90 && ly < MS_BOWL.y + 50;
+  const cx = CUP_C[0] + d.dx, cy = CUP_C[1] + d.dy, bcx = MS_BOWL.x + MS_BOWL.w / 2;
+  const lx = cx - 158, ly = cy + 113;   // where the lip is once the cup tips
+  d.over = cx > bcx + 20 && cx < bcx + 300 && cy > MS_BOWL.y - 320 && cy < MS_BOWL.y + 120;   // anywhere near the bowl counts
   document.getElementById('msCup').classList.toggle('tip', d.over);
   d.lip = [lx, ly];
 });
@@ -967,7 +992,8 @@ function setPose(p) {
 }
 
 // water: after eating, an empty bowl sits by the pet; drag it to the sink (or tap the sink) and it fills
-const WB = { x: 1180, bottom: RUG.bottom + 12 }, SINK_SPOT = { cx: 1493, bottom: 498 };
+const WB = { x: 1180, bottom: RUG.bottom + 12 }, SINK_SPOT = { cx: 1512, bottom: 506, k: .7 };   // in the basin, under the faucet
+const SINK_FRONT = 'M1386 503 L1608 503 L1608 560 L1386 560 Z';   // the sink's front edge, drawn over the bowl
 function waterTime() {
   hideExtra('shelfWater');
   const bw = FLOOR_BOWL, bh = bw * 236 / 360, x = WB.x, y = WB.bottom - bh;
@@ -980,10 +1006,11 @@ function waterTime() {
   room.querySelector('[data-t="water"]').classList.add('on');
   guide(`Drag the water bowl to the sink to fill it!`);
 }
-function wbMove(dx, dy, ms_) {
+function wbMove(dx, dy, ms_, k = 1) {
   const g = document.getElementById('waterBowl');
   g.style.transition = ms_ ? `transform ${ms_}ms ease-in-out` : 'none';
-  g.style.transform = `translate(${dx}px, ${dy}px)`;
+  g.style.transformOrigin = `${WB.x + FLOOR_BOWL / 2}px ${WB.bottom}px`;
+  g.style.transform = `translate(${dx}px, ${dy}px) scale(${k})`;
 }
 let wdrag = null;
 room.addEventListener('pointerdown', e => {
@@ -1012,13 +1039,14 @@ function fillWater(fromDx, fromDy) {
   guideEl.classList.add('hide');
   const bw = FLOOR_BOWL, tx = SINK_SPOT.cx - (WB.x + bw / 2), ty = SINK_SPOT.bottom - WB.bottom;
   if (fromDx !== undefined) wbMove(fromDx, fromDy, 0);
-  requestAnimationFrame(() => wbMove(tx, ty, 450));   // under the faucet
-  setTimeout(() => {   // water runs and the bowl fills
-    room.insertAdjacentHTML('beforeend', `<rect id="faucetWater" x="${SINK_SPOT.cx + 22}" y="410" width="10" height="${SINK_SPOT.bottom - 430}" rx="5" fill="#8fd0f5" opacity=".9"/>`);
+  requestAnimationFrame(() => wbMove(tx, ty, 450, SINK_SPOT.k));   // down into the sink, under the faucet
+  setTimeout(() => {   // the sink's front edge goes in front of the bowl, water runs and the bowl fills
+    document.getElementById('sinkFront').style.opacity = 1;
+    room.insertAdjacentHTML('beforeend', `<rect id="faucetWater" x="${SINK_SPOT.cx - 5}" y="424" width="10" height="34" rx="5" fill="#8fd0f5" opacity=".9"/>`);
     document.getElementById('wbWater').style.transform = 'scale(1)';
     document.getElementById('wbShine').setAttribute('opacity', .7);
   }, 500);
-  setTimeout(() => { const f = document.getElementById('faucetWater'); if (f) f.remove(); wbMove(0, 0, 600); }, 1600);   // back by the pet
+  setTimeout(() => { const f = document.getElementById('faucetWater'); if (f) f.remove(); document.getElementById('sinkFront').style.opacity = 0; wbMove(0, 0, 600); }, 1600);   // back by the pet
   setTimeout(() => {
     watered = true; busy = false;
     showToast(`Fresh water for ${pet.name}!`);
