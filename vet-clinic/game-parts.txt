@@ -340,7 +340,9 @@ const PETS = {
     { id: 'zuzu', name: 'Zuzu', art: 'zuzuSit', eat: 'zuzuEat', bath: 'zuzuBath', done: 'zuzuDone', weight: 55,
       boy: false, breed: 'Goldendoodle', loves: 'playing tug', nose: [.171, .778] },
     { id: 'spud', name: 'Spud', art: 'spudSit', eat: 'spudEat', bath: 'spudBath', done: 'spudDone', weight: 16,
-      boy: true, breed: 'Pug', loves: 'naps on the couch', nose: [.156, .68] } ],
+      boy: true, breed: 'Pug', loves: 'naps on the couch', nose: [.156, .68] },
+    { id: 'milly', name: 'Milly', art: 'millySit', eat: 'millyEat', bath: 'millyBath', done: 'millyDone', weight: 65,
+      boy: false, breed: 'Golden Retriever', loves: 'fetching tennis balls', nose: [.082, .809] } ],
   cat: [],
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will
