@@ -29,7 +29,10 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "spudSit": (A + "pets/spud-sit.webp", "image/webp"), "spudEat": (A + "pets/spud-eat.webp", "image/webp"),
        "spudBath": (A + "pets/spud-bath.webp", "image/webp"), "spudDone": (A + "pets/spud-done.webp", "image/webp"),
        "millySit": (A + "pets/milly-sit.webp", "image/webp"), "millyEat": (A + "pets/milly-eat.webp", "image/webp"),
-       "millyBath": (A + "pets/milly-bath.webp", "image/webp"), "millyDone": (A + "pets/milly-done.webp", "image/webp")}
+       "millyBath": (A + "pets/milly-bath.webp", "image/webp"), "millyDone": (A + "pets/milly-done.webp", "image/webp"),
+       "lunaSit": (A + "pets/luna-sit.webp", "image/webp"), "lunaEat": (A + "pets/luna-eat.webp", "image/webp"),
+       "lunaGroom": (A + "pets/luna-groom.webp", "image/webp"), "lunaPlay": (A + "pets/luna-play.webp", "image/webp"),
+       "lunaDone": (A + "pets/luna-done.webp", "image/webp"), "lunaSleep": (A + "pets/luna-sleep.webp", "image/webp")}
 # every pet pose (sit, bath, done) is measured across its paws, so the game can draw each pose the same size as sitting
 from PIL import Image
 def paws(f):
@@ -50,7 +53,7 @@ def collar(f):   # the middle of the collar band: the widest row of a color that
     if not rows: return [W / 2, H * .45]
     m = max(v[0] for v in rows.values()); ys = [y for y, v in rows.items() if v[0] > .5 * m]
     return [round(sum(rows[y][1] for y in ys) / len(ys)), round(sum(ys) / len(ys))]
-PAW = {k: paws(f) for k, (f, m) in ART.items() if "/pets/" in f and not f.endswith("-eat.webp")}
+PAW = {k: paws(f) for k, (f, m) in ART.items() if "/pets/" in f and not f.endswith(("-eat.webp", "-sleep.webp"))}
 for k, v in PAW.items(): print("  paws", k, v[0], "collar", v[2], v[3])
 page = page.replace("const ART = {};", "const ART = {\n" + "".join("  %s: '%s',\n" % (k, d(*v)) for k, v in ART.items()) + "};", 1)
 page = page.replace("// ---------- The game ----------\n", "// ---------- The game ----------\n" + js, 1)

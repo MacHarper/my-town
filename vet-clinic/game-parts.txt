@@ -343,7 +343,8 @@ const PETS = {
       boy: true, breed: 'Pug', loves: 'naps on the couch', nose: [.156, .68] },
     { id: 'milly', name: 'Milly', art: 'millySit', eat: 'millyEat', bath: 'millyBath', done: 'millyDone', weight: 65,
       boy: false, breed: 'Golden Retriever', loves: 'fetching tennis balls', nose: [.082, .809] } ],
-  cat: [],
+  cat: [ { id: 'luna', name: 'Luna', art: 'lunaSit', eat: 'lunaEat', bath: 'lunaGroom', play: 'lunaPlay', done: 'lunaDone',
+      boy: false, breed: 'American Shorthair', loves: 'chasing feathers', nose: [.156, .70] } ],   // cats: no weight; bath is the groom pose
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will
 // ask the player to measure this much in the measuring cup (lines at 1/4, 1/2, 3/4 and 1 cup).
@@ -384,6 +385,7 @@ let TASKS = TASK_LISTS.dog;   // the cat list once a cat is picked
 // Ralphie sitting in the blue bed in the dog crate, and the two bowls on the shelves under the food bin.
 // Each one leaves when it is used: the pet when you pick it, the food bowl when you measure, the water bowl at water time.
 const EXTRAS = {
+  cat: { id: 'luna', art: 'lunaSleep', cx: 372, bottom: 428, w: 140, bedFront: 'M298 417 Q372 431 446 417 L446 442 L298 442 Z' },   // Luna asleep on the pink cushion in the cat crate
   pet: { id: 'ralphie', cx: 362, bottom: 692, h: 165, bedFront: 'M266 684 L314 694 L362 698 L410 694 L457 684 L457 712 L266 712 Z' },
   bowls: [ { id: 'shelfFood', art: 'bowlFood', cx: 1115, bottom: 596, w: 110 }, { id: 'shelfWater', art: 'bowlWater', cx: 1115, bottom: 696, w: 110 } ],
 };
@@ -391,6 +393,9 @@ function extrasSvg() {
   const p = EXTRAS.pet, w = p.h * 443 / 560;
   let s = `<g id="cratePet" class="extra"><image href="${ART.dachshundSit}" x="${p.cx - w / 2}" y="${p.bottom - p.h}" width="${w}" height="${p.h}"/>
     <clipPath id="bedFrontClip"><path d="${p.bedFront}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#bedFrontClip)"/></g>`;
+  const c = EXTRAS.cat, ch = c.w * 400 / 498;
+  s += `<g id="crateCat" class="extra"><image href="${ART[c.art]}" x="${c.cx - c.w / 2}" y="${c.bottom - ch}" width="${c.w}" height="${ch}"/>
+    <clipPath id="catBedClip"><path d="${c.bedFront}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#catBedClip)"/></g>`;
   EXTRAS.bowls.forEach(b => { const h = b.w * 236 / 360;
     s += `<image id="${b.id}" class="extra" href="${ART[b.art]}" x="${b.cx - b.w / 2}" y="${b.bottom - h}" width="${b.w}" height="${h}"/>`; });
   return s;
@@ -573,6 +578,7 @@ document.getElementById('piPick').addEventListener('click', () => { const a = in
 function choosePet(a) {
   pet = Object.assign({}, a); closeOverlay(picker);
   if (a.id === EXTRAS.pet.id) hideExtra('cratePet');   // out of the crate
+  if (a.id === EXTRAS.cat.id) hideExtra('crateCat');   // out of the cat crate
   const pic = new Image();
   pic.onload = () => {
     const h = rugH(), w = h * pic.width / pic.height, x = RUG.cx - w / 2, y = RUG.bottom - h;
