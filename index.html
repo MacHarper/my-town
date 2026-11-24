@@ -710,7 +710,7 @@ function drawRoom(id) {
     const g = r.guide, w = g.text.length * 19 + 60;
     s += `<g class="guide-say"><rect x="${g.x - w / 2}" y="${g.y - 32}" width="${w}" height="72" rx="22" fill="rgba(74,59,92,.16)"/><rect x="${g.x - w / 2}" y="${g.y - 36}" width="${w}" height="72" rx="22" fill="#fffaf5"/>
       <text x="${g.x}" y="${g.y + 12}" text-anchor="middle" font-size="34" font-weight="bold" fill="#4a3b5c">${g.text}</text>
-      <g class="pick-arrow"><path d="M${g.x} ${g.y + 44} L${g.x} ${g.y + 70}" stroke="#5fae7a" stroke-width="14" stroke-linecap="round"/><path d="M${g.x - 24} ${g.y + 62} L${g.x} ${g.y + 92} L${g.x + 24} ${g.y + 62} Z" fill="#5fae7a" stroke="#5fae7a" stroke-width="8" stroke-linejoin="round"/></g></g>`;
+      <g class="pick-arrow"><g transform="translate(${g.x} ${g.y + 92}) scale(.6)"><path d="M-15 -80 H15 V-42 H36 L0 0 L-36 -42 H-15 Z" transform="translate(0 7)" fill="#b8336a" stroke="#b8336a" stroke-width="12" stroke-linejoin="round"/><path d="M-15 -80 H15 V-42 H36 L0 0 L-36 -42 H-15 Z" fill="#e0457b" stroke="#e0457b" stroke-width="12" stroke-linejoin="round"/><path d="M-6 -74 V-48" stroke="#f58db0" stroke-width="7" stroke-linecap="round"/></g></g></g>`;
   }
   roomSvg.innerHTML = s;
   document.getElementById('roomBg').style.backgroundImage = `url(${r.img})`;

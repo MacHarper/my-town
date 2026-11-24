@@ -3,31 +3,57 @@
   .play { position: relative; overflow: hidden; background: #fffaf5; padding: 0; }
   #room { width: 100%; height: 100%; display: block; touch-action: none; }
   /* task list in the header: slides out once when you come in; the current task is the biggest */
-  /* the header: only Back to town (berry pink, like every Back to town) and the name, in plum */
-  header h2 { color: #4a3b5c; }
-  header .back { background: #e0457b; box-shadow: 0 4px 0 #b8336a, 0 8px 18px rgba(74, 59, 92, .15); }
-  /* the checklist: its own white bar under the header, like a row of stickers joined by paw prints.
-     The current step is sunny yellow and a little bigger; done steps get a green check. */
-  .taskbar { width: 100%; max-width: 1000px; margin-top: 10px; background: #fff; border-radius: 22px; box-shadow: 0 10px 30px rgba(120, 60, 120, .12), 0 0 0 2px #f3edf8; padding: 8px 14px; }
-  .tasks { display: flex; align-items: center; justify-content: center; gap: 4px; animation: tasksIn .5s .3s ease-out backwards; }
-  @keyframes tasksIn { from { transform: translateY(-12px); opacity: 0; } to { transform: none; opacity: 1; } }
-  .task { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 50px; padding: 0 16px 0 6px; border-radius: 16px; background: #f3edf8; font-size: 16px; font-weight: bold; color: #6b5a80; transition: transform .2s; }
+  /* the whole page: the Vet Clinic's soft green, like the room when you walk in from town */
+  body, #loading { background: linear-gradient(160deg, #f4fbf6 0%, #e0f3e7 55%, #c9ebd6 100%) !important; }
+  #game { padding: 8px 12px 10px; }   /* the toolbar may cover the floor's corner: everything to do is on the back wall */
+  header { max-width: none; }
+  header h2 { display: none; }   /* the building's name sits in the task bar */
+  .back.backtown { background: #e0457b; box-shadow: 0 4px 0 #b8336a, 0 8px 18px rgba(74, 59, 92, .15); }
+  /* the frame: the task bar on top, the room right under it, no gap. fitFrame() sizes it to fill the screen. */
+  .frame { flex: none; width: 100%; margin-top: 8px; display: flex; flex-direction: column; background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(74, 59, 92, .15), 0 0 0 2px #f3edf8; }
+  .taskbar { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: #fff; border-bottom: 2px solid #f3edf8; }
+  .bldg { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; }
+  .bldg-logo { width: 54px; height: 54px; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 5px;
+    box-shadow: 0 4px 0 #d9cfe6, 0 8px 18px rgba(74, 59, 92, .15), 0 0 0 2px #f3edf8; }   /* a raised badge, like the buttons */
+  .bldg-logo img, .bldg-logo svg { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .bldg-name { margin: 0; font-size: 24px; font-weight: bold; color: #4a3b5c; white-space: nowrap; }
+  .bar-div { flex: 0 0 auto; width: 4px; height: 44px; border-radius: 2px; background: #ece4f4; }
+  .play { flex: none; width: 100%; max-width: none; aspect-ratio: 1984 / 1116; margin: 0; border-radius: 0; box-shadow: none; }
+  /* the checklist: stickers joined by dots. The current step is sunny yellow and a little bigger (tap it to start it); done steps get a green check. */
+  .tasks { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; animation: tasksIn .5s .3s ease-out backwards; }
+  @keyframes tasksIn { from { transform: translateX(-12px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .task { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 50px; padding: 0 16px 0 6px; border-radius: 16px; background: #f3edf8; font-size: 16px; font-weight: bold; color: #6b5a80; transition: transform .1s, box-shadow .1s; }
   .task svg { width: 36px; height: 36px; flex: 0 0 auto; background: #fff; border-radius: 50%; padding: 3px; }
-  .task.cur { height: 58px; padding: 0 20px 0 7px; background: #ffc94d; color: #4a3b5c; font-size: 21px; box-shadow: 0 4px 0 #d9a531; }
-  .task.cur svg { width: 44px; height: 44px; }
+  .task.cur { height: 58px; padding: 0 20px 0 7px; background: #ffc94d; color: #4a3b5c; font-size: 21px; box-shadow: 0 4px 0 #d9a531; cursor: pointer; }
+  .task.cur:hover svg { transform: translateY(-2px) rotate(-6deg); }
+  .task.cur:active { transform: translateY(3px); box-shadow: 0 1px 0 #d9a531; }
+  .task.cur svg { width: 44px; height: 44px; transition: transform .2s; }
   .task.done { background: #fff; color: #9b90a8; box-shadow: 0 0 0 3px #f3edf8 inset; }
   .task.done svg { background: none; padding: 0; }
   .task.pop { animation: popSoft .45s cubic-bezier(.3, 1.5, .5, 1); }
   .trail { flex: 0 1 34px; min-width: 14px; height: 14px; background: radial-gradient(circle, #ddd0ec 3.5px, transparent 4px) 0 50% / 11px 11px repeat-x; }
   .trail.done { background-image: radial-gradient(circle, #ffc94d 3.5px, transparent 4px); }
+  @media (max-width: 900px) { .bldg-name { display: none; } }
+  @media (max-width: 760px) { .task:not(.cur) span { display: none; } .task:not(.cur) { padding: 0 6px; } .task.cur { font-size: 16px; } .taskbar { padding: 6px 8px; gap: 8px; } }
+  /* short screens (a phone on its side): Back sits inside the task bar's left end, and everything is a little smaller */
+  @media (max-height: 600px) {
+    #game { padding: 6px 8px; }
+    header { display: none; }
+    .taskbar .backtown { flex: 0 0 auto; height: 44px; } .taskbar .backtown .back-words { display: none; }
+    .frame { margin-top: 0; }
+    .taskbar { padding: 5px 10px; }
+    .bldg-logo { width: 42px; height: 42px; border-radius: 13px; } .bar-div { height: 34px; }
+    .task { height: 38px; font-size: 14px; } .task svg { width: 28px; height: 28px; }
+    .task.cur { height: 44px; font-size: 16px; } .task.cur svg { width: 34px; height: 34px; }
+  }
   @keyframes popSoft { from { transform: scale(.85); opacity: .4; } to { transform: scale(1); opacity: 1; } }
-  @media (max-width: 760px) { .task:not(.cur) span { display: none; } .task:not(.cur) { padding: 0 6px; } .task.cur { font-size: 16px; } .taskbar { padding: 6px 8px; } }
   /* tap targets: a soft ring shows only when it is your turn to tap it, or while you hover right on it.
      While you hover one thing, only that thing lights up. */
   .tgt { cursor: pointer; outline: none; }
   .petg { outline: none; }
   .petg.drag { cursor: grab; }
   .petg.dragging { cursor: grabbing; }
+  .petg.dragging .ring, .held .ring { opacity: 0 !important; }   /* once you pick it up, its ring goes away */
   .ring, .tag { opacity: 0; transition: opacity .15s; }
   .tag { pointer-events: none; }
   .tgt:hover .ring, .tgt:focus-visible .ring { opacity: .75; }
@@ -37,7 +63,7 @@
   .tgt.done:hover .ring, .tgt.done:hover .tag { opacity: 0 !important; }
   .tgt.on .tag, .tgt.named .tag, .tgt:hover .tag, .tgt:focus-visible .tag { opacity: 1; }
   .pick-arrow { pointer-events: none; animation: bob 1.2s ease-in-out infinite; }
-  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(14px); } }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
   #room:has(.tgt:hover, .petg.drag:hover) .tgt:not(:hover) .ring,
   #room:has(.tgt:hover, .petg.drag:hover) .tgt:not(:hover) .tag,
   #room:has(.tgt:hover) .petg .ring { opacity: 0; }
@@ -70,12 +96,13 @@
   .pk-strip { display: flex; height: 100%; transition: transform .45s ease-in-out; }
   .pk-page { flex: 0 0 100%; height: 100%; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; padding: 6px; }
   .pk-card { position: relative; min-height: 0; border: none; border-radius: 22px; background: #f3edf8; display: flex; align-items: flex-end; justify-content: center; padding: 8px 8px 46px; transition: transform .15s, box-shadow .15s; }
-  .pk-card img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
+  .pk-card img { max-width: 100%; max-height: 100%; object-fit: contain; object-position: 50% 100%; pointer-events: none; }
   .pk-card:not(.empty):hover, .pk-card:not(.empty):focus-visible { transform: translateY(-4px); box-shadow: 0 0 0 5px #fff6b0, 0 8px 18px rgba(74, 59, 92, .2); outline: none; }
   .pk-card.empty { background: #f6f3f9; cursor: default; align-items: center; }
-  .pk-card.empty svg { width: 38%; max-height: 60%; opacity: .25; }
+  .pk-card.empty svg { width: 38%; max-height: 60%; opacity: .5; }
   .pk-name { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); background: #fff; border: 3px solid #8a5a3b; border-radius: 999px; padding: 4px 14px; font-size: clamp(11px, 1.6vw, 16px); font-weight: bold; color: #6b4329; white-space: nowrap; }
   .pk-card.empty .pk-name { border-color: #d8d0e2; color: #9b90a8; }
+  .pk-card:not(.empty) .pk-name { border-color: #4a3b5c; color: #4a3b5c; }
   .pk-next { flex: 0 0 auto; width: 64px; height: 64px; border: none; border-radius: 50%; background: #3d8fe0; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #2a6db3; transition: transform .15s; }
   .pk-next:hover { transform: scale(1.06); }
   .pk-next:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a6db3; }
@@ -130,8 +157,6 @@
   .ms-bin.on .ring, .ms-cup.on .ring { opacity: 1; }
   .ms-cup.on { cursor: grab; }
   .ms-cup.tip .ring { opacity: 0; }
-  .ms-cup .spill { opacity: 0; transition: opacity .15s; }   /* food piles up at the lip, a little above it, while pouring */
-  .ms-cup.tip .spill { opacity: .95; }
   .kib2 { animation: fall2 .45s linear infinite; }
   @keyframes fall2 { from { transform: translate(0, 0); opacity: 1; } to { transform: translate(-6px, 70px); opacity: 1; } }
   .wb { outline: none; }
@@ -147,7 +172,8 @@
   .ms-bin:hover .ring, .ms-bowl:hover .ring { opacity: .75; }
 
   /* ---------- bath ---------- */
-  .bt-panel { width: 94%; height: 92%; padding: 10px 16px 14px; }
+  .bt-panel { width: 97%; height: 95%; padding: 8px 16px 10px; }
+  .bt-panel .bt-steps { margin: 4px 0 14px; }
   .bt-steps { display: flex; gap: 8px; justify-content: center; }
   .bt-steps .task { height: 46px; font-size: 16px; }
   .bt-steps .task.cur { height: 58px; font-size: 20px; }
@@ -204,7 +230,12 @@
   @media (max-width: 600px) { .pk-info { flex-direction: column; gap: 10px; padding: 14px; } .pi-pic { height: 34%; max-width: 80%; } }
 @@HEADER@@
 @@HTML@@
-  <div class="taskbar"><div class="tasks" id="tasks" aria-label="Things to do"></div></div>
+  <div class="frame" id="frame">
+  <div class="taskbar">
+    <div class="bldg"><span class="bldg-logo" id="bldgLogo"></span><h1 class="bldg-name">Vet Clinic</h1></div>
+    <i class="bar-div"></i>
+    <div class="tasks" id="tasks" aria-label="Things to do"></div>
+  </div>
   <div class="play" id="play">
     <svg id="room" viewBox="0 0 1984 1116" preserveAspectRatio="xMidYMid meet" aria-label="Inside the Vet Clinic"></svg>
     <div class="guide" id="guide"></div>
@@ -272,6 +303,7 @@
       </div>
     </div>
   </div>
+  </div>
   <div id="toast"></div>
 @@JS@@
 // The room picture is 1984 x 1116; everything on it uses those numbers.
@@ -282,7 +314,9 @@ const PETS = {
   dog: [ { id: 'ralphie', name: 'Ralphie', art: 'dachshundSit', eat: 'ralphieEat', bath: 'ralphieBath', done: 'ralphieDone', weight: 16,
       boy: true, breed: 'Dachshund', loves: 'playing fetch' },
     { id: 'bella', name: 'Bella', art: 'bellaSit', eat: 'bellaEat', bath: 'bellaBath', done: 'bellaDone', weight: 65,
-      boy: false, breed: 'Labrador Retriever', loves: 'swimming', nose: [.165, .785] } ],
+      boy: false, breed: 'Labrador Retriever', loves: 'swimming', nose: [.165, .785] },
+    { id: 'zuzu', name: 'Zuzu', art: 'zuzuSit', eat: 'zuzuEat', bath: 'zuzuBath', done: 'zuzuDone', weight: 55,
+      boy: false, breed: 'Goldendoodle', loves: 'playing tug', nose: [.171, .778] } ],
   cat: [],
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will
@@ -336,8 +370,9 @@ const ON_SCALE = { cx: 1322, bottom: 726, k: .63 };     // where it sits on the 
 let task = 0, pet = null, kind = 'dog', page = 0, busy = false;
 const room = document.getElementById('room');
 
+const PAW_SHAPE = col => `<ellipse cx="39" cy="18" rx="10" ry="14" fill="${col}"/><ellipse cx="62" cy="18" rx="10" ry="14" fill="${col}"/><ellipse cx="18" cy="42" rx="9" ry="13" fill="${col}" transform="rotate(-20 18 42)"/><ellipse cx="82" cy="42" rx="9" ry="13" fill="${col}" transform="rotate(20 82 42)"/><path d="M50 44 C32 44 22 66 24 78 C26 88 38 86 50 84 C62 86 74 88 76 78 C78 66 68 44 50 44 Z" fill="${col}"/>`;   // the same paw as the boy/girl card
 const ICONS = {
-  paw: `<ellipse cx="0" cy="8" rx="13" ry="11" fill="#8a5a3b"/><ellipse cx="-14" cy="-6" rx="5.5" ry="7" fill="#8a5a3b"/><ellipse cx="-5" cy="-15" rx="5.5" ry="7" fill="#8a5a3b"/><ellipse cx="6" cy="-15" rx="5.5" ry="7" fill="#8a5a3b"/><ellipse cx="15" cy="-6" rx="5.5" ry="7" fill="#8a5a3b"/>`,
+  paw: `<svg x="-22" y="-20" width="44" height="41" viewBox="0 0 100 92">${PAW_SHAPE('#8a5a3b')}</svg>`,
   scale: `<rect x="-20" y="2" width="40" height="14" rx="5" fill="#8f98a3"/><rect x="-17" y="-1" width="34" height="8" rx="4" fill="#b7c0ca"/><rect x="-7" y="1" width="14" height="5" rx="2" fill="#dff3ff"/>`,
   bowl: `<path d="M-22 -2 H22 Q20 18 0 18 Q-20 18 -22 -2 Z" fill="#f28fb0"/><ellipse cx="0" cy="-2" rx="22" ry="6" fill="#f7b6cc"/><ellipse cx="0" cy="-4" rx="12" ry="3.5" fill="#c98a5a"/>`,
   bubbles: `<circle cx="-8" cy="6" r="11" fill="#bfe3fb"/><circle cx="10" cy="-4" r="9" fill="#d7eefc"/><circle cx="4" cy="14" r="6" fill="#a9d8f8"/><circle cx="-11" cy="2" r="3" fill="#fff"/>`,
@@ -360,11 +395,17 @@ function drawTasks(popCur) {
 function tagSvg(t) {
   const w = Math.max(120, t.name.length * 20 + 44), cx = t.x + t.w / 2;
   const y = t.tag === 'top' ? t.y - 58 : t.y + t.h - 6;
+  if (t.name === 'Cats' || t.name === 'Dogs') return `<g class="tag pick-btn"><rect x="${cx - w / 2 - 8}" y="${y - 4}" width="${w + 16}" height="60" rx="18" fill="#2f2540" transform="translate(0 7)"/>
+    <rect x="${cx - w / 2 - 8}" y="${y - 4}" width="${w + 16}" height="60" rx="18" fill="#4a3b5c"/>
+    <text x="${cx}" y="${y + 36}" text-anchor="middle" font-size="30" font-weight="bold" fill="#fff">${t.name}</text></g>`;
   return `<g class="tag"><rect x="${cx - w / 2}" y="${y}" width="${w}" height="48" rx="24" fill="#fff" stroke="#8a5a3b" stroke-width="4"/>
     <text x="${cx}" y="${y + 33}" text-anchor="middle" font-size="27" font-weight="bold" fill="#6b4329">${t.name}</text></g>`;
 }
 const ringSvg = (x, y, w, h) => `<rect class="ring" x="${x}" y="${y}" width="${w}" height="${h}" rx="40" fill="rgba(255,246,176,.18)" stroke="#fff6b0" stroke-width="14"/>`;
 
+const ARROW = `<path d="M-15 -80 H15 V-42 H36 L0 0 L-36 -42 H-15 Z" transform="translate(0 7)" fill="#b8336a" stroke="#b8336a" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M-15 -80 H15 V-42 H36 L0 0 L-36 -42 H-15 Z" fill="#e0457b" stroke="#e0457b" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M-6 -74 V-48" stroke="#f58db0" stroke-width="7" stroke-linecap="round"/>`;   // pointing down, tip at 0 0
 function drawRoom() {
   let s = `<image href="${ART.room}" x="0" y="0" width="1984" height="1116"/><g id="extras">${extrasSvg()}</g>`;
   for (const [id, t] of Object.entries(TARGETS)) {
@@ -375,9 +416,9 @@ function drawRoom() {
   s += `<g id="petLayer"></g>
     <g id="sinkFront" style="opacity:0; pointer-events:none"><clipPath id="sinkClip"><path d="${SINK_FRONT}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#sinkClip)"/></g>
     <g id="tubFront" style="opacity:0; pointer-events:none"><clipPath id="tubClip"><path d="${TUB_FRONT}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#tubClip)"/></g>
-    <g id="pickArrow" class="pick-arrow"><path d="M490 92 L490 136" stroke="#e0457b" stroke-width="18" stroke-linecap="round"/><path d="M462 128 L490 164 L518 128 Z" fill="#e0457b" stroke="#e0457b" stroke-width="12" stroke-linejoin="round"/></g>
+    <g id="pickArrow" class="pick-arrow"><g transform="translate(492 146)">${ARROW}</g></g>
     <g class="readout" id="readout"><rect x="${ON_SCALE.cx - 95}" y="300" width="190" height="72" rx="36" fill="#fff" stroke="#4a9be0" stroke-width="6"/>
-      <text id="readNum" x="${ON_SCALE.cx}" y="350" text-anchor="middle" font-size="40" font-weight="bold" fill="#3e6e4b"></text></g>`;
+      <text id="readNum" x="${ON_SCALE.cx}" y="350" text-anchor="middle" font-size="40" font-weight="bold" fill="#4a3b5c"></text></g>`;
   room.innerHTML = s;
 }
 
@@ -445,7 +486,7 @@ function openPicker(k) {
     s += '<div class="pk-page">';
     for (let i = p * 8; i < p * 8 + 8; i++) {
       const a = list[i];
-      s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt=""><span class="pk-name">${a.name}</span></button>`
+      s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt="" style="height: ${Math.round(100 * sizeK(a) ** 2.2)}%"><span class="pk-name">${a.name}</span></button>`
              : `<div class="pk-card empty" aria-hidden="true">${EMPTY_PAW}<span class="pk-name">Coming soon</span></div>`;
     }
     s += '</div>';
@@ -611,6 +652,7 @@ const CLOSE_ENOUGH = .045; // how near the line counts as just right
 // Layout (1100 wide): the bowl on the left (the cup's lip faces it), the cup in the middle, the food bin on the right.
 const CUP = { x: 340, y: 150, w: 360, h: 307, y0: 404, y1: 228, left0: 410, left1: 382, right0: 578, right1: 596 };
 const CUP_C = [520, 300];                 // the cup turns around its middle when it pours
+const CUP_S = 1.22, CUP_CS = [520, 205 + (300 - 205) * CUP_S];   // the cup is drawn 1.22 times bigger, grown from its opening (520, 205)
 const MS_BOWL = { x: 40, y: 360, w: 180 };
 const BOWL_OPEN = { cx: .53, cy: .30, rx: .35, ry: .18 };   // the bowl's opening, as parts of the bowl picture
 const EAT = { h: 330, cx: 1010, nose: [.15, .86] };       // the eating picture on the rug, and where its nose is
@@ -653,12 +695,11 @@ function drawMeasure() {
   let s = '';
   s += `<g id="msBowl" class="away"><image href="${ART.bowlFood}" x="${MS_BOWL.x}" y="${MS_BOWL.y}" width="${MS_BOWL.w}" height="${bh}"/>
     <ellipse id="msBowlFood" cx="${MS_BOWL.x + MS_BOWL.w * BOWL_OPEN.cx}" cy="${MS_BOWL.y + bh * BOWL_OPEN.cy}" rx="${MS_BOWL.w * BOWL_OPEN.rx * .9}" ry="${bh * BOWL_OPEN.ry * .9}" fill="#b98557" opacity="0"/></g>`;
-  s += `<g id="msCupMove"><g class="ms-cup" id="msCup" role="button" tabindex="0" aria-label="Measuring cup">
+  s += `<g id="msCupMove"><g transform="translate(520 205) scale(1.22) translate(-520 -205)"><g class="ms-cup" id="msCup" role="button" tabindex="0" aria-label="Measuring cup">
     ${ringSvg(CUP.x - 4, CUP.y - 10, CUP.w + 8, CUP.h + 20)}
     <image href="${ART.cup}" x="${CUP.x}" y="${CUP.y}" width="${CUP.w}" height="${CUP.h}"/>
     <g opacity=".88"><path id="msFood" d="" fill="#c98a5a"/><g id="msDots"></g></g>
-    <path class="spill" d="M${CUP.x + 6} ${CUP.y + 52} Q${CUP.x + 10} ${CUP.y + 22} ${CUP.x + 44} ${CUP.y + 26} Q${CUP.x + 80} ${CUP.y + 30} ${CUP.x + 96} ${CUP.y + 58} Q${CUP.x + 60} ${CUP.y + 74} ${CUP.x + 6} ${CUP.y + 52} Z" fill="#c98a5a"/>
-    <circle class="spill" cx="${CUP.x + 30}" cy="${CUP.y + 38}" r="5" fill="#a86d43"/><circle class="spill" cx="${CUP.x + 58}" cy="${CUP.y + 42}" r="5" fill="#a86d43"/>`;
+`;
   lines.forEach(c => {
     const y = cupY(c), t = (CUP.y0 - y) / (CUP.y0 - CUP.y1), l = CUP.left0 + (CUP.left1 - CUP.left0) * t;
     s += `<g class="ms-line" data-c="${c}">
@@ -667,7 +708,7 @@ function drawMeasure() {
       <g class="lbl"><rect x="${l - 112}" y="${y - 17}" width="96" height="34" rx="17" fill="#fff" stroke="#4f86b8" stroke-width="4"/>
       <text x="${l - 64}" y="${y + 8}" text-anchor="middle" font-size="22" font-weight="bold" fill="#2f6390">${CUPS[c]}</text></g></g>`;
   });
-  s += `</g></g><g id="msStream"></g><g id="msBinWrap" class="away">${binSvg()}</g>`;
+  s += `</g></g></g><g id="msStream"></g><g id="msBinWrap" class="away">${binSvg()}</g>`;
   document.getElementById('msStage').innerHTML = s;
   setCup(0);
 }
@@ -676,7 +717,6 @@ function setCup(c) {
   document.getElementById('msFood').setAttribute('d', ms.amount > 0 ? cupInside(ms.amount) : '');
   document.getElementById('msDots').innerHTML = kibbleDots(ms.amount);
   const tipped = document.getElementById('msCup').classList.contains('tip');
-  document.querySelectorAll('#msCup .spill').forEach(e => { e.style.opacity = tipped && ms.amount < .2 ? Math.max(0, ms.amount / .2 * .95) : ''; });
 }
 const msSay = t => { document.getElementById('msSay').innerHTML = t; };
 function msButtons(next, spoon) {
@@ -694,7 +734,7 @@ function openMeasure() {
   openOverlay(document.getElementById('measure'));
   lessonStep();
 }
-const MS_VIEW = { full: [0, 0, 1100, 520], cup: [190, 120, 660, 360] };
+const MS_VIEW = { full: [0, 0, 1100, 520], cup: [150, 110, 760, 415] };
 function msView(to, ms_) {   // move the measuring screen's view smoothly (bigger cup at first)
   const st = document.getElementById('msStage'), from = (st.getAttribute('viewBox') || '').split(' ').map(Number);
   if (!ms_ || from.length !== 4) return st.setAttribute('viewBox', to.join(' '));
@@ -770,7 +810,7 @@ stage.addEventListener('pointerdown', e => {
   if (e.target.closest('#msCup') && ms && ms.ready && !ms.done) {   // pick up the cup
     e.preventDefault();
     const p = msPoint(e);
-    ms.drag = { sx: p.x, sy: p.y, dx: 0, dy: 0 };
+    ms.drag = { sx: p.x, sy: p.y, dx: 0, dy: 0 }; document.getElementById('msCup').classList.add('held');
     document.getElementById('msCupMove').style.transition = 'none';
     stage.setPointerCapture(e.pointerId);
     ms.last = performance.now(); requestAnimationFrame(pourOutTick);
@@ -781,15 +821,15 @@ stage.addEventListener('pointermove', e => {
   const p = msPoint(e), d = ms.drag;
   d.dx = p.x - d.sx; d.dy = p.y - d.sy;
   // anywhere near the bowl counts; then the cup snaps so its lip is right over the bowl and the food lands in it
-  const cx = CUP_C[0] + d.dx, cy = CUP_C[1] + d.dy, bcx = MS_BOWL.x + MS_BOWL.w / 2;
+  const cx = CUP_CS[0] + d.dx, cy = CUP_CS[1] + d.dy, bcx = MS_BOWL.x + MS_BOWL.w / 2;
   d.over = cx > bcx + 10 && cx < bcx + 340 && cy > MS_BOWL.y - 360 && cy < MS_BOWL.y + 160;
   const mv = document.getElementById('msCupMove');
   let tx = d.dx, ty = d.dy;
-  if (d.over) { tx = bcx + 10 + 158 - CUP_C[0]; ty = MS_BOWL.y - 28 - 113 - CUP_C[1]; }
+  if (d.over) { tx = bcx + 10 + 158 * CUP_S - CUP_CS[0]; ty = MS_BOWL.y - 28 - 113 * CUP_S - CUP_CS[1]; }
   mv.style.transition = d.over ? 'transform .18s ease-out' : 'none';
   mv.style.transform = `translate(${tx}px, ${ty}px)`;
   document.getElementById('msCup').classList.toggle('tip', d.over);
-  d.lip = [CUP_C[0] + tx - 158, CUP_C[1] + ty + 113];   // where the lip is once the cup tips
+  d.lip = [CUP_CS[0] + tx - 158 * CUP_S, CUP_CS[1] + ty + 113 * CUP_S];   // where the lip is once the cup tips
 });
 function dropCup() {
   if (!ms) return;
@@ -901,10 +941,12 @@ function wbMove(dx, dy, ms_, k = 1) {
   g.style.transform = `translate(${dx}px, ${dy}px) scale(${k})`;
 }
 let wdrag = null;
+addEventListener('pointerup', () => setTimeout(() => document.querySelectorAll('.held').forEach(h => h.classList.remove('held')), 0));
+addEventListener('pointercancel', () => document.querySelectorAll('.held').forEach(h => h.classList.remove('held')));
 room.addEventListener('pointerdown', e => {
   const g = e.target.closest('.wb.drag');
   if (!g || busy || watered) return;
-  wdrag = { start: svgPoint(e), dx: 0, dy: 0 };
+  wdrag = { start: svgPoint(e), dx: 0, dy: 0 }; g.classList.add('held');
   room.setPointerCapture(e.pointerId);
   requestAnimationFrame(holdFillTick);
 });
@@ -999,15 +1041,18 @@ const RUB_DONE = .7;   // how much of the pet you have to rub
 let bt = null;
 
 const PAWS = {};   // filled in by build.py: each pose picture's paw width and paw middle, in picture pixels
-function poseBox(pose, cx, bottom, sitH) {
+function poseBox(pose, cx, bottom, sitH, byCollar) {
   const P = POSES[pose], k = sitH / 560, a = PAWS[P.art(pet)], s = PAWS[pet.art];
   if (!a || !s) return { x: cx - P.w * k / 2 + P.dx * k, y: bottom - P.h * k, w: P.w * k, h: P.h * k };
-  // every pose is drawn so its paws are as wide as when sitting, and stand on the same spot
-  const f = s[0] / a[0], mid = cx - POSES.sit.w * k / 2 + s[1] * k;
+  // every pose is drawn so its paws are as wide as when sitting
+  const f = s[0] / a[0], sx = cx - POSES.sit.w * k / 2, sy = bottom - 560 * k;   // where the sitting picture's corner is
+  // in the tub (paws hidden) the collar stays in the same spot, so the head does not jump; on the floor the paws do
+  if (byCollar) return { x: sx + s[2] * k - a[2] * k * f, y: sy + s[3] * k - a[3] * k * f, w: P.w * k * f, h: P.h * k * f };
+  const mid = sx + s[1] * k;
   return { x: mid - a[1] * k * f, y: bottom - P.h * k * f, w: P.w * k * f, h: P.h * k * f };
 }
 function poseImg(pose) {
-  const b = poseBox(pose, TUB_DOG.cx, TUB_DOG.bottom, tubH());
+  const b = poseBox(pose, TUB_DOG.cx, TUB_DOG.bottom, tubH(), true);
   return `<image id="btDog" href="${ART[POSES[pose].art(pet)]}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`;
 }
 
@@ -1099,7 +1144,7 @@ async function openBath() {
   bt.cells = await petCells(pet.art, box, 7, 8);
   document.getElementById('btTitle').textContent = `${pet.name}'s bath`;
   document.getElementById('btStage').innerHTML = `
-    <rect x="0" y="0" width="1100" height="520" fill="#f3fbf6" rx="20"/>
+    <rect x="0" y="0" width="1100" height="520" fill="#fffaf5" rx="20"/>
     <g id="btDogLayer">${poseImg('sit')}${stinkSvg(box)}<g id="btFx"></g></g>
     ${tubSvg()}
     ${showerSvg()}
@@ -1225,7 +1270,7 @@ function bathDone() {
   bt.step = BATH_STEPS.length; bt.ready = false; bathStep();
   setDogPose('done');
   document.getElementById('btSay').textContent = `${pet.name} is all clean.`;
-  const b = poseBox('done', TUB_DOG.cx, TUB_DOG.bottom, tubH()), cx = b.x + b.w / 2, cy = b.y + b.h * .35;
+  const b = poseBox('done', TUB_DOG.cx, TUB_DOG.bottom, tubH(), true), cx = b.x + b.w / 2, cy = b.y + b.h * .35;
   let stars = '';
   for (let i = 0; i < 8; i++) {   // one small burst of stars, once
     const a = i / 8 * Math.PI * 2;
@@ -1265,6 +1310,32 @@ room.addEventListener('keydown', e => {
   if (g || p) { e.preventDefault(); g ? useTarget(g) : TASKS[task].icon === 'bubbles' ? goToBath() : weigh(); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(picker); });
+// the yellow task in the task bar starts that task, the same as tapping its spot in the room
+document.getElementById('tasks').addEventListener('click', e => {
+  const t = TASKS[task];
+  if (!e.target.closest('.task.cur') || !t || busy) return;
+  if (t.icon === 'scale') return weigh();
+  if (t.icon === 'bubbles') return goToBath();
+  const id = t.icon === 'bowl' && fed && !watered ? 'water' : t.targets[0];
+  useTarget(room.querySelector(`[data-t="${id}"]`));
+});
+// make the task bar and room as big as the screen allows (the room keeps its shape)
+const frame = document.getElementById('frame');
+// on short screens (a phone on its side) Back to town moves into the task bar's left end, so the room can be taller
+const short = matchMedia('(max-height: 600px)'), backBtn = document.querySelector('header .backtown');
+function placeBack() { if (short.matches) document.querySelector('.taskbar').prepend(backBtn); else document.querySelector('header').prepend(backBtn); fitFrame(); }
+short.addEventListener('change', placeBack);
+// the building's badge in the task bar (a stand-in paw until the Vet Clinic logo is added)
+document.getElementById('bldgLogo').innerHTML = `<svg viewBox="-6 -6 112 104">${PAW_SHAPE('#5fae7a')}</svg>`;
+function fitFrame() {
+  const g = document.getElementById('game'), cs = getComputedStyle(g), hd = document.querySelector('header');
+  const w = g.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const top = short.matches ? 0 : hd.offsetHeight + 8;
+  const h = g.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - top - document.querySelector('.taskbar').offsetHeight;
+  frame.style.width = Math.max(280, Math.min(w, h * 1984 / 1116)) + 'px';
+}
+addEventListener('resize', fitFrame); placeBack();
+new ResizeObserver(fitFrame).observe(document.querySelector('.taskbar'));   // the task bar grows a little when the tasks come in
 
 drawRoom();
 setTask(0, true);

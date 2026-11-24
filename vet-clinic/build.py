@@ -23,15 +23,31 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "bowlFood": (A + "bowl-food.webp", "image/webp"), "bowlWater": (A + "bowl-water.webp", "image/webp"),
        "soap": (A + "soap.webp", "image/webp"), "towel": (A + "towel.webp", "image/webp"), "brush": (A + "brush.webp", "image/webp"),
        "bellaSit": (A + "pets/bella-sit.webp", "image/webp"), "bellaEat": (A + "pets/bella-eat.webp", "image/webp"),
-       "bellaBath": (A + "pets/bella-bath.webp", "image/webp"), "bellaDone": (A + "pets/bella-done.webp", "image/webp")}
+       "bellaBath": (A + "pets/bella-bath.webp", "image/webp"), "bellaDone": (A + "pets/bella-done.webp", "image/webp"),
+       "zuzuSit": (A + "pets/zuzu-sit.webp", "image/webp"), "zuzuEat": (A + "pets/zuzu-eat.webp", "image/webp"),
+       "zuzuBath": (A + "pets/zuzu-bath.webp", "image/webp"), "zuzuDone": (A + "pets/zuzu-done.webp", "image/webp")}
 # every pet pose (sit, bath, done) is measured across its paws, so the game can draw each pose the same size as sitting
 from PIL import Image
 def paws(f):
     a = Image.open(f).convert("RGBA").split()[3]; W, H = a.size
     b = a.crop((0, int(H * .94), W, H)).point(lambda v: 255 if v > 128 else 0).getbbox()
-    return [b[2] - b[0], (b[0] + b[2]) / 2]
+    return [b[2] - b[0], (b[0] + b[2]) / 2] + collar(f)
+def collar(f):   # the middle of the collar band: the widest row of a color that is not fur (blue, purple, green...)
+    import colorsys
+    im = Image.open(f).convert("RGBA"); W, H = im.size; px = im.load(); rows = {}
+    for y in range(int(H * .6)):
+        n = xs = 0
+        for x in range(0, W, 2):
+            r, g, bb, a = px[x, y]
+            if a < 200: continue
+            h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, bb / 255)
+            if s > .35 and v > .3 and 90 < h * 360 < 352: n += 1; xs += x
+        if n: rows[y] = (n, xs / n)
+    if not rows: return [W / 2, H * .45]
+    m = max(v[0] for v in rows.values()); ys = [y for y, v in rows.items() if v[0] > .5 * m]
+    return [round(sum(rows[y][1] for y in ys) / len(ys)), round(sum(ys) / len(ys))]
 PAW = {k: paws(f) for k, (f, m) in ART.items() if "/pets/" in f and not f.endswith("-eat.webp")}
-for k, v in PAW.items(): print("  paws", k, v[0])
+for k, v in PAW.items(): print("  paws", k, v[0], "collar", v[2], v[3])
 page = page.replace("const ART = {};", "const ART = {\n" + "".join("  %s: '%s',\n" % (k, d(*v)) for k, v in ART.items()) + "};", 1)
 page = page.replace("// ---------- The game ----------\n", "// ---------- The game ----------\n" + js, 1)
 page = page.replace("const PAWS = {};", "const PAWS = " + str(PAW).replace("'", '"') + ";", 1)
