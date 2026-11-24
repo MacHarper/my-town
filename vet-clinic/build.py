@@ -41,7 +41,13 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "peachesSleep": (A + "pets/peaches-sleep.webp", "image/webp"),
        "felixSit": (A + "pets/felix-sit.webp", "image/webp"), "felixEat": (A + "pets/felix-eat.webp", "image/webp"),
        "felixGroom": (A + "pets/felix-groom.webp", "image/webp"), "felixPlay": (A + "pets/felix-play.webp", "image/webp"),
-       "felixDone": (A + "pets/felix-done.webp", "image/webp"), "felixSleep": (A + "pets/felix-sleep.webp", "image/webp")}
+       "felixDone": (A + "pets/felix-done.webp", "image/webp"), "felixSleep": (A + "pets/felix-sleep.webp", "image/webp"),
+       "tuckerSit": (A + "pets/tucker-sit.webp", "image/webp"), "tuckerEat": (A + "pets/tucker-eat.webp", "image/webp"),
+       "tuckerGroom": (A + "pets/tucker-groom.webp", "image/webp"), "tuckerPlay": (A + "pets/tucker-play.webp", "image/webp"),
+       "tuckerDone": (A + "pets/tucker-done.webp", "image/webp"), "tuckerSleep": (A + "pets/tucker-sleep.webp", "image/webp"),
+       "finnSit": (A + "pets/finn-sit.webp", "image/webp"), "finnEat": (A + "pets/finn-eat.webp", "image/webp"),
+       "finnGroom": (A + "pets/finn-groom.webp", "image/webp"), "finnPlay": (A + "pets/finn-play.webp", "image/webp"),
+       "finnDone": (A + "pets/finn-done.webp", "image/webp"), "finnSleep": (A + "pets/finn-sleep.webp", "image/webp")}
 # every pet pose (sit, bath, done) is measured across its paws, so the game can draw each pose the same size as sitting
 from PIL import Image
 def paws(f):
@@ -57,7 +63,7 @@ def collar(f):   # the middle of the collar band: the widest row of a color that
             r, g, bb, a = px[x, y]
             if a < 200: continue
             h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, bb / 255)
-            if s > .35 and v > .3 and (90 < h * 360 < 352 or (h * 360 < 15 and s > .55 and v > .8)): n += 1; xs += x   # (red and coral collars too)
+            if s > .35 and v > .3 and (90 < h * 360 < 352 or (h * 360 < 15 and s > .55 and v > .8) or (22 <= h * 360 < 45 and s > .85 and v > .85)): n += 1; xs += x   # (red, coral and orange collars too)
         if n: rows[y] = (n, xs / n)
     if not rows: return [W / 2, H * .45]
     m = max(v[0] for v in rows.values()); ys = [y for y, v in rows.items() if v[0] > .5 * m]

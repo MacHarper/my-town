@@ -356,7 +356,11 @@ const PETS = {
     { id: 'peaches', name: 'Peaches', art: 'peachesSit', eat: 'peachesEat', bath: 'peachesGroom', play: 'peachesPlay', playDown: 'peachesPlayDown', playFit: [-84.5, -100.2, 527.5, 659.4], paw: 'left',
       done: 'peachesDone', boy: false, breed: 'Persian', loves: 'being brushed', nose: [.19, .847] },
     { id: 'felix', name: 'Felix', art: 'felixSit', eat: 'felixEat', bath: 'felixGroom', play: 'felixPlay', done: 'felixDone',
-      boy: true, breed: 'American Shorthair', loves: 'batting at toy mice', nose: [.108, .711] } ],   // playDown: her play picture with the paw down
+      boy: true, breed: 'American Shorthair', loves: 'batting at toy mice', nose: [.108, .711] },
+    { id: 'tucker', name: 'Tucker', art: 'tuckerSit', eat: 'tuckerEat', bath: 'tuckerGroom', play: 'tuckerPlay', done: 'tuckerDone',
+      boy: true, breed: 'Russian Blue', loves: 'chasing crinkle balls', nose: [.138, .667] },
+    { id: 'finn', name: 'Finn', art: 'finnSit', eat: 'finnEat', bath: 'finnGroom', play: 'finnPlay', done: 'finnDone',
+      boy: true, breed: 'Bombay', loves: 'curling up in cozy boxes', nose: [.088, .675] } ],   // playDown: her play picture with the paw down
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will
 // ask the player to measure this much in the measuring cup (lines at 1/4, 1/2, 3/4 and 1 cup).
