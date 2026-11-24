@@ -77,7 +77,7 @@
   .wt-big { font-size: clamp(30px, 6vw, 52px); font-weight: bold; color: #3e6e4b; }
   .wt-chart { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   .wt-col { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 10px; border-radius: 18px; background: #f6f3f9; font-size: 13px; color: #6b5a80; font-weight: bold; min-width: 88px; }
-  .wt-col svg { width: 54px; height: 64px; }
+  .wt-col svg { width: 74px; height: 64px; }
   .wt-col.me { background: #fff8d6; box-shadow: 0 0 0 4px #f2c14e; color: #6b4329; }
   .wt-col b { font-size: 17px; }
   .ok { margin-top: 6px; min-width: 140px; height: 54px; padding: 0 30px; border: none; border-radius: 999px; background: #5fae7a; color: #fff; font-size: 20px; font-weight: bold; box-shadow: 0 4px 0 #468a5e; }
@@ -489,6 +489,7 @@ function choosePet(a) {
     const h = rugH(), w = h * pic.width / pic.height, x = RUG.cx - w / 2, y = RUG.bottom - h;
     document.getElementById('petLayer').innerHTML =
       `<g class="petg" role="button" tabindex="0" aria-label="${a.name}">${ringSvg(x - 24, y - 20, w + 48, h + 36)}
+        <rect class="hit" x="${x - 24}" y="${y - 20}" width="${w + 48}" height="${h + 36}" rx="40" fill="rgba(255,255,255,0)"/>
         <image class="pet in" href="${ART[a.art]}" x="${x}" y="${y}" width="${w}" height="${h}"/></g>`;
     setTask(1);
   };
@@ -517,19 +518,25 @@ room.addEventListener('pointermove', e => {
   if (!drag) return;
   const p = svgPoint(e), dx = p.x - drag.start.x, dy = p.y - drag.start.y;
   if (Math.hypot(dx, dy) > 8) drag.moved = true;
-  petMove(dx, dy, 1, 0);
-  drag.dx = dx; drag.dy = dy;
-  dropHint(petDropSpot(dx, dy));   // the spot glows brighter while the pet is right on it; let go to drop
+  petMove(dx, dy, dragK(dx, dy), 0);
+  drag.dx = dx; drag.dy = dy; drag.p = p;
+  dropHint(petDropSpot(dx, dy, p));   // the spot glows brighter while the pet is right on it; let go to drop
 });
+function dragK(dx, dy) {   // 1 on the rug, the spot's size once the feet reach the spot
+  const t = TASKS[task], to = t && t.icon === 'scale' ? ON_SCALE : t && t.icon === 'bubbles' ? IN_TUB : null;
+  if (!to) return 1;
+  const all = Math.hypot(to.cx - RUG.cx, to.bottom - RUG.bottom), left = Math.hypot(to.cx - RUG.cx - dx, to.bottom - RUG.bottom - dy);
+  return to.k + (1 - to.k) * Math.min(1, left / all);
+}
 function dropHint(id) { room.querySelectorAll('.tgt').forEach(g => g.classList.toggle('over', g.dataset.t === id)); }
 // Drag and drop rule for the whole game (Mac, Nov 23): nothing pulls or jumps while you drag.
 // The spot glows brighter when the thing is right on it, and it only counts when you let go there;
 // then it glides gently into place.
 const on = (t, x, y, below = 0) => x > t.x && x < t.x + t.w && y > t.y && y < t.y + t.h + below;
-function petDropSpot(dx, dy) {
+function petDropSpot(dx, dy, p) {
   const fx = RUG.cx + dx, fy = RUG.bottom + dy, t = TASKS[task];   // where the pet's feet are
   if (t && t.icon === 'scale' && on(TARGETS.scale, fx, fy, 25)) return 'scale';
-  if (t && t.icon === 'bubbles' && on({ x: 1640, y: 470, w: 330, h: 230 }, fx, fy)) return 'bath';   // feet in or on the tub
+  if (t && t.icon === 'bubbles' && (on(TARGETS.bath, fx, fy) || (p && on(TARGETS.bath, p.x, p.y)))) return 'bath';   // anywhere in the glowing tub box
   return null;
 }
 room.addEventListener('pointerup', () => {
@@ -537,10 +544,10 @@ room.addEventListener('pointerup', () => {
   const d = drag; drag = null;
   document.querySelector('.petg').classList.remove('dragging'); dropHint(null);
   if (!d.moved) return;
-  const spot = petDropSpot(d.dx, d.dy);
+  const spot = petDropSpot(d.dx, d.dy, d.p);
   if (spot === 'scale') weigh();
   else if (spot === 'bath') goToBath();
-  else petMove(0, 0, 1, 450);   // not on the right spot: back to the rug
+  else petMove(0, 0, 1, 450);   // not on the right spot: back to the rug, full size
 });
 
 function weigh() {
@@ -557,20 +564,16 @@ function weigh() {
     let n = 0; const steps = 12;
     const tick = setInterval(() => {
       n++; num.textContent = `${Math.round(pet.weight * n / steps)} lb`;
-      if (n >= steps) { clearInterval(tick); setTimeout(showWeightCard, 450); }
+      if (n >= steps) { clearInterval(tick); setTimeout(showWeightCard, 950); }
     }, 55);
   }, 650);
 }
 
-function cupSvg(cups) {
-  // a glass measuring cup with lines at 1/4, 1/2, 3/4 and 1 cup, filled with food to this much
-  const top = 12, bot = 74, fillY = bot - (bot - top) * cups;
-  let lines = '';
-  for (const q of [.25, .5, .75, 1]) { const y = bot - (bot - top) * q; lines += `<rect x="12" y="${y - 1.5}" width="12" height="3" rx="1.5" fill="#7aa6c8"/>`; }
-  return `<svg viewBox="0 0 64 80"><rect x="8" y="6" width="44" height="70" rx="10" fill="#e6f2fb"/>
-    <rect x="8" y="${fillY}" width="44" height="${bot - fillY + 2}" rx="${cups === 1 ? 10 : 4}" fill="#c98a5a"/>
-    <circle cx="20" cy="${fillY + 8}" r="3" fill="#a86d43"/><circle cx="34" cy="${fillY + 12}" r="3" fill="#a86d43"/>
-    ${lines}<path d="M52 22 h6 a6 6 0 0 1 6 6 v18 a6 6 0 0 1 -6 6 h-6" fill="none" stroke="#e6f2fb" stroke-width="6"/></svg>`;
+function cupSvg(cups) {   // the same measuring cup as the pouring screen, filled with food to this much
+  const lines = [.25, .5, .75, 1].map(c => { const y = cupY(c), t = (CUP.y0 - y) / (CUP.y0 - CUP.y1), l = CUP.left0 + (CUP.left1 - CUP.left0) * t;
+    return `<rect x="${l + 4}" y="${y - 4}" width="66" height="8" rx="4" fill="#4f86b8"/>`; }).join('');
+  return `<svg viewBox="${CUP.x - 6} ${CUP.y - 6} ${CUP.w + 12} ${CUP.h + 12}"><image href="${ART.cup}" x="${CUP.x}" y="${CUP.y}" width="${CUP.w}" height="${CUP.h}"/>
+    <g opacity=".88"><path d="${cupInside(cups)}" fill="#c98a5a"/>${kibbleDots(cups)}</g>${lines}</svg>`;
 }
 
 function showWeightCard() {
@@ -664,6 +667,8 @@ function setCup(c) {
   ms.amount = Math.max(0, Math.min(1.12, c));
   document.getElementById('msFood').setAttribute('d', ms.amount > 0 ? cupInside(ms.amount) : '');
   document.getElementById('msDots').innerHTML = kibbleDots(ms.amount);
+  const tipped = document.getElementById('msCup').classList.contains('tip');
+  document.querySelectorAll('#msCup .spill').forEach(e => { e.style.opacity = tipped && ms.amount < .2 ? Math.max(0, ms.amount / .2 * .95) : ''; });
 }
 const msSay = t => { document.getElementById('msSay').innerHTML = t; };
 function msButtons(next, spoon) {
@@ -814,6 +819,7 @@ function pourOutTick(t) {
 function foodInBowl() {
   ms.done = true; ms.drag = null;
   document.getElementById('msStream').innerHTML = '';
+  document.querySelectorAll('#msCup .spill').forEach(e => { e.style.opacity = 0; });
   document.getElementById('msBowlFood').setAttribute('opacity', 1);
   document.getElementById('msCup').classList.remove('on');
   msSay(`Just right! That's ${CUPS[pet.food]} of food for ${pet.name}.`);
@@ -868,6 +874,7 @@ function setPose(p) {
 const WB = { x: 1180, bottom: RUG.bottom + 12 }, SINK_SPOT = { cx: 1512, bottom: 506, k: .7 };   // in the basin, under the faucet
 const SINK_FRONT = 'M1386 503 L1608 503 L1608 560 L1386 560 Z';   // the sink's front edge, drawn over the bowl
 function waterTime() {
+  wfill = 0;
   hideExtra('shelfWater');
   const bw = FLOOR_BOWL, bh = bw * 236 / 360, x = WB.x, y = WB.bottom - bh;
   const cx = x + bw * BOWL_OPEN.cx, cy = y + bh * BOWL_OPEN.cy, rx = bw * BOWL_OPEN.rx * .85, ry = bh * BOWL_OPEN.ry * .8;
@@ -891,21 +898,52 @@ room.addEventListener('pointerdown', e => {
   if (!g || busy || watered) return;
   wdrag = { start: svgPoint(e), dx: 0, dy: 0 };
   room.setPointerCapture(e.pointerId);
+  requestAnimationFrame(holdFillTick);
 });
 room.addEventListener('pointermove', e => {
   if (!wdrag) return;
   const p = svgPoint(e); wdrag.dx = p.x - wdrag.start.x; wdrag.dy = p.y - wdrag.start.y;
   wbMove(wdrag.dx, wdrag.dy, 0);
-  dropHint(atSink(wdrag.dx, wdrag.dy) ? 'water' : null);   // let go over the sink to fill it
+  wdrag.over = atSink(wdrag.dx, wdrag.dy);
+  dropHint(wdrag.over ? 'water' : null);
+  faucet(wdrag.over ? WB.bottom + wdrag.dy - FLOOR_BOWL * 236 / 360 * (1 - BOWL_OPEN.cy) : null);
 });
+// while the bowl is held over the sink, the faucet runs and the bowl fills; full = done
+const WATER_RATE = .55;   // bowls per second (about 2 seconds)
+let wfill = 0;
+function faucet(toY) {
+  let f = document.getElementById('faucetWater');
+  if (toY == null) { if (f) f.remove(); return; }
+  if (!f) { room.insertAdjacentHTML('beforeend', `<rect id="faucetWater" x="${SINK_SPOT.cx - 5}" y="424" width="10" rx="5" fill="#8fd0f5" opacity=".9" style="pointer-events:none"/>`); f = document.getElementById('faucetWater'); }
+  f.setAttribute('height', Math.max(14, toY - 424));
+}
+function holdFillTick(t) {
+  if (!wdrag) return;
+  const dt = wdrag.last ? (t - wdrag.last) / 1000 : 0; wdrag.last = t;
+  if (wdrag.over) {
+    wfill = Math.min(1, wfill + WATER_RATE * dt);
+    const w = document.getElementById('wbWater'); w.style.transition = 'none'; w.style.transform = `scale(${wfill})`;
+    if (wfill >= 1) { wdrag = null; dropHint(null); return waterDone(); }
+  }
+  requestAnimationFrame(holdFillTick);
+}
+function waterDone() {   // full: the water stops and the bowl goes back by the pet
+  busy = true; faucet(null);
+  const g = document.getElementById('waterBowl'); g.classList.remove('drag');
+  room.querySelector('[data-t="water"]').classList.remove('on');
+  document.getElementById('wbShine').setAttribute('opacity', .7);
+  guideEl.classList.add('hide');
+  setTimeout(() => wbMove(0, 0, 600), 250);
+  setTimeout(() => { watered = true; busy = false; showToast(`Fresh water for ${pet.name}`); setTask(3); }, 900);
+}
 function atSink(dx, dy) {   // the bowl's middle has to be over the sink's basin
   const cx = WB.x + FLOOR_BOWL / 2 + dx, by = WB.bottom + dy;
   return on({ x: 1400, y: 380, w: 200, h: 200 }, cx, by);
 }
 room.addEventListener('pointerup', () => {
   if (!wdrag) return;
-  const d = wdrag; wdrag = null; dropHint(null);
-  if (atSink(d.dx, d.dy)) fillWater(d.dx, d.dy);
+  const d = wdrag; wdrag = null; dropHint(null); faucet(null);
+  if (atSink(d.dx, d.dy)) fillWater(d.dx, d.dy);   // let go over the sink: it sits under the faucet and finishes filling
   else wbMove(0, 0, 450);   // not at the sink: back by the pet
 });
 function fillWater(fromDx, fromDy) {
@@ -920,7 +958,7 @@ function fillWater(fromDx, fromDy) {
   setTimeout(() => {   // the sink's front edge goes in front of the bowl, water runs and the bowl fills
     document.getElementById('sinkFront').style.opacity = 1;
     room.insertAdjacentHTML('beforeend', `<rect id="faucetWater" x="${SINK_SPOT.cx - 5}" y="424" width="10" height="34" rx="5" fill="#8fd0f5" opacity=".9"/>`);
-    document.getElementById('wbWater').style.transform = 'scale(1)';
+    const w = document.getElementById('wbWater'); w.style.transition = 'transform .9s ease-out'; w.style.transform = 'scale(1)';
     document.getElementById('wbShine').setAttribute('opacity', .7);
   }, 500);
   setTimeout(() => { const f = document.getElementById('faucetWater'); if (f) f.remove(); document.getElementById('sinkFront').style.opacity = 0; wbMove(0, 0, 600); }, 1600);   // back by the pet
