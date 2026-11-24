@@ -77,6 +77,24 @@
   .readout.show { opacity: 1; }
   /* the guide: one short line that says what to do next */
   .guide { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 3; background: #fffaf5; border: none; border-radius: 18px; box-shadow: 0 6px 16px rgba(74, 59, 92, .18); padding: 10px 22px; font-size: clamp(14px, 2.4vw, 22px); font-weight: bold; color: #4a3b5c; white-space: nowrap; transition: opacity .3s; pointer-events: none; }
+  /* cats: food tools, grooming, the feather wand */
+  .cf-tool, .cf-src { cursor: pointer; outline: none; }
+  .cf-tool.on .ring, .cf-src.on .ring { opacity: 1; }
+  .cf-tool.held .ring, .cf-tool.held .cf-tag { opacity: 0; }
+  .cf-tool .cf-tag { transition: opacity .2s; }
+  .cf-wig.shake { animation: shake .47s; transform-box: fill-box; transform-origin: center; }
+  .cf-food { transform-box: fill-box; transform-origin: center; transition: transform .35s ease-out, opacity .3s; }
+  .nail-spot { animation: blink 1.1s ease-in-out infinite; }
+  .snip { animation: snip .6s ease-out forwards; transform-box: fill-box; transform-origin: center; }
+  @keyframes snip { 0% { transform: scale(.3); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+  .wand { outline: none; }
+  .wand.drag { cursor: grab; }
+  .wand.drag .ring { opacity: 1; }
+  .wand.held .ring { opacity: 0; }
+  .wiggle .feather { animation: wiggle .5s ease-in-out infinite; transform-box: view-box; }
+  @keyframes wiggle { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(14deg); } }
+  .petg image.bat { animation: bat .45s ease-in-out 4; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes bat { 50% { transform: translateY(-16px) scale(1.03); } }
   .guide.hide, body:has(.overlay.open) .guide { opacity: 0; }   /* never two places with words: a pop-up's words replace the guide line */
   .guide.nudge { animation: nudge .45s ease-out; }
   @keyframes nudge { 0%, 100% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12); } }
@@ -320,7 +338,9 @@ const PETS = {
     { id: 'bella', name: 'Bella', art: 'bellaSit', eat: 'bellaEat', bath: 'bellaBath', done: 'bellaDone', weight: 65,
       boy: false, breed: 'Labrador Retriever', loves: 'swimming', nose: [.165, .785] },
     { id: 'zuzu', name: 'Zuzu', art: 'zuzuSit', eat: 'zuzuEat', bath: 'zuzuBath', done: 'zuzuDone', weight: 55,
-      boy: false, breed: 'Goldendoodle', loves: 'playing tug', nose: [.171, .778] } ],
+      boy: false, breed: 'Goldendoodle', loves: 'playing tug', nose: [.171, .778] },
+    { id: 'spud', name: 'Spud', art: 'spudSit', eat: 'spudEat', bath: 'spudBath', done: 'spudDone', weight: 16,
+      boy: true, breed: 'Pug', loves: 'naps on the couch', nose: [.156, .68] } ],
   cat: [],
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will
@@ -341,14 +361,23 @@ const TARGETS = {
   scale: { name: 'Scale',     x: 1226, y: 672, w: 192, h: 86,  tag: 'bottom' },
   water: { name: 'Water',     x: 1379, y: 372, w: 228, h: 362, tag: 'top' },
   bath:  { name: 'Bath',      x: 1592, y: 326, w: 384, h: 476, tag: 'top' },
+  tree:  { name: 'Cat tree',  x: 795,  y: 395, w: 210, h: 335, tag: 'top' },
 };
 // The tasks, in order; the room parts for the current task are the ones that light up
-const TASKS = [
+const TASK_LISTS = {
+  dog: [
   { name: 'Pick a pet', icon: 'paw',     targets: ['dogs', 'cats'],  guide: 'Pick a pet to care for.' },
   { name: 'Weigh',      icon: 'scale',   targets: ['scale'],         guide: 'Put your pet on the scale.' },
   { name: 'Food',       icon: 'bowl',    targets: ['food'],          guide: 'Time to feed your pet.' },   // water comes after eating
-  { name: 'Bath',       icon: 'bubbles', targets: ['bath'],          guide: 'Time for a bath.' },
-];
+  { name: 'Bath',       icon: 'bubbles', targets: ['bath'],          guide: 'Time for a bath.' } ],
+  // cats are not weighed (they all eat the same size of meal); the Bath spot is called Groom for them
+  cat: [
+  { name: 'Pick a pet', icon: 'paw',     targets: ['dogs', 'cats'],  guide: 'Pick a pet to care for.' },
+  { name: 'Food',       icon: 'bowl',    targets: ['food'],          guide: 'Time to feed your pet.' },   // water comes after eating
+  { name: 'Groom',      icon: 'brush',   targets: ['bath'],          guide: 'Take your pet to get groomed.' },
+  { name: 'Play',       icon: 'feather', targets: ['tree'],          guide: 'Time to play!' } ],
+};
+let TASKS = TASK_LISTS.dog;   // the cat list once a cat is picked
 // Things in the room when you come in (same numbers as vet-clinic/room_extras.py, which makes the town's picture):
 // Ralphie sitting in the blue bed in the dog crate, and the two bowls on the shelves under the food bin.
 // Each one leaves when it is used: the pet when you pick it, the food bowl when you measure, the water bowl at water time.
@@ -367,7 +396,8 @@ function extrasSvg() {
 const hideExtra = id => { const e = document.getElementById(id); if (e) e.style.opacity = 0; };
 const RUG = { cx: 992, bottom: 965, h: 400 };   // h is a big dog's height; smaller dogs are drawn smaller
 const SIZES = [.72, .82, .92, 1];   // up to 10 lb, 11 to 20, 21 to 40, over 40 (the food chart's groups)
-function sizeK(p) { const rules = FOOD[kind] || FOOD.dog; return SIZES[Math.max(0, rules.findIndex(r => p.weight <= r.upTo))] || 1; }
+const CAT_K = .72;   // every cat is drawn the same size
+function sizeK(p) { if (kind === 'cat') return CAT_K; const rules = FOOD[kind] || FOOD.dog; return SIZES[Math.max(0, rules.findIndex(r => p.weight <= r.upTo))] || 1; }
 const rugH = () => RUG.h * sizeK(pet), eatH = () => EAT.h * sizeK(pet), tubH = () => TUB_DOG.h * sizeK(pet);          // where the pet sits on the rug
 const ON_SCALE = { cx: 1322, bottom: 726, k: .63 };     // where it sits on the scale, smaller (it is farther back)
 
@@ -383,6 +413,8 @@ const ICONS = {
   drop: `<path d="M0 -18 C8 -6 14 2 14 8 A14 14 0 0 1 -14 8 C-14 2 -8 -6 0 -18Z" fill="#8fd0f5"/><ellipse cx="-5" cy="6" rx="3" ry="5" fill="#fff" opacity=".7"/>`,
   towel: `<rect x="-20" y="-12" width="40" height="26" rx="10" fill="#9fdcbc"/><rect x="-20" y="-12" width="40" height="10" rx="5" fill="#bae5ca"/>`,
   brush: `<rect x="-4" y="-2" width="26" height="9" rx="4.5" fill="#d8a067" transform="rotate(-30)"/><ellipse cx="-9" cy="6" rx="13" ry="9" fill="#c98a5a"/><ellipse cx="-9" cy="3" rx="10" ry="6" fill="#f2d3a8"/>`,
+  feather: `<path d="M-16 18 L6 -4" stroke="#d8a067" stroke-width="5" stroke-linecap="round"/><path d="M6 -4 C 0 -18, 10 -24, 20 -22 C 22 -10, 16 -2, 6 -4 Z" fill="#e0457b"/><path d="M8 -6 C 12 -13, 15 -17, 19 -20" stroke="#f7b6cc" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
+  clip: `<path d="M-4 0 L20 -10" stroke="#f28fb0" stroke-width="8" stroke-linecap="round"/><path d="M-4 4 L20 14" stroke="#e0457b" stroke-width="8" stroke-linecap="round"/><path d="M-20 -1 Q-24 2 -20 5 L-2 5 L-2 -1 Z" fill="#b7c0ca"/><circle cx="-2" cy="2" r="4.5" fill="#9aa6b2"/>`,
   check: `<circle r="19" fill="#5fae7a"/><path d="M-9 0 L-2 7 L10 -7" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
 };
 const icon = k => `<svg viewBox="-24 -24 48 48">${ICONS[k]}</svg>`;
@@ -420,6 +452,7 @@ function drawRoom() {
   s += `<g id="petLayer"></g>
     <g id="sinkFront" style="opacity:0; pointer-events:none"><clipPath id="sinkClip"><path d="${SINK_FRONT}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#sinkClip)"/></g>
     <g id="tubFront" style="opacity:0; pointer-events:none"><clipPath id="tubClip"><path d="${TUB_FRONT}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#tubClip)"/></g>
+    <g id="treeFront" style="opacity:0; pointer-events:none"><clipPath id="treeClip"><path d="${TREE_FRONT}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#treeClip)"/></g>
     <g id="pickArrow" class="pick-arrow"><g transform="translate(492 146)">${ARROW}</g></g>
     <g class="readout" id="readout"><rect x="${ON_SCALE.cx - 95}" y="300" width="190" height="72" rx="36" fill="#fff" stroke="#4a9be0" stroke-width="6"/>
       <text id="readNum" x="${ON_SCALE.cx}" y="350" text-anchor="middle" font-size="40" font-weight="bold" fill="#4a3b5c"></text></g>`;
@@ -436,7 +469,7 @@ function setTask(i, quiet) {
   room.querySelectorAll('.tgt').forEach(g => { const mine = !!t && t.targets.includes(g.dataset.t); g.classList.toggle('on', mine && !pickTime); g.classList.toggle('named', mine && pickTime); });
   document.getElementById('pickArrow').style.display = pickTime ? '' : 'none';
   const pg = document.querySelector('.petg');
-  if (pg) pg.classList.toggle('drag', !!t && (t.icon === 'scale' || t.icon === 'bubbles'));   // drag the pet to the scale or the tub
+  if (pg) pg.classList.toggle('drag', !!t && ['scale', 'bubbles', 'brush'].includes(t.icon));   // drag the pet to the scale or the tub
   if (t) guide(say(t.guide)); else guideEl.classList.add('hide');   // all done: the All Done card says it
 }
 
@@ -467,9 +500,10 @@ function useTarget(g) {
   if (!allowed) return id === 'water' && TASKS[task].icon === 'bowl' && !fed ? showToast(`Feed ${pet.name} first!`) : nudgeGuide();   // not this one yet
   if (id === 'dogs' || id === 'cats') return openPicker(id === 'dogs' ? 'dog' : 'cat');
   if (id === 'scale') return weigh();
-  if (id === 'food') return fed ? null : openMeasure();
+  if (id === 'food') return fed ? null : kind === 'cat' ? openCatFood() : openMeasure();
   if (id === 'water') return fillWater();
   if (id === 'bath') return goToBath();
+  if (id === 'tree') return playAtTree();
   g.classList.remove('shake'); void g.getBBox(); g.classList.add('shake');   // not built yet
   setTimeout(() => g.classList.remove('shake'), 500);
   showToast(`${TARGETS[id].name}: coming soon`);
@@ -490,7 +524,7 @@ function openPicker(k) {
     s += '<div class="pk-page">';
     for (let i = p * 8; i < p * 8 + 8; i++) {
       const a = list[i];
-      s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt="" style="height: ${Math.round(Math.min(90, 100 * sizeK(a) ** 2.2))}%"><span class="pk-name">${a.name}</span><span class="pk-sex" aria-hidden="true">${PAW(a.boy ? '#4a9be0' : '#e0457b')}</span></button>`
+      s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt="" style="height: ${kind === 'cat' ? 75 : Math.round(Math.min(90, 100 * sizeK(a) ** 2.2))}%"><span class="pk-name">${a.name}</span><span class="pk-sex" aria-hidden="true">${PAW(a.boy ? '#4a9be0' : '#e0457b')}</span></button>`
              : `<div class="pk-card empty" aria-hidden="true">${EMPTY_PAW}<span class="pk-name">Coming soon</span></div>`;
     }
     s += '</div>';
@@ -544,6 +578,7 @@ function choosePet(a) {
       `<g class="petg" role="button" tabindex="0" aria-label="${a.name}">${ringSvg(x - 24, y - 20, w + 48, h + 36)}
         <rect class="hit" x="${x - 24}" y="${y - 20}" width="${w + 48}" height="${h + 36}" rx="40" fill="rgba(255,255,255,0)"/>
         <image class="pet in" href="${ART[a.art]}" x="${x}" y="${y}" width="${w}" height="${h}"/></g>`;
+    TASKS = TASK_LISTS[kind]; nameTarget('bath', kind === 'cat' ? 'Groom' : 'Bath');
     setTask(1);
   };
   pic.src = ART[a.art];
@@ -576,7 +611,7 @@ room.addEventListener('pointermove', e => {
   dropHint(petDropSpot(dx, dy, p));   // the spot glows brighter while the pet is right on it; let go to drop
 });
 function dragK(dx, dy) {   // 1 on the rug, the spot's size once the feet reach the spot
-  const t = TASKS[task], to = t && t.icon === 'scale' ? ON_SCALE : t && t.icon === 'bubbles' ? IN_TUB : null;
+  const t = TASKS[task], to = t && t.icon === 'scale' ? ON_SCALE : t && (t.icon === 'bubbles' || t.icon === 'brush') ? IN_TUB : null;
   if (!to) return 1;
   const all = Math.hypot(to.cx - RUG.cx, to.bottom - RUG.bottom), left = Math.hypot(to.cx - RUG.cx - dx, to.bottom - RUG.bottom - dy);
   return to.k + (1 - to.k) * Math.min(1, left / all);
@@ -589,7 +624,7 @@ const on = (t, x, y, below = 0) => x > t.x && x < t.x + t.w && y > t.y && y < t.
 function petDropSpot(dx, dy, p) {
   const fx = RUG.cx + dx, fy = RUG.bottom + dy, t = TASKS[task];   // where the pet's feet are
   if (t && t.icon === 'scale' && on(TARGETS.scale, fx, fy, 25)) return 'scale';
-  if (t && t.icon === 'bubbles' && (on(TARGETS.bath, fx, fy) || (p && on(TARGETS.bath, p.x, p.y)))) return 'bath';   // anywhere in the glowing tub box
+  if (t && (t.icon === 'bubbles' || t.icon === 'brush') && (on(TARGETS.bath, fx, fy) || (p && on(TARGETS.bath, p.x, p.y)))) return 'bath';   // anywhere in the glowing tub box
   return null;
 }
 room.addEventListener('pointerup', () => {
@@ -895,7 +930,7 @@ function feedPet() {
   const ocy = by + bh * BOWL_OPEN.cy, ory = bh * BOWL_OPEN.ry;
   const layer = document.getElementById('petLayer');
   layer.insertAdjacentHTML('afterbegin', `<g id="foodBowl" class="bowlfood"><image href="${ART.bowlFood}" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>
-    <ellipse id="bowlKib" cx="${bx + bw * BOWL_OPEN.cx}" cy="${ocy}" rx="${bw * BOWL_OPEN.rx * .85}" ry="${ory * .8}" fill="#b98557"/></g>`);
+    <ellipse id="bowlKib" cx="${bx + bw * BOWL_OPEN.cx}" cy="${ocy}" rx="${bw * BOWL_OPEN.rx * .85}" ry="${ory * .8}" fill="${kind === 'cat' ? '#a36b48' : '#b98557'}"/></g>`);
   layer.insertAdjacentHTML('beforeend', `<g id="foodRim" class="bowlfood" clip-path="url(#rimClip)"><clipPath id="rimClip"><rect x="${bx - 5}" y="${ocy + ory * .55}" width="${bw + 10}" height="${bh}"/></clipPath>
     <image href="${ART.bowlFood}" x="${bx}" y="${by}" width="${bw}" height="${bh}"/></g>`);
   setPose('eat');
@@ -988,7 +1023,7 @@ function waterDone() {   // full: the water stops and the bowl goes back by the 
   document.getElementById('wbShine').setAttribute('opacity', .7);
   guideEl.classList.add('hide');
   setTimeout(() => wbMove(0, 0, 600), 250);
-  setTimeout(() => { watered = true; busy = false; showToast(`Fresh water for ${pet.name}`); setTask(3); }, 900);
+  setTimeout(() => { watered = true; busy = false; showToast(`Fresh water for ${pet.name}`); setTask(task + 1); }, 900);
 }
 function atSink(dx, dy) {   // the bowl's middle has to be over the sink's basin
   const cx = WB.x + FLOOR_BOWL / 2 + dx, by = WB.bottom + dy;
@@ -1019,7 +1054,7 @@ function fillWater(fromDx, fromDy) {
   setTimeout(() => {
     watered = true; busy = false;
     showToast(`Fresh water for ${pet.name}`);
-    setTask(3);
+    setTask(task + 1);
   }, 2300);
 }
 
@@ -1030,6 +1065,7 @@ const POSES = {   // the sitting pictures at the same scale (560 = the sitting p
   sit:  { art: p => p.art,  w: 443, h: 560, dx: 0 },
   bath: { art: p => p.bath, w: 464, h: 580, dx: 10 },
   done: { art: p => p.done, w: 452, h: 560, dx: 4 },
+  play: { art: p => p.play, w: 464, h: 580, dx: 0 },   // cats: sitting up, reaching for the feather
 };
 const TUB_DOG = { cx: 560, bottom: 470, h: 380 };   // the pet in the tub (sitting height), its paws hidden by the tub
 const TUB = { x: 230, w: 670 };                     // the tub reaches the shower pipe at x 900
@@ -1041,6 +1077,11 @@ const BATH_STEPS = [
   { id: 'towel', name: 'Dry',   say: n => `Dry ${n} with the towel.`, ok: n => '' },
   { id: 'brush', name: 'Brush', say: n => `Brush ${n}'s fur.`, ok: n => '' },
 ];
+const GROOM_STEPS = [   // cats: brush, then trim the nails (no tub, no water)
+  { id: 'brush', name: 'Brush', say: n => `Brush ${n}'s fur.`, ok: n => '' },
+  { id: 'nails', name: 'Nails', say: n => `Trim ${n}'s nails. Snip each front paw.`, ok: n => '' },
+];
+const STEPS = () => kind === 'cat' ? GROOM_STEPS : BATH_STEPS;
 const RUB_DONE = .7;   // how much of the pet you have to rub
 let bt = null;
 
@@ -1056,7 +1097,7 @@ function poseBox(pose, cx, bottom, sitH, byCollar) {
   return { x: mid - a[1] * k * f, y: bottom - P.h * k * f, w: P.w * k * f, h: P.h * k * f };
 }
 function poseImg(pose) {
-  const b = poseBox(pose, TUB_DOG.cx, TUB_DOG.bottom, tubH(), true);
+  const b = poseBox(pose, TUB_DOG.cx, TUB_DOG.bottom, tubH(), kind !== 'cat');   // a cat's paws show, so they stay put
   return `<image id="btDog" href="${ART[POSES[pose].art(pet)]}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`;
 }
 
@@ -1080,8 +1121,8 @@ function petCells(artKey, box, cols, rows) {
 }
 
 function bathStepsHtml() {
-  const icons = { soap: 'bubbles', rinse: 'drop', towel: 'towel', brush: 'brush' };
-  return BATH_STEPS.map((s, i) => {
+  const icons = { soap: 'bubbles', rinse: 'drop', towel: 'towel', brush: 'brush', nails: 'clip' };
+  return STEPS().map((s, i) => {
     const done = i < bt.step, cur = i === bt.step, next = bt.ready && i === bt.step + 1;
     return `<div class="task${cur ? ' cur' : ''}${done ? ' done' : ''}${next ? ' blink' : ''}" data-i="${i}"${next ? ' role="button" tabindex="0"' : ''}>${icon(done ? 'check' : icons[s.id])}<span>${s.name}</span></div>`;
   }).join('');
@@ -1121,17 +1162,22 @@ function setHead(x, y) {
   document.getElementById('btHose').setAttribute('d', `M911 398 C 990 470, ${ex + 120} ${ey + 60}, ${ex} ${ey}`);
 }
 function toolSvg(id, x, y, w) {
-  const art = { soap: ART.soap, towel: ART.towel, brush: ART.brush }[id], h = w * TOOL_SIZE[id];
+  const art = { soap: ART.soap, towel: ART.towel, brush: ART.brush, nails: ART.nails }[id], h = w * TOOL_SIZE[id];
   return `<g class="bt-tool" id="bt-${id}" data-tool="${id}" role="button" tabindex="0" aria-label="${id}">
     ${ringSvg(x - 14, y - 14, w + 28, h + 28)}<image href="${art}" x="${x}" y="${y}" width="${w}" height="${h}"/></g>`;
 }
-const TOOL_SIZE = { soap: 0, towel: 0, brush: 0 };   // height / width of each tool picture, filled in below
-['soap', 'towel', 'brush'].forEach(k => { const im = new Image(); im.onload = () => { TOOL_SIZE[k] = im.height / im.width; }; im.src = ART[k]; });
+ART.nails = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 110">
+  <path d="M74 50 L180 20" stroke="#f28fb0" stroke-width="26" stroke-linecap="round"/><path d="M74 60 L180 90" stroke="#e0457b" stroke-width="26" stroke-linecap="round"/>
+  <path d="M96 40 L168 20" stroke="#f7b6cc" stroke-width="7" stroke-linecap="round"/>
+  <path d="M14 48 Q4 55 14 62 L80 62 L80 48 Z" fill="#b7c0ca"/><path d="M20 51 L72 51" stroke="#e8eef3" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="80" cy="55" r="13" fill="#9aa6b2"/><circle cx="77" cy="52" r="4" fill="#e8eef3"/></svg>`);   // nail clippers
+const TOOL_SIZE = { soap: 0, towel: 0, brush: 0, nails: 0 };   // height / width of each tool picture, filled in below
+['soap', 'towel', 'brush', 'nails'].forEach(k => { const im = new Image(); im.onload = () => { TOOL_SIZE[k] = im.height / im.width; }; im.src = ART[k]; });
 
 const IN_TUB = { cx: 1790, bottom: 598, k: .6 };   // where the pet sits in the room's tub (farther back, so smaller)
 const TUB_FRONT = 'M1600 582 L1975 582 L1975 700 L1600 700 Z';   // the tub's front, drawn over the pet's paws
 function goToBath() {
-  if (busy || !TASKS[task] || TASKS[task].icon !== 'bubbles') return;
+  if (busy || !TASKS[task] || !['bubbles', 'brush'].includes(TASKS[task].icon)) return;
   busy = true;
   document.querySelector('.petg').classList.remove('drag');
   room.querySelector('[data-t="bath"]').classList.remove('on');
@@ -1146,36 +1192,43 @@ async function openBath() {
   const box = poseBox('sit', TUB_DOG.cx, TUB_DOG.bottom, tubH());
   bt.box = box;
   bt.cells = await petCells(pet.art, box, 7, 8);
-  document.getElementById('btTitle').textContent = `${pet.name}'s bath`;
-  document.getElementById('btStage').innerHTML = `
+  const cat = kind === 'cat';
+  document.getElementById('btTitle').textContent = cat ? `Groom ${pet.name}` : `${pet.name}'s bath`;
+  document.getElementById('btStage').innerHTML = cat ? `
+    <rect x="0" y="0" width="1100" height="520" fill="#fffaf5" rx="20"/>
+    <ellipse cx="${TUB_DOG.cx}" cy="${TUB_DOG.bottom - 4}" rx="290" ry="44" fill="#e6dcf2"/><ellipse cx="${TUB_DOG.cx}" cy="${TUB_DOG.bottom - 8}" rx="240" ry="30" fill="#f1ebf8"/>
+    <g id="btDogLayer">${poseImg('sit')}<g id="btFx"></g></g>
+    ${toolSvg('brush', 50, 110, 160)}${toolSvg('nails', 40, 300, 180)}
+    <g id="btTop"></g>` : `
     <rect x="0" y="0" width="1100" height="520" fill="#fffaf5" rx="20"/>
     <g id="btDogLayer">${poseImg('sit')}${stinkSvg(box)}<g id="btFx"></g></g>
     ${tubSvg()}
     ${showerSvg()}
     ${toolSvg('soap', 40, 70, 150)}${toolSvg('towel', 30, 220, 170)}${toolSvg('brush', 40, 370, 160)}
     <g id="btTop"></g>`;
-  setHead(...SHOWER_HOME);
+  if (!cat) setHead(...SHOWER_HOME);
   openOverlay(document.getElementById('bath'));
   bathStep();
   setTimeout(() => { petMove(0, 0, 1, 0); document.getElementById('tubFront').style.opacity = 0; }, 400);   // behind the bath screen, back to the rug
 }
 
 function bathStep() {
-  const s = BATH_STEPS[bt.step], next = BATH_STEPS[bt.step + 1];
+  const s = STEPS()[bt.step], next = STEPS()[bt.step + 1];
   document.getElementById('btSteps').innerHTML = bathStepsHtml();
   document.getElementById('btSay').textContent = !s ? '' : bt.ready ? s.ok(pet.name) : s.say(pet.name);
   document.querySelectorAll('.bt-tool').forEach(g => {
-    const i = BATH_STEPS.findIndex(x => x.id === g.dataset.tool);
+    const i = STEPS().findIndex(x => x.id === g.dataset.tool);
     g.classList.toggle('on', !!s && ((i === bt.step && !bt.ready) || (bt.ready && i === bt.step + 1)));
     g.classList.toggle('used', i < bt.step);
   });
 }
 function nextBathStep() {
-  if (!bt.ready || bt.step >= BATH_STEPS.length - 1) return;
+  if (!bt.ready || bt.step >= STEPS().length - 1) return;
   bt.step++; bt.ready = false;
   bt.cells.forEach(c => c.done = false);
   document.querySelectorAll('#btFx .puff').forEach(p => p.remove());
-  if (BATH_STEPS[bt.step].id === 'towel') document.querySelectorAll('#btFx .bub').forEach(b => b.remove());
+  if (STEPS()[bt.step].id === 'nails') nailSpots();
+  if (STEPS()[bt.step].id === 'towel') document.querySelectorAll('#btFx .bub').forEach(b => b.remove());
   bathStep();
 }
 document.getElementById('btSteps').addEventListener('click', e => { if (e.target.closest('.task.blink')) nextBathStep(); });
@@ -1188,7 +1241,7 @@ function btPoint(e) {
 btStage.addEventListener('pointerdown', e => {
   const t = e.target.closest('.bt-tool');
   if (!bt || !t) return;
-  const i = BATH_STEPS.findIndex(x => x.id === t.dataset.tool);
+  const i = STEPS().findIndex(x => x.id === t.dataset.tool);
   if (bt.ready && i === bt.step + 1) nextBathStep();   // picking up the next tool moves on
   if (i !== bt.step) return;
   e.preventDefault();
@@ -1224,7 +1277,7 @@ btStage.addEventListener('pointermove', e => {
 function dropTool() {
   if (!bt || !bt.drag) return;
   const d = bt.drag; bt.drag = null;
-  if (bt.brushEnd && BATH_STEPS[bt.step] && BATH_STEPS[bt.step].id === 'brush' && bt.ready) { clearTimeout(bt.brushEnd); bt.brushEnd = null; setTimeout(bathDone, 200); }
+  if (bt.brushEnd && STEPS()[bt.step] && STEPS()[bt.step].id === 'brush' && bt.ready) { clearTimeout(bt.brushEnd); bt.brushEnd = null; setTimeout(bathDone, 200); }
   if (d.head) {
     document.getElementById('btHead').classList.remove('raining');
     document.querySelector('#btHead .ring').style.display = '';
@@ -1237,7 +1290,7 @@ btStage.addEventListener('pointerup', dropTool);
 btStage.addEventListener('pointercancel', dropTool);
 
 function rubAt(x, y, reach) {
-  const step = BATH_STEPS[bt.step].id, fx = document.getElementById('btFx');
+  const step = STEPS()[bt.step].id, fx = document.getElementById('btFx');
   let hit = false;
   bt.cells.forEach((c, i) => {
     if (c.done || Math.hypot(c.x - x, c.y - y) > reach) return;
@@ -1245,6 +1298,9 @@ function rubAt(x, y, reach) {
     if (step === 'soap') {
       const jx = (i * 37) % 23 - 11, jy = (i * 53) % 19 - 9, r = 15 + (i * 7) % 9;   // a little uneven, like real bubbles
       fx.insertAdjacentHTML('beforeend', `<g class="bub" data-cell="${i}"><circle cx="${c.x - 8 + jx}" cy="${c.y + jy}" r="${r}" fill="#fff" opacity=".92"/><circle cx="${c.x + 12 + jx}" cy="${c.y - 12 + jy}" r="${r * .6}" fill="#fff" opacity=".92"/><circle cx="${c.x - 12 + jx}" cy="${c.y - 6 + jy}" r="4" fill="#d7eefc"/></g>`);
+    } else if (step === 'nails') {   // snip: the paw's glow goes and a little star pops
+      fx.querySelectorAll(`.nail-spot[data-cell="${i}"]`).forEach(n => n.remove());
+      fx.insertAdjacentHTML('beforeend', `<polygon class="snip" points="${starPts(c.x, c.y - 6, 26, 11)}" fill="#ffd34d"/>`);
     } else if (step === 'rinse') {
       fx.querySelectorAll(`.bub[data-cell="${i}"]`).forEach(b => { b.style.opacity = 0; setTimeout(() => b.remove(), 400); });
     } else {
@@ -1255,7 +1311,7 @@ function rubAt(x, y, reach) {
   if (!hit) return;
   const part = bt.cells.filter(c => c.done).length / bt.cells.length;
   if (step === 'soap') { const st = document.getElementById('btStink'); if (st) st.style.opacity = Math.max(0, 1 - part / RUB_DONE); }
-  if (!bt.ready && part >= RUB_DONE) stepReady(step);
+  if (!bt.ready && part >= (step === 'nails' ? 1 : RUB_DONE)) stepReady(step);
 }
 
 function stepReady(step) {
@@ -1263,6 +1319,8 @@ function stepReady(step) {
   if (step === 'soap') { const st = document.getElementById('btStink'); if (st) st.remove(); }
   if (step === 'rinse') setDogPose('bath');
   if (step === 'towel') setDogPose('sit');
+  if (step === 'nails') return groomDone();
+  if (step === 'brush' && kind === 'cat') { setDogPose('bath'); return bathStep(); }   // happy and fluffy; the clippers blink next
   if (step === 'brush') { bt.brushEnd = setTimeout(() => { bt.brushEnd = null; dropTool(); bathDone(); }, 3000); return bathStep(); }
   bathStep();
 }
@@ -1271,7 +1329,7 @@ function setDogPose(pose) {
 }
 
 function bathDone() {
-  bt.step = BATH_STEPS.length; bt.ready = false; bathStep();
+  bt.step = STEPS().length; bt.ready = false; bathStep();
   setDogPose('done');
   document.getElementById('btSay').textContent = `${pet.name} is all clean.`;
   const b = poseBox('done', TUB_DOG.cx, TUB_DOG.bottom, tubH(), true), cx = b.x + b.w / 2, cy = b.y + b.h * .35;
@@ -1292,6 +1350,29 @@ function bathDone() {
     setTimeout(() => openOverlay(document.getElementById('allDone')), 700);
   }, 1600);
 }
+// cats: two glowing front paws to snip with the clippers
+function nailSpots() {
+  const b = poseBox('sit', TUB_DOG.cx, TUB_DOG.bottom, tubH()), sp = PAWS[pet.art], k = b.w / POSES.sit.w;
+  const mid = sp ? b.x + sp[1] * k : b.x + b.w / 2, pw = sp ? sp[0] * k : b.w * .6, y = b.y + b.h * .93;
+  bt.cells = [-.24, .24].map(f => ({ x: mid + f * pw, y, done: false }));
+  document.getElementById('btFx').insertAdjacentHTML('beforeend', bt.cells.map((c, i) =>
+    `<circle class="nail-spot" data-cell="${i}" cx="${c.x}" cy="${c.y}" r="28" fill="rgba(255,211,77,.3)" stroke="#ffc94d" stroke-width="7"/>`).join(''));
+}
+function starBurst(cx, cy, el) {   // one small burst of stars, once
+  let stars = '';
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2;
+    stars += `<polygon points="${starPts(cx, cy, 22, 9)}" fill="#ffd34d" style="--bx:${Math.cos(a) * 190}px;--by:${Math.sin(a) * 150}px"/>`; }
+  el.innerHTML = `<g class="burst">${stars}</g>`;
+}
+function groomDone() {
+  bt.step = STEPS().length; bt.ready = false; bathStep();
+  document.getElementById('btSay').textContent = `${pet.name} is all groomed.`;
+  const b = poseBox('bath', TUB_DOG.cx, TUB_DOG.bottom, tubH()); starBurst(b.x + b.w / 2, b.y + b.h * .35, document.getElementById('btFx'));
+  setTimeout(() => {
+    closeOverlay(document.getElementById('bath'));
+    setPose('sit'); busy = false; setTask(task + 1); playTime();
+  }, 1600);
+}
 function starPts(cx, cy, R, r) {
   let p = [];
   for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R; p.push(`${cx + Math.cos(a) * rr},${cy + Math.sin(a) * rr}`); }
@@ -1302,17 +1383,311 @@ document.getElementById('adAgain').addEventListener('click', () => {
   closeOverlay(document.getElementById('allDone'));
   pet = null; fed = false; watered = false;
   room.querySelectorAll('.tgt.used').forEach(g => g.classList.remove('used'));
+  TASKS = TASK_LISTS.dog; nameTarget('bath', 'Bath'); document.getElementById('treeFront').style.opacity = 0;
   document.getElementById('petLayer').innerHTML = '';
   document.getElementById('extras').innerHTML = extrasSvg();   // everything back in its place
   setTask(0);
 });
+
+// a room spot's name can change (the Bath spot is called Groom for cats)
+function nameTarget(id, name) {
+  const g = room.querySelector(`[data-t="${id}"]`);
+  g.querySelector('.tag').outerHTML = tagSvg(Object.assign({}, TARGETS[id], { name }));
+  g.setAttribute('aria-label', name);
+}
+
+// ---------- Cat food: the cat's recipe, pick the right tool, scoop, then stir ----------
+// Every visit the cat wants a new mix of dry and wet food. Pick the teaspoon, tablespoon or cup for each,
+// tap the food to scoop it into the bowl, then stir. The words only show in the line at the top.
+const CF_TOOLS = {
+  tsp:  { name: 'Teaspoon',   one: 'teaspoon',   x: 330 },
+  tbsp: { name: 'Tablespoon', one: 'tablespoon', x: 550 },
+  cup:  { name: 'Cup',        one: 'cup',        x: 770 },
+};
+const CF_DRY = [ { tool: 'tbsp', n: 2 }, { tool: 'tbsp', n: 3 }, { tool: 'cup', n: 1 } ];               // the cup is ¼ cup
+const CF_WET = [ { tool: 'tsp', n: 1 }, { tool: 'tsp', n: 2 }, { tool: 'tsp', n: 3 }, { tool: 'tbsp', n: 1 } ];
+const CF_HOME_Y = 140, CF_HELD = [558, 290];
+const CF_BOWL = { x: 420, y: 340, w: 260 }, CF_DRY_AT = [929, 262], CF_WET_AT = [155, 338];
+const cfAmount = r => r.tool === 'cup' ? '¼ cup' : `${r.n} ${CF_TOOLS[r.tool].one}${r.n > 1 ? 's' : ''}`;
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+let cf = null;
+
+function cfToolSvg(id) {
+  const t = CF_TOOLS[id], hx = t.x, hy = CF_HOME_Y, ch = 140 * 307 / 360;
+  const spoon = k => `<g transform="scale(${k})"><rect x="-8" y="-128" width="16" height="104" rx="8" fill="#c9d3dc"/><rect x="-3" y="-120" width="5" height="88" rx="2.5" fill="#e8eef3"/>
+      <ellipse cx="0" cy="0" rx="28" ry="34" fill="#c9d3dc"/><ellipse cx="-3" cy="-4" rx="20" ry="25" fill="#e8eef3"/>
+      <ellipse class="cf-load" cx="0" cy="-2" rx="21" ry="24" fill="#b98557" opacity="0"/></g>`;
+  const art = id === 'cup' ? `<image href="${ART.cup}" x="-70" y="-24" width="140" height="${ch}"/>
+      <ellipse class="cf-load" cx="2" cy="${-24 + ch * .74}" rx="30" ry="11" fill="#b98557" opacity="0"/>` : spoon(id === 'tsp' ? .72 : 1);
+  return `<g class="cf-tool" id="cf-${id}" data-tool="${id}" role="button" tabindex="0" aria-label="${t.name}">
+    ${ringSvg(hx - 96, 2, 192, 300)}
+    <g class="cf-tag"><rect x="${hx - 82}" y="248" width="164" height="46" rx="23" fill="#fff" stroke="#8a5a3b" stroke-width="4"/>
+      <text x="${hx}" y="280" text-anchor="middle" font-size="24" font-weight="bold" fill="#6b4329">${t.name}</text></g>
+    <g class="cf-move" style="transform-origin: ${hx}px ${hy}px"><g class="cf-wig"><g transform="translate(${hx} ${hy})">${art}</g></g></g></g>`;
+}
+function cfBinSvg() {   // the dry food bin, open at the top (the same bin as the dogs' food)
+  return `<g class="cf-src" id="cfDry" role="button" tabindex="0" aria-label="Dry food">${ringSvg(818, 170, 236, 320)}
+    <g transform="translate(790 120) scale(.75)">
+      <rect x="70" y="150" width="230" height="320" rx="34" fill="#e3eef0"/>
+      <path d="M78 250 Q120 232 160 250 T240 248 T292 250 V440 Q292 462 270 462 H100 Q78 462 78 440 Z" fill="#b98557"/>
+      ${[[120, 300], [190, 340], [245, 290], [150, 400], [230, 410]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="#9a6a42"/>`).join('')}
+      <rect x="92" y="170" width="22" height="270" rx="11" fill="#fff" opacity=".45"/>
+      <rect x="64" y="140" width="242" height="22" rx="11" fill="#c4a690"/></g></g>`;
+}
+function cfCanSvg() {   // the wet food can, open, with a fish on its label
+  return `<g class="cf-src" id="cfWet" role="button" tabindex="0" aria-label="Wet food">${ringSvg(52, 282, 208, 208)}
+    <ellipse cx="226" cy="318" rx="44" ry="13" fill="#dfe7ee" transform="rotate(-28 226 318)"/>
+    <rect x="75" y="332" width="160" height="134" rx="24" fill="#f28fb0"/>
+    <rect x="75" y="364" width="160" height="66" fill="#fde3ec"/>
+    <ellipse cx="148" cy="397" rx="30" ry="16" fill="#f7b6cc"/><path d="M174 397 L196 383 L196 411 Z" fill="#f7b6cc"/><circle cx="134" cy="393" r="4" fill="#e0457b"/>
+    <ellipse cx="155" cy="334" rx="80" ry="20" fill="#c9d3dc"/><ellipse cx="155" cy="335" rx="68" ry="14" fill="#a0563f"/>
+    <ellipse cx="138" cy="331" rx="22" ry="5" fill="#bb6f55"/></g>`;
+}
+function cfBowlSvg() {
+  const B = CF_BOWL, bh = B.w * 236 / 360, cx = B.x + B.w * BOWL_OPEN.cx, cy = B.y + bh * BOWL_OPEN.cy, rx = B.w * BOWL_OPEN.rx, ry = bh * BOWL_OPEN.ry;
+  return `<g class="cf-src" id="cfBowl" role="button" tabindex="0" aria-label="Food bowl">${ringSvg(B.x - 20, B.y - 20, B.w + 40, bh + 40)}
+    <image href="${ART.bowlFood}" x="${B.x}" y="${B.y}" width="${B.w}" height="${bh}"/>
+    <ellipse class="cf-food" id="cfDryIn" cx="${cx}" cy="${cy}" rx="${rx * .86}" ry="${ry * .8}" fill="#b98557" style="transform: scale(0)"/>
+    <g id="cfKib"></g>
+    <ellipse class="cf-food" id="cfWetIn" cx="${cx + 8}" cy="${cy - 3}" rx="${rx * .48}" ry="${ry * .5}" fill="#a0563f" style="transform: scale(0)"/>
+    <g class="cf-food" id="cfMixIn" opacity="0"><ellipse cx="${cx}" cy="${cy}" rx="${rx * .86}" ry="${ry * .8}" fill="#a36b48"/>
+      ${[[-50, -4], [-20, 6], [14, -6], [44, 4], [-4, -12], [30, 12]].map(([x, y], i) => `<circle cx="${cx + x}" cy="${cy + y}" r="${6 - i % 2}" fill="${i % 2 ? '#7f4a32' : '#c08a5e'}"/>`).join('')}</g></g>`;
+}
+
+function openCatFood() {
+  hideExtra('shelfFood');   // the bowl comes off the shelf
+  ms = null;                // (the dogs' measuring cup is not used)
+  if (!pet.recipe) pet.recipe = { dry: pickOne(CF_DRY), wet: pickOne(CF_WET) };   // what this cat wants today
+  cf = { dry: pet.recipe.dry, wet: pet.recipe.wet, phase: 'pickDry', held: null, count: 0, mix: 0, anim: false, stir: null };
+  document.getElementById('msTitle').textContent = `Make ${pet.name}'s food`;
+  document.getElementById('msStage').innerHTML = cfCanSvg() + cfBinSvg() + cfBowlSvg() + Object.keys(CF_TOOLS).map(cfToolSvg).join('');
+  msView(MS_VIEW.full); msButtons(null);
+  openOverlay(document.getElementById('measure'));
+  cfUpdate();
+}
+function cfUpdate() {   // the words at the top and which things glow
+  const c = cf, r = c.phase === 'scoopDry' ? c.dry : c.wet, left = r.tool === 'cup' ? '' : ` (${c.count} of ${r.n})`;
+  const say = {
+    pickDry: `${pet.name} wants <b>${cfAmount(c.dry)}</b> of dry food and <b>${cfAmount(c.wet)}</b> of wet food. Pick the tool for the dry food.`,
+    scoopDry: `Tap the dry food to scoop <b>${cfAmount(c.dry)}</b>.${left}`,
+    pickWet: `Now the wet food: <b>${cfAmount(c.wet)}</b>. Pick the tool for it.`,
+    scoopWet: `Tap the wet food to scoop <b>${cfAmount(c.wet)}</b>.${left}`,
+    stir: `Stir the food to mix it.`,
+    done: `Just right! That's ${pet.name}'s favorite.`,
+  }[c.phase];
+  msSay(say);
+  const picking = c.phase === 'pickDry' || c.phase === 'pickWet';
+  document.querySelectorAll('.cf-tool').forEach(g => { g.classList.toggle('on', picking); g.classList.toggle('held', g.dataset.tool === c.held); });
+  document.getElementById('cfDry').classList.toggle('on', c.phase === 'scoopDry');
+  document.getElementById('cfWet').classList.toggle('on', c.phase === 'scoopWet');
+  document.getElementById('cfBowl').classList.toggle('on', c.phase === 'stir' && !c.stir && c.mix === 0);
+}
+function cfMove(id, x, y, rot, ms_) {
+  const t = CF_TOOLS[id], el = document.querySelector(`#cf-${id} .cf-move`);
+  el.style.transition = ms_ ? `transform ${ms_}ms ease-in-out` : 'none';
+  el.style.transform = `translate(${x - t.x}px, ${y - CF_HOME_Y}px) rotate(${rot}deg)`;
+}
+function cfLoad(id, wet, on) {
+  const l = document.querySelector(`#cf-${id} .cf-load`);
+  l.setAttribute('fill', wet ? '#a0563f' : '#b98557'); l.setAttribute('opacity', on ? 1 : 0);
+}
+function cfPickTool(id) {
+  const c = cf, dry = c.phase === 'pickDry';
+  if (c.anim || !(dry || c.phase === 'pickWet')) return;
+  const r = dry ? c.dry : c.wet;
+  if (id !== r.tool) {   // not this one: a little shake, and the line says which one
+    const w = document.querySelector(`#cf-${id} .cf-wig`);
+    w.classList.remove('shake'); void w.getBBox(); w.classList.add('shake');
+    msSay(`That's the ${CF_TOOLS[id].one}. The ${dry ? 'dry' : 'wet'} food needs the <b>${CF_TOOLS[r.tool].one}</b>.`);
+    return;
+  }
+  c.held = id; c.count = 0; c.phase = dry ? 'scoopDry' : 'scoopWet';
+  cfMove(id, ...CF_HELD, 0, 450);
+  cfUpdate();
+}
+function cfScoop(wet) {
+  const c = cf, r = wet ? c.wet : c.dry, id = c.held, at = wet ? CF_WET_AT : CF_DRY_AT, n = r.tool === 'cup' ? 1 : r.n;
+  c.anim = true;
+  document.getElementById(wet ? 'cfWet' : 'cfDry').classList.remove('on');   // once you use it, no ring
+  cfMove(id, at[0], at[1], 0, 420);                                            // into the food
+  setTimeout(() => { cfLoad(id, wet, true); cfMove(id, CF_BOWL.x + 150, CF_BOWL.y - 30, 0, 420); }, 520);   // over the bowl
+  setTimeout(() => cfMove(id, CF_BOWL.x + 160, CF_BOWL.y - 10, -60, 220), 980);                            // tip it in
+  setTimeout(() => {
+    cfLoad(id, wet, false); c.count++;
+    const k = Math.min(1, .45 + .55 * c.count / n);
+    document.getElementById(wet ? 'cfWetIn' : 'cfDryIn').style.transform = `scale(${k})`;
+    if (!wet) document.getElementById('cfKib').insertAdjacentHTML('beforeend', [0, 1, 2].map(i => {
+      const B = CF_BOWL, bh = B.w * 236 / 360, x = B.x + B.w * BOWL_OPEN.cx + ((c.count * 37 + i * 29) % 90 - 45) * k, y = B.y + bh * BOWL_OPEN.cy + ((c.count * 13 + i * 11) % 20 - 10) * k;
+      return `<circle cx="${x}" cy="${y}" r="6" fill="#9a6a42"/>`; }).join(''));
+    cfMove(id, ...CF_HELD, 0, 260);
+    setTimeout(() => {
+      c.anim = false;
+      if (c.count < n) return cfUpdate();
+      if (!wet) { c.phase = 'pickWet'; c.held = null; cfMove(id, CF_TOOLS[id].x, CF_HOME_Y, 0, 420); }   // back in its place
+      else c.phase = 'stir';
+      cfUpdate();
+    }, 280);
+  }, 1220);
+}
+function cfStirBy(d) {   // mixing: the two foods turn into one
+  const c = cf;
+  c.mix = Math.min(1, c.mix + d);
+  document.getElementById('cfBowl').classList.remove('on');
+  document.getElementById('cfMixIn').setAttribute('opacity', c.mix);
+  ['cfDryIn', 'cfWetIn', 'cfKib'].forEach(i => { document.getElementById(i).style.opacity = 1 - c.mix; });
+  if (c.mix >= 1 && c.phase === 'stir') {
+    c.phase = 'done'; c.stir = null;
+    cfMove(c.held, CF_TOOLS[c.held].x, CF_HOME_Y, 0, 420); c.held = null;
+    cfUpdate();
+    setTimeout(() => { closeOverlay(document.getElementById('measure')); cf = null; feedPet(); }, 1500);
+  }
+}
+function cfTap(el) {
+  if (!cf || cf.anim) return;
+  const tool = el.closest('.cf-tool'), src = el.closest('.cf-src');
+  if (tool && !tool.classList.contains('held')) return cfPickTool(tool.dataset.tool);
+  if (src && src.id === 'cfDry' && cf.phase === 'scoopDry') return cfScoop(false);
+  if (src && src.id === 'cfWet' && cf.phase === 'scoopWet') return cfScoop(true);
+  if ((src && src.id === 'cfBowl' || tool) && cf.phase === 'stir' && performance.now() - (cf.tapped || 0) > 400) cfStirTap();
+}
+function cfStirTap() {   // a tap on the bowl stirs a little
+  if (!cf || !cf.held) return;
+  cf.tapped = performance.now();
+  { const [x, y] = CF_HELD; cfMove(cf.held, x - 30, y + 60, 20, 150); setTimeout(() => cf && cf.held && cfMove(cf.held, x + 30, y + 60, -20, 150), 160);
+    setTimeout(() => cf && cf.held && cfMove(cf.held, ...CF_HELD, 0, 150), 320);
+    cfStirBy(.25);
+  }
+}
+stage.addEventListener('click', e => { if (cf) cfTap(e.target); });
+stage.addEventListener('keydown', e => { if (cf && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); cfTap(e.target); } });
+// stirring by dragging: hold the spoon (or the bowl) and move it around in the bowl
+stage.addEventListener('pointerdown', e => {
+  if (!cf || cf.phase !== 'stir' || cf.anim || !e.target.closest('#cfBowl, .cf-tool.held')) return;
+  e.preventDefault(); cf.stir = msPoint(e); cf.moved = false; stage.setPointerCapture(e.pointerId);
+  cfUpdate();
+});
+stage.addEventListener('pointermove', e => {
+  if (!cf || !cf.stir) return;
+  const p = msPoint(e), d = Math.hypot(p.x - cf.stir.x, p.y - cf.stir.y);
+  if (d > 6) cf.moved = true;
+  const B = CF_BOWL, x = Math.max(B.x + 60, Math.min(B.x + B.w - 60, p.x)), y = Math.max(B.y - 40, Math.min(B.y + 30, p.y - 30));
+  cfMove(cf.held, x, y, (x - CF_HELD[0]) / 6, 0);
+  cf.stir = p;
+  cfStirBy(d / 1400);
+});
+const cfStirEnd = () => { if (cf && cf.stir) { cf.stir = null; if (!cf.moved) return cfStirTap(); if (cf.held) cfMove(cf.held, ...CF_HELD, 0, 250); cf.tapped = performance.now(); } };
+stage.addEventListener('pointerup', cfStirEnd);
+stage.addEventListener('pointercancel', cfStirEnd);
+
+// ---------- Play (cats): drag the feather wand to the cat tree, and the cat jumps up after it ----------
+const TREE_BED = { cx: 884, bottom: 462, k: .55 };   // the bed at the top of the cat tree (farther back, so smaller)
+const TREE_FRONT = 'M804 444 Q884 470 964 444 L958 484 Q884 498 810 484 Z';   // the bed's front edge, drawn over the cat's paws
+const WAND = { x: 430, y: 945 };                     // where the wand's handle lies on the rug
+const FEATHER = [250, -70];                          // the feather, from the handle
+function wandSvg() {
+  const [fx, fy] = FEATHER;
+  return `<g id="wand" class="wand drag" role="button" tabindex="0" aria-label="Feather wand, drag it to the cat tree">
+    ${ringSvg(WAND.x - 30, WAND.y - 190, 330, 220)}
+    <rect x="${WAND.x - 30}" y="${WAND.y - 190}" width="330" height="220" fill="rgba(255,255,255,0)"/>
+    <g id="wandMove"><g transform="translate(${WAND.x} ${WAND.y})">
+      <path d="M0 0 L190 -110" stroke="#c98a5a" stroke-width="13" stroke-linecap="round"/>
+      <path d="M6 -6 L150 -88" stroke="#e2b07e" stroke-width="4" stroke-linecap="round"/>
+      <path d="M190 -110 Q236 -126 ${fx} ${fy}" stroke="#8a7a9c" stroke-width="3" fill="none"/>
+      <g class="feather" style="transform-origin: ${WAND.x + fx}px ${WAND.y + fy}px">
+        <path d="M${fx} ${fy} C ${fx - 22} ${fy + 20}, ${fx - 18} ${fy + 58}, ${fx - 4} ${fy + 78} C ${fx + 12} ${fy + 56}, ${fx + 14} ${fy + 22}, ${fx} ${fy} Z" fill="#e0457b"/>
+        <path d="M${fx} ${fy} C ${fx + 8} ${fy + 22}, ${fx + 30} ${fy + 46}, ${fx + 42} ${fy + 58} C ${fx + 42} ${fy + 34}, ${fx + 24} ${fy + 10}, ${fx} ${fy} Z" fill="#a77bd1"/>
+        <path d="M${fx - 1} ${fy + 4} L${fx - 4} ${fy + 66}" stroke="#f7b6cc" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="${fx}" cy="${fy}" r="7" fill="#ffd34d"/></g></g></g></g>`;
+}
+function playTime() {   // the wand lies on the rug, and the cat tree lights up
+  document.getElementById('petLayer').insertAdjacentHTML('beforeend', wandSvg());
+  guide(`Drag the feather wand to the cat tree.`);
+}
+function wandMove(dx, dy, ms_) {
+  const g = document.getElementById('wandMove');
+  g.style.transition = ms_ ? `transform ${ms_}ms ease-in-out` : 'none';
+  g.style.transform = `translate(${dx}px, ${dy}px)`;
+}
+let wd = null;
+room.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.wand.drag');
+  if (!g || busy) return;
+  wd = { start: svgPoint(e), dx: 0, dy: 0 }; g.classList.add('held');
+  room.setPointerCapture(e.pointerId);
+});
+room.addEventListener('pointermove', e => {
+  if (!wd) return;
+  const p = svgPoint(e); wd.dx = p.x - wd.start.x; wd.dy = p.y - wd.start.y; wd.p = p;
+  wandMove(wd.dx, wd.dy, 0);
+  dropHint(on(TARGETS.tree, p.x, p.y) ? 'tree' : null);   // the tree glows brighter when the wand is on it; let go there
+});
+room.addEventListener('pointerup', () => {
+  if (!wd) return;
+  const d = wd; wd = null; dropHint(null);
+  const g = document.getElementById('wand'); if (g) g.classList.remove('held');
+  if (d.p && on(TARGETS.tree, d.p.x, d.p.y)) playAtTree(d.dx, d.dy);
+  else wandMove(0, 0, 400);   // not on the tree: back on the rug
+});
+function petImg(pose, cx, bottom, h) {   // a pose on the rug, the same size as sitting
+  const img = document.querySelector('.petg image'), b = poseBox(pose, cx, bottom, h);
+  img.setAttribute('href', ART[POSES[pose].art(pet)]); img.setAttribute('x', b.x); img.setAttribute('y', b.y); img.setAttribute('width', b.w); img.setAttribute('height', b.h);
+  return img;
+}
+function jumpPet(from, to, ms_, done) {   // a hop along an arc: from and to are [dx, dy, scale]
+  const g = document.querySelector('.petg'), t0 = performance.now();
+  g.style.transition = 'none'; g.style.transformOrigin = `${RUG.cx}px ${RUG.bottom}px`;
+  const step = t => {
+    const k = Math.min(1, (t - t0) / ms_), up = 4 * 170 * k * (1 - k);
+    const x = from[0] + (to[0] - from[0]) * k, y = from[1] + (to[1] - from[1]) * k - up, s = from[2] + (to[2] - from[2]) * k;
+    g.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+    if (k < 1) requestAnimationFrame(step); else done();
+  };
+  requestAnimationFrame(step);
+}
+function playAtTree(fromDx, fromDy) {
+  if (busy || !TASKS[task] || TASKS[task].icon !== 'feather') return;
+  busy = true;
+  const wand = document.getElementById('wand');
+  wand.classList.remove('drag');
+  room.querySelector('[data-t="tree"]').classList.remove('on');
+  guideEl.classList.add('hide');
+  // the wand glides up so the feather dangles just above the bed, and wiggles
+  const tx = TREE_BED.cx - (WAND.x + FEATHER[0]) + 20, ty = TREE_BED.bottom - 190 - (WAND.y + FEATHER[1]);
+  if (fromDx !== undefined) wandMove(fromDx, fromDy, 0);
+  requestAnimationFrame(() => wandMove(tx, ty, 500));
+  setTimeout(() => wand.classList.add('wiggle'), 450);
+  const bed = [TREE_BED.cx - RUG.cx, TREE_BED.bottom - RUG.bottom, TREE_BED.k];
+  setTimeout(() => {   // up the tree after it
+    petImg('play', RUG.cx, RUG.bottom, rugH());
+    jumpPet([0, 0, 1], bed, 750, () => {
+      document.getElementById('treeFront').style.opacity = 1;
+      const img = petImg('play', RUG.cx, RUG.bottom, rugH()); img.classList.add('bat');   // batting at the feather
+      setTimeout(() => {   // back down, happy
+        img.classList.remove('bat');
+        document.getElementById('treeFront').style.opacity = 0;
+        wand.classList.remove('wiggle'); wand.style.transition = 'opacity .4s'; wand.style.opacity = 0;
+        jumpPet(bed, [0, 0, 1], 750, playDone);
+      }, 1900);
+    });
+  }, 900);
+}
+function playDone() {
+  const img = petImg('done', RUG.cx, RUG.bottom, rugH());
+  const fx = document.createElementNS('http://www.w3.org/2000/svg', 'g'); room.appendChild(fx);
+  starBurst(RUG.cx, RUG.bottom - rugH() * .6, fx); setTimeout(() => fx.remove(), 1200);
+  const w = document.getElementById('wand'); if (w) w.remove();
+  busy = false; setTask(task + 1);
+  document.getElementById('adTitle').textContent = `${pet.name} is all done!`;
+  document.getElementById('adSay').textContent = `You fed, groomed and played with ${pet.name}. Great job!`;
+  setTimeout(() => openOverlay(document.getElementById('allDone')), 900);
+}
 
 // ---------- Taps and keys ----------
 room.addEventListener('click', e => { const g = e.target.closest('.tgt'); if (g) useTarget(g); });
 room.addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const g = e.target.closest('.tgt'), p = e.target.closest('.petg.drag');
-  if (g || p) { e.preventDefault(); g ? useTarget(g) : TASKS[task].icon === 'bubbles' ? goToBath() : weigh(); }
+  if (g || p) { e.preventDefault(); g ? useTarget(g) : ['bubbles', 'brush'].includes(TASKS[task].icon) ? goToBath() : weigh(); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(picker); });
 // the yellow task in the task bar starts that task, the same as tapping its spot in the room
@@ -1320,7 +1695,7 @@ document.getElementById('tasks').addEventListener('click', e => {
   const t = TASKS[task];
   if (!e.target.closest('.task.cur') || !t || busy) return;
   if (t.icon === 'scale') return weigh();
-  if (t.icon === 'bubbles') return goToBath();
+  if (t.icon === 'bubbles' || t.icon === 'brush') return goToBath();
   const id = t.icon === 'bowl' && fed && !watered ? 'water' : t.targets[0];
   useTarget(room.querySelector(`[data-t="${id}"]`));
 });
