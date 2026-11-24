@@ -352,7 +352,11 @@ const PETS = {
     { id: 'suzy', name: 'Suzy', art: 'suzySit', eat: 'suzyEat', bath: 'suzyBath', done: 'suzyDone', weight: 50,
       boy: false, breed: 'Poodle', loves: 'getting her curls fluffed', nose: [.18, .79] } ],
   cat: [ { id: 'luna', name: 'Luna', art: 'lunaSit', eat: 'lunaEat', bath: 'lunaGroom', play: 'lunaPlay', done: 'lunaDone',
-      boy: false, breed: 'American Shorthair', loves: 'chasing feathers', nose: [.156, .70] } ],   // cats: no weight; bath is the groom pose
+      boy: false, breed: 'American Shorthair', loves: 'chasing feathers', nose: [.156, .70] },   // cats: no weight; bath is the groom pose
+    { id: 'peaches', name: 'Peaches', art: 'peachesSit', eat: 'peachesEat', bath: 'peachesGroom', play: 'peachesPlay', playDown: 'peachesPlayDown', playFit: [-84.5, -100.2, 527.5, 659.4], paw: 'left',
+      done: 'peachesDone', boy: false, breed: 'Persian', loves: 'being brushed', nose: [.19, .847] },
+    { id: 'felix', name: 'Felix', art: 'felixSit', eat: 'felixEat', bath: 'felixGroom', play: 'felixPlay', done: 'felixDone',
+      boy: true, breed: 'American Shorthair', loves: 'batting at toy mice', nose: [.108, .711] } ],   // playDown: her play picture with the paw down
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will
 // ask the player to measure this much in the measuring cup (lines at 1/4, 1/2, 3/4 and 1 cup).
@@ -393,17 +397,34 @@ let TASKS = TASK_LISTS.dog;   // the cat list once a cat is picked
 // Ralphie sitting in the blue bed in the dog crate, and the two bowls on the shelves under the food bin.
 // Each one leaves when it is used: the pet when you pick it, the food bowl when you measure, the water bowl at water time.
 const EXTRAS = {
-  cat: { id: 'luna', art: 'lunaSleep', cx: 372, bottom: 428, w: 140, bedFront: 'M298 417 Q372 431 446 417 L446 442 L298 442 Z' },   // Luna asleep on the pink cushion in the cat crate
-  pet: { id: 'ralphie', cx: 362, bottom: 692, h: 165, bedFront: 'M266 684 L314 694 L362 698 L410 694 L457 684 L457 712 L266 712 Z' },
+  // the crates: which dog and which two cats sleep there changes every visit (see CRATES below)
+  catSlots: [ { cx: 372, bottom: 428, w: 140, bedFront: 'M298 417 Q372 431 446 417 L446 442 L298 442 Z' },     // the pink cushion
+    { cx: 628, bottom: 430, w: 140, bedFront: 'M556 419 Q628 433 700 419 L700 444 L556 444 Z' } ],            // the green cushion
+  dogSlot: { cx: 362, bottom: 692, h: 165, bedFront: 'M266 684 L314 694 L362 698 L410 694 L457 684 L457 712 L266 712 Z' },   // the blue bed (h: a 11 to 20 lb dog)
   bowls: [ { id: 'shelfFood', art: 'bowlFood', cx: 1115, bottom: 596, w: 110 }, { id: 'shelfWater', art: 'bowlWater', cx: 1115, bottom: 696, w: 110 } ],
 };
+// Who is in the crates this visit: the town picks when you walk in and sends it along (#cat&crates=bella,luna,felix);
+// opening the game on its own picks at random. Every dog can sit in the bed; every cat with a sleeping picture can nap on a cushion.
+const CRATES = (() => {
+  const m = location.hash.match(/crates=([\w,]+)/), want = m ? m[1].split(',') : [];
+  const dogs = PETS.dog, cats = PETS.cat.filter(c => ART[c.id + 'Sleep']), find = (list, id) => list.find(p => p.id === id);
+  const shuffled = l => l.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(v => v[1]);
+  const dog = find(dogs, want[0]) || shuffled(dogs)[0];
+  let two = [find(cats, want[1]), find(cats, want[2])].filter(Boolean);
+  if (two.length < 2 || two[0] === two[1]) two = shuffled(cats).slice(0, 2);
+  return { dog, cats: two };
+})();
+function crateDogH(d) {   // bigger dogs sit taller in the bed (the same size groups as the food chart)
+  const k = SIZES[Math.max(0, FOOD.dog.findIndex(r => d.weight <= r.upTo))] || 1;
+  return EXTRAS.dogSlot.h * k / SIZES[1];
+}
 function extrasSvg() {
-  const p = EXTRAS.pet, w = p.h * 443 / 560;
-  let s = `<g id="cratePet" class="extra"><image href="${ART.dachshundSit}" x="${p.cx - w / 2}" y="${p.bottom - p.h}" width="${w}" height="${p.h}"/>
+  const p = EXTRAS.dogSlot, d = CRATES.dog, h = crateDogH(d), w = h * 443 / 560;
+  let s = `<g id="crate-${d.id}" class="extra"><image href="${ART[d.art]}" x="${p.cx - w / 2}" y="${p.bottom - h}" width="${w}" height="${h}"/>
     <clipPath id="bedFrontClip"><path d="${p.bedFront}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#bedFrontClip)"/></g>`;
-  const c = EXTRAS.cat, ch = c.w * 400 / 498;
-  s += `<g id="crateCat" class="extra"><image href="${ART[c.art]}" x="${c.cx - c.w / 2}" y="${c.bottom - ch}" width="${c.w}" height="${ch}"/>
-    <clipPath id="catBedClip"><path d="${c.bedFront}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#catBedClip)"/></g>`;
+  EXTRAS.catSlots.forEach((c, i) => { const cat = CRATES.cats[i]; if (!cat) return; const ch = c.w * 400 / 498;
+    s += `<g id="crate-${cat.id}" class="extra"><image href="${ART[cat.id + 'Sleep']}" x="${c.cx - c.w / 2}" y="${c.bottom - ch}" width="${c.w}" height="${ch}"/>
+    <clipPath id="catBedClip-${i}"><path d="${c.bedFront}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#catBedClip-${i})"/></g>`; });
   EXTRAS.bowls.forEach(b => { const h = b.w * 236 / 360;
     s += `<image id="${b.id}" class="extra" href="${ART[b.art]}" x="${b.cx - b.w / 2}" y="${b.bottom - h}" width="${b.w}" height="${h}"/>`; });
   return s;
@@ -585,8 +606,7 @@ document.getElementById('piPick').addEventListener('click', () => { const a = in
 
 function choosePet(a) {
   pet = Object.assign({}, a); closeOverlay(picker);
-  if (a.id === EXTRAS.pet.id) hideExtra('cratePet');   // out of the crate
-  if (a.id === EXTRAS.cat.id) hideExtra('crateCat');   // out of the cat crate
+  hideExtra('crate-' + a.id);   // out of its crate (if it was napping in one)
   const pic = new Image();
   pic.onload = () => {
     const h = rugH(), w = h * pic.width / pic.height, x = RUG.cx - w / 2, y = RUG.bottom - h;
@@ -1083,6 +1103,7 @@ const POSES = {   // the sitting pictures at the same scale (560 = the sitting p
   bath: { art: p => p.bath, w: 464, h: 580, dx: 10 },
   done: { art: p => p.done, w: 452, h: 560, dx: 4 },
   play: { art: p => p.play, w: 464, h: 580, dx: 0 },   // cats: sitting up, reaching for the feather
+  playDown: { art: p => p.playDown, w: 464, h: 580, dx: 0 },   // the same play picture with the paw down (sized like play, so they line up)
 };
 const TUB_DOG = { cx: 560, bottom: 470, h: 380 };   // the pet in the tub (sitting height), its paws hidden by the tub
 const TUB = { x: 230, w: 670 };                     // the tub reaches the shower pipe at x 900
@@ -1104,7 +1125,11 @@ let bt = null;
 
 const PAWS = {};   // filled in by build.py: each pose picture's paw width and paw middle, in picture pixels
 function poseBox(pose, cx, bottom, sitH, byCollar) {
-  const P = POSES[pose], k = sitH / 560, a = PAWS[P.art(pet)], s = PAWS[pet.art];
+  const P = POSES[pose], k = sitH / 560, a = PAWS[(pose === 'playDown' ? POSES.play : P).art(pet)], s = PAWS[pet.art];
+  if (pet.playFit && (pose === 'play' || pose === 'playDown')) {   // a play picture turned to the side: placed where it sits on the sitting picture
+    const [fx, fy, fw, fh] = pet.playFit, sx = cx - POSES.sit.w * k / 2, sy = bottom - 560 * k;
+    return { x: sx + fx * k, y: sy + fy * k, w: fw * k, h: fh * k };
+  }
   if (!a || !s) return { x: cx - P.w * k / 2 + P.dx * k, y: bottom - P.h * k, w: P.w * k, h: P.h * k };
   // every pose is drawn so its paws are as wide as when sitting
   const f = s[0] / a[0], sx = cx - POSES.sit.w * k / 2, sy = bottom - 560 * k;   // where the sitting picture's corner is
@@ -1800,7 +1825,7 @@ function swats(n, done) {   // batting at the feather: the paw goes up (play pic
     if (i++ >= n) { petImg('play', RUG.cx, RUG.bottom, rugH()); return done(); }
     petImg('play', RUG.cx, RUG.bottom, rugH());
     if (fea) { fea.style.translate = `${i % 2 ? 14 : -10}px -16px`; setTimeout(() => { fea.style.translate = '0 0'; }, 170); }
-    setTimeout(() => { petImg('sit', RUG.cx, RUG.bottom, rugH()); setTimeout(one, 230 + (i % 2) * 90); }, 260);
+    setTimeout(() => { petImg(pet.playDown ? 'playDown' : 'sit', RUG.cx, RUG.bottom, rugH()); setTimeout(one, 230 + (i % 2) * 90); }, 260);
   };
   one();
 }
@@ -1812,7 +1837,7 @@ function playAtTree(fromDx, fromDy) {
   room.querySelector('[data-t="tree"]').classList.remove('on');
   guideEl.classList.add('hide');
   // the wand glides up so the feather dangles just above the bed, and wiggles
-  const tx = TREE_BED.cx - (WAND.x + FEATHER[0]) + 46, ty = TREE_BED.bottom - 217 - (WAND.y + FEATHER[1]);   // just above the paw she lifts
+  const tx = TREE_BED.cx - (WAND.x + FEATHER[0]) + (pet.paw === 'left' ? -62 : 46), ty = TREE_BED.bottom - 217 - (WAND.y + FEATHER[1]);   // just above the paw she lifts
   if (fromDx !== undefined) wandMove(fromDx, fromDy, 0);
   requestAnimationFrame(() => wandMove(tx, ty, 500));
   setTimeout(() => wand.classList.add('wiggle'), 450);
@@ -1879,4 +1904,4 @@ new ResizeObserver(fitFrame).observe(document.querySelector('.taskbar'));   // t
 drawRoom();
 setTask(0, true);
 // coming from the town's crates: open that picker right away
-if (location.hash === '#dog' || location.hash === '#cat') { openPicker(location.hash.slice(1)); history.replaceState(null, '', location.pathname); }   // only once
+{ const k = location.hash.match(/^#(dog|cat)\b/); if (k) { openPicker(k[1]); history.replaceState(null, '', location.pathname); } }   // only once

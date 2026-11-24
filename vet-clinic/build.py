@@ -34,7 +34,14 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "suzyBath": (A + "pets/suzy-bath.webp", "image/webp"), "suzyDone": (A + "pets/suzy-done.webp", "image/webp"),
        "lunaSit": (A + "pets/luna-sit.webp", "image/webp"), "lunaEat": (A + "pets/luna-eat.webp", "image/webp"),
        "lunaGroom": (A + "pets/luna-groom.webp", "image/webp"), "lunaPlay": (A + "pets/luna-play.webp", "image/webp"),
-       "lunaDone": (A + "pets/luna-done.webp", "image/webp"), "lunaSleep": (A + "pets/luna-sleep.webp", "image/webp")}
+       "lunaDone": (A + "pets/luna-done.webp", "image/webp"), "lunaSleep": (A + "pets/luna-sleep.webp", "image/webp"),
+       "peachesSit": (A + "pets/peaches-sit.webp", "image/webp"), "peachesEat": (A + "pets/peaches-eat.webp", "image/webp"),
+       "peachesGroom": (A + "pets/peaches-groom.webp", "image/webp"), "peachesPlay": (A + "pets/peaches-play.webp", "image/webp"),
+       "peachesPlayDown": (A + "pets/peaches-playdown.webp", "image/webp"), "peachesDone": (A + "pets/peaches-done.webp", "image/webp"),
+       "peachesSleep": (A + "pets/peaches-sleep.webp", "image/webp"),
+       "felixSit": (A + "pets/felix-sit.webp", "image/webp"), "felixEat": (A + "pets/felix-eat.webp", "image/webp"),
+       "felixGroom": (A + "pets/felix-groom.webp", "image/webp"), "felixPlay": (A + "pets/felix-play.webp", "image/webp"),
+       "felixDone": (A + "pets/felix-done.webp", "image/webp"), "felixSleep": (A + "pets/felix-sleep.webp", "image/webp")}
 # every pet pose (sit, bath, done) is measured across its paws, so the game can draw each pose the same size as sitting
 from PIL import Image
 def paws(f):
