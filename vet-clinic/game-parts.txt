@@ -401,31 +401,34 @@ let TASKS = TASK_LISTS.dog;   // the cat list once a cat is picked
 // Ralphie sitting in the blue bed in the dog crate, and the two bowls on the shelves under the food bin.
 // Each one leaves when it is used: the pet when you pick it, the food bowl when you measure, the water bowl at water time.
 const EXTRAS = {
-  // the crates: which dog and which two cats sleep there changes every visit (see CRATES below)
+  // the crates: which two dogs and which two cats are there changes every visit (see CRATES below)
   catSlots: [ { cx: 372, bottom: 428, w: 140, bedFront: 'M298 417 Q372 431 446 417 L446 442 L298 442 Z' },     // the pink cushion
     { cx: 628, bottom: 430, w: 140, bedFront: 'M556 419 Q628 433 700 419 L700 444 L556 444 Z' } ],            // the green cushion
-  dogSlot: { cx: 362, bottom: 692, h: 165, bedFront: 'M266 684 L314 694 L362 698 L410 694 L457 684 L457 712 L266 712 Z' },   // the blue bed (h: a 11 to 20 lb dog)
+  dogSlots: [ { cx: 362, bottom: 692, h: 165, bedFront: 'M266 684 L314 694 L362 698 L410 694 L457 684 L457 712 L266 712 Z' },   // the blue bed (h: a 11 to 20 lb dog)
+    { cx: 630, bottom: 695, h: 165, bedFront: 'M534 687 L582 697 L630 701 L678 697 L725 687 L725 715 L534 715 Z' } ],   // the red bed
   bowls: [ { id: 'shelfFood', art: 'bowlFood', cx: 1115, bottom: 596, w: 110 }, { id: 'shelfWater', art: 'bowlWater', cx: 1115, bottom: 696, w: 110 } ],
 };
-// Who is in the crates this visit: the town picks when you walk in and sends it along (#cat&crates=bella,luna,felix);
+// Who is in the crates this visit: the town picks when you walk in and sends it along (#cat&crates=bella,spud,luna,felix: two dogs, then two cats);
 // opening the game on its own picks at random. Every dog can sit in the bed; every cat with a sleeping picture can nap on a cushion.
 const CRATES = (() => {
   const m = location.hash.match(/crates=([\w,]+)/), want = m ? m[1].split(',') : [];
   const dogs = PETS.dog, cats = PETS.cat.filter(c => ART[c.id + 'Sleep']), find = (list, id) => list.find(p => p.id === id);
   const shuffled = l => l.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(v => v[1]);
-  const dog = find(dogs, want[0]) || shuffled(dogs)[0];
-  let two = [find(cats, want[1]), find(cats, want[2])].filter(Boolean);
+  let twoDogs = [find(dogs, want[0]), find(dogs, want[1])].filter(Boolean);
+  if (twoDogs.length < 2 || twoDogs[0] === twoDogs[1]) twoDogs = shuffled(dogs).slice(0, 2);
+  let two = [find(cats, want[2]), find(cats, want[3])].filter(Boolean);
   if (two.length < 2 || two[0] === two[1]) two = shuffled(cats).slice(0, 2);
-  return { dog, cats: two };
+  return { dogs: twoDogs, cats: two };
 })();
 function crateDogH(d) {   // bigger dogs sit taller in the bed (the same size groups as the food chart)
   const k = SIZES[Math.max(0, FOOD.dog.findIndex(r => d.weight <= r.upTo))] || 1;
-  return EXTRAS.dogSlot.h * k / SIZES[1];
+  return EXTRAS.dogSlots[0].h * k / SIZES[1];
 }
 function extrasSvg() {
-  const p = EXTRAS.dogSlot, d = CRATES.dog, h = crateDogH(d), w = h * 443 / 560;
-  let s = `<g id="crate-${d.id}" class="extra"><image href="${ART[d.art]}" x="${p.cx - w / 2}" y="${p.bottom - h}" width="${w}" height="${h}"/>
-    <clipPath id="bedFrontClip"><path d="${p.bedFront}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#bedFrontClip)"/></g>`;
+  let s = '';
+  EXTRAS.dogSlots.forEach((p, i) => { const d = CRATES.dogs[i]; if (!d) return; const h = crateDogH(d), w = h * 443 / 560;
+    s += `<g id="crate-${d.id}" class="extra"><image href="${ART[d.art]}" x="${p.cx - w / 2}" y="${p.bottom - h}" width="${w}" height="${h}"/>
+    <clipPath id="bedFrontClip-${i}"><path d="${p.bedFront}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#bedFrontClip-${i})"/></g>`; });
   EXTRAS.catSlots.forEach((c, i) => { const cat = CRATES.cats[i]; if (!cat) return; const ch = c.w * 400 / 498;
     s += `<g id="crate-${cat.id}" class="extra"><image href="${ART[cat.id + 'Sleep']}" x="${c.cx - c.w / 2}" y="${c.bottom - ch}" width="${c.w}" height="${ch}"/>
     <clipPath id="catBedClip-${i}"><path d="${c.bedFront}"/></clipPath><image href="${ART.room}" x="0" y="0" width="1984" height="1116" clip-path="url(#catBedClip-${i})"/></g>`; });
@@ -1220,7 +1223,7 @@ ART.nails = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w
 const TOOL_SIZE = { soap: 0, towel: 0, brush: 0, nails: 0 };   // height / width of each tool picture, filled in below
 ['soap', 'towel', 'brush', 'nails'].forEach(k => { const im = new Image(); im.onload = () => { TOOL_SIZE[k] = im.height / im.width; }; im.src = ART[k]; });
 
-const IN_TUB = { cx: 1790, bottom: 598, k: .6 };   // where the pet sits in the room's tub (farther back, so smaller)
+const IN_TUB = { cx: 1750, bottom: 598, k: .6 };   // where the pet sits in the room's tub (farther back, so smaller)
 const TUB_FRONT = 'M1600 582 L1975 582 L1975 700 L1600 700 Z';   // the tub's front, drawn over the pet's paws
 function goToBath() {
   if (busy || !TASKS[task] || !['bubbles', 'brush'].includes(TASKS[task].icon)) return;
@@ -1446,14 +1449,13 @@ function nameTarget(id, name) {
 
 // ---------- Cat food: the cat's recipe, pick the right tool, scoop, then stir ----------
 // Every visit the cat wants a new mix of dry and wet food. A picture checklist (top left) says what the cat needs.
-// Pick the tsp, Tbsp or ¼ cup, drag it into the food to scoop, drag it to the bowl to tip it in, then stir.
-// A dashed arrow always shows where to drag next, so you don't need to read.
+// Drag the tsp or Tbsp straight to the food to scoop (the wrong spoon shakes and goes back), drag it to the bowl to tip it in, then stir.
+// The food and the bowl light up to show where to drag next, so you don't need to read.
 const CF_TOOLS = {
-  tsp:  { name: 'tsp',   x: 345 },
-  tbsp: { name: 'Tbsp',  x: 530 },
-  cup:  { name: '¼ cup', x: 715 },
+  tsp:  { name: 'tsp',   x: 430 },
+  tbsp: { name: 'Tbsp',  x: 640 },
 };
-const CF_DRY = [ { tool: 'tbsp', n: 2 }, { tool: 'tbsp', n: 3 }, { tool: 'cup', n: 1 } ];               // the cup is ¼ cup
+const CF_DRY = [ { tool: 'tbsp', n: 2 }, { tool: 'tbsp', n: 3 }, { tool: 'tbsp', n: 4 } ];
 const CF_WET = [ { tool: 'tsp', n: 1 }, { tool: 'tsp', n: 2 }, { tool: 'tsp', n: 3 }, { tool: 'tbsp', n: 1 } ];
 const CF_HOME_Y = 140, CF_HELD = [558, 290];
 const CF_BOWL = { x: 420, y: 340, w: 260 };
@@ -1533,7 +1535,7 @@ function cfListSvg() {
     { mini: 'wet', name: 'Wet food', r: c.wet, count: step > 1 ? c.wet.n : step === 1 ? c.count : 0 },
     { mini: 'stir', name: 'Stir' } ];
   let s = `<rect x="8" y="6" width="236" height="262" rx="22" fill="#fffdf3" stroke="#8a5a3b" stroke-width="4"/>
-    <text x="24" y="44" font-size="26" font-weight="bold" fill="#4a3b5c">${pet.name} needs:</text>`;
+    <text class="cf-title" x="24" y="44" font-size="26" font-weight="bold" fill="#4a3b5c">${pet.name} needs:</text>`;
   rows.forEach((row, i) => {
     const y = 64 + i * 66, done = i < step, cur = i === step;
     if (cur) s += `<rect x="16" y="${y}" width="220" height="60" rx="14" fill="#fff1a8" stroke="#ffc94d" stroke-width="3"/>`;
@@ -1545,13 +1547,14 @@ function cfListSvg() {
     s += `<text x="96" y="${y + 25}" font-size="20" font-weight="bold" fill="${col}">${row.name}</text>
       <text class="cf-amt" x="96" y="${y + 51}" font-size="22" font-weight="bold" fill="${done ? col : '#b8336a'}">${cfAmount(row.r)}</text><g class="cf-dots">`;
     if (n > 1) for (let k = 0; k < n; k++)   // a dot for each scoop, filled in as you scoop (moved to just after the amount below)
-      s += `<circle cx="${k * 15}" cy="${y + 44}" r="5.5" fill="${k < row.count ? '#5fae7a' : '#fff'}" stroke="${k < row.count ? '#5fae7a' : '#b9a99a'}" stroke-width="2.5"/>`;
+      s += `<circle cx="${k * 13}" cy="${y + 44}" r="5" fill="${k < row.count ? '#5fae7a' : '#fff'}" stroke="${k < row.count ? '#5fae7a' : '#b9a99a'}" stroke-width="2.5"/>`;
     s += '</g>';
   });
   return s;
 }
-function cfArrow(from, to) {   // the dashed arrow that shows where to drag next
+function cfArrow(from, to) {   // (no arrow any more: the food and bowl light up instead)
   const h = document.getElementById('cfHint');
+  h.innerHTML = ''; return;
   if (!from) { h.innerHTML = ''; return; }
   const [x1, y1] = from, [x2, y2] = to, mx = (x1 + x2) / 2, my = Math.min(y1, y2) - 90;
   const a = Math.atan2(y2 - my, x2 - mx), back = 22, hx = x2 - Math.cos(a) * 8, hy = y2 - Math.sin(a) * 8;
@@ -1568,7 +1571,7 @@ function openCatFood() {
   document.getElementById('msTitle').textContent = `Make ${pet.name}'s food`;
   document.getElementById('msSay').style.display = 'none';   // no sentences: the checklist and arrows show what to do
   document.getElementById('msStage').innerHTML = cfCanSvg() + cfBinSvg() + cfBowlSvg() + Object.keys(CF_TOOLS).map(cfToolSvg).join('')
-    + cfFrontSvg() + '<g id="cfHint" style="pointer-events: none"></g><g id="cfList"></g>';
+    + cfFrontSvg() + '<g id="cfHint" style="pointer-events: none"></g><g id="cfList" transform="translate(4 4) scale(.88)" style="pointer-events: none"></g>';
   msView(MS_VIEW.full); msButtons(null);
   openOverlay(document.getElementById('measure'));
   cfUpdate(); cfStuckTimer();
@@ -1581,7 +1584,9 @@ const cfSrcKey = () => cf.phase === 'scoopDry' ? 'dry' : cf.phase === 'scoopWet'
 function cfUpdate() {   // the checklist, which things glow, and where the arrow points
   const c = cf, picking = c.phase === 'pickDry' || c.phase === 'pickWet', k = cfSrcKey();
   document.getElementById('cfList').innerHTML = cfListSvg();
-  document.querySelectorAll('#cfList .cf-amt').forEach(t => t.nextElementSibling.setAttribute('transform', `translate(${96 + t.getComputedTextLength() + 13} 0)`));
+  const title = document.querySelector('#cfList .cf-title'), tw = title.getComputedTextLength();
+  if (tw > 204) title.setAttribute('font-size', Math.floor(26 * 204 / tw));   // a long name: smaller letters, so it stays inside the card
+  document.querySelectorAll('#cfList .cf-amt').forEach(t => t.nextElementSibling.setAttribute('transform', `translate(${96 + t.getComputedTextLength() + 11} 0)`));
   document.querySelectorAll('.cf-tool').forEach(g => {
     const hint = picking && c.hint === g.dataset.tool;   // no glow on the tools unless you are stuck
     g.classList.toggle('on', hint); g.classList.toggle('hint', hint);
@@ -1674,7 +1679,7 @@ function cfStirBy(d) {   // mixing: the two foods turn into one
   }
 }
 function cfTap(el) {   // taps (and Enter) still work: tap a tool to pick it, the food to scoop, the bowl to tip it in or stir
-  if (!cf || cf.anim || cf.drag) return;
+  if (!cf || cf.anim || cf.drag || performance.now() - (cf.dragEnd || 0) < 350) return;   // (not the click that ends a drag)
   const tool = el.closest('.cf-tool'), src = el.closest('.cf-src'), k = cfSrcKey();
   if (tool && !tool.classList.contains('cf-held')) return cfPickTool(tool.dataset.tool);
   if (k && !cf.loaded && src && src.id === (k === 'dry' ? 'cfDry' : 'cfWet')) return cfDip();
@@ -1703,6 +1708,19 @@ stage.addEventListener('pointerdown', e => {
     e.preventDefault(); cf.stir = msPoint(e); cf.moved = false; stage.setPointerCapture(e.pointerId);
     return cfUpdate();
   }
+  const pick = e.target.closest('.cf-tool:not(.cf-held)');
+  if (pick && (cf.phase === 'pickDry' || cf.phase === 'pickWet')) {   // drag a spoon from its place straight to the food
+    const id = pick.dataset.tool, r = cf.phase === 'pickDry' ? cf.dry : cf.wet;
+    e.preventDefault(); const p = msPoint(e), home = [CF_TOOLS[id].x, CF_HOME_Y];
+    if (id !== r.tool) {   // the wrong spoon: you can pick it up, but it shakes and goes back when you let go
+      cf.wrongDrag = { id, off: [home[0] - p.x, home[1] - p.y], moved: false };
+      stage.setPointerCapture(e.pointerId); return;
+    }
+    clearTimeout(cf.stuck); cf.wrong = 0;
+    cf.held = id; cf.count = 0; cf.hint = null; cf.loaded = false; cf.phase = cf.phase === 'pickDry' ? 'scoopDry' : 'scoopWet'; cf.pos = home;
+    cf.drag = { off: [home[0] - p.x, home[1] - p.y], from: home, moved: false };
+    stage.setPointerCapture(e.pointerId); return cfUpdate();
+  }
   const k = cfSrcKey(), src = k && e.target.closest(k === 'dry' ? '#cfDry' : '#cfWet');
   if (!k || !(e.target.closest('.cf-tool.cf-held') || (cf.loaded && src))) return;   // dragging the tool to the food, then to the bowl (a full one can be picked up from its food too)
   e.preventDefault(); const p = msPoint(e), onTool = !!e.target.closest('.cf-tool.cf-held');
@@ -1711,6 +1729,11 @@ stage.addEventListener('pointerdown', e => {
 });
 stage.addEventListener('pointermove', e => {
   if (!cf) return;
+  if (cf.wrongDrag) {
+    const p = msPoint(e), d = cf.wrongDrag, x = p.x + d.off[0], y = p.y + d.off[1], t = CF_TOOLS[d.id];
+    if (Math.hypot(x - t.x, y - CF_HOME_Y) > 8) d.moved = true;
+    cfMove(d.id, x, y, 0, 0); return;
+  }
   if (cf.drag) {
     const p = msPoint(e), d = cf.drag, x = p.x + d.off[0], y = p.y + d.off[1]; d.p = p;
     if (Math.hypot(x - d.from[0], y - d.from[1]) > 8) d.moved = true;
@@ -1735,9 +1758,14 @@ stage.addEventListener('pointermove', e => {
   cfStirBy(d / 1400);
 });
 const cfStirEnd = () => {
+  if (cf && cf.wrongDrag) {   // the wrong spoon: back to its place with a shake (a tap on it is handled by cfTap)
+    const d = cf.wrongDrag; cf.wrongDrag = null;
+    if (d.moved) { cf.dragEnd = performance.now(); cfMove(d.id, CF_TOOLS[d.id].x, CF_HOME_Y, 0, 250); setTimeout(() => cf && cfPickTool(d.id), 260); }
+    return;
+  }
   if (cf && cf.drag) {
     const d = cf.drag, box = cfDropBox(), ok = d.moved && box && (cfIn(box, { x: cf.pos[0], y: cf.pos[1] }) || (d.p && cfIn(box, d.p)));
-    cf.drag = null; document.querySelectorAll('.cf-src.over').forEach(g => g.classList.remove('over'));
+    cf.drag = null; cf.dragEnd = performance.now(); document.querySelectorAll('.cf-src.over').forEach(g => g.classList.remove('over'));
     if (ok) return cf.loaded ? cfTip() : cfDip();
     cfMove(cf.held, ...(d.filled ? CF_SRC[cfSrcKey()].rest : d.from), 0, 250);   // not there yet: back where it was (full: waiting by the food)
     return cfUpdate();
