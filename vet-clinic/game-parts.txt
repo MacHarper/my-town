@@ -56,10 +56,12 @@
   .petg.dragging .ring, .held .ring { opacity: 0 !important; }   /* once you pick it up, its ring goes away */
   .ring, .tag { opacity: 0; transition: opacity .15s; }
   .tag { pointer-events: none; }
+  .tag.pick-btn { pointer-events: auto; cursor: pointer; }   /* the Dogs and Cats buttons are real buttons: tapping anywhere on them opens the picker */
   .tgt:hover .ring, .tgt:focus-visible .ring { opacity: .75; }
   .tgt.on .ring, .petg.drag .ring { opacity: 1; }
   .tgt.over .ring { opacity: 1; stroke-width: 12; }   /* the spot under what you are dragging: let go here */
   .tgt.done { cursor: default; }
+  .tgt.used .ring { opacity: 0 !important; }   /* once you are using it (bowl at the sink), its ring goes away */
   .tgt.done:hover .ring, .tgt.done:hover .tag { opacity: 0 !important; }
   .tgt.on .tag, .tgt.named .tag, .tgt:hover .tag, .tgt:focus-visible .tag { opacity: 1; }
   .pick-arrow { pointer-events: none; animation: bob 1.2s ease-in-out infinite; }
@@ -75,7 +77,7 @@
   .readout.show { opacity: 1; }
   /* the guide: one short line that says what to do next */
   .guide { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 3; background: #fffaf5; border: none; border-radius: 18px; box-shadow: 0 6px 16px rgba(74, 59, 92, .18); padding: 10px 22px; font-size: clamp(14px, 2.4vw, 22px); font-weight: bold; color: #4a3b5c; white-space: nowrap; transition: opacity .3s; pointer-events: none; }
-  .guide.hide { opacity: 0; }
+  .guide.hide, body:has(.overlay.open) .guide { opacity: 0; }   /* never two places with words: a pop-up's words replace the guide line */
   .guide.nudge { animation: nudge .45s ease-out; }
   @keyframes nudge { 0%, 100% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12); } }
   #toast { position: fixed; z-index: 60; left: 50%; top: 14px; transform: translate(-50%, -30px); background: #fff; border: none; box-shadow: 0 6px 16px rgba(74, 59, 92, .18); border-radius: 14px; padding: 10px 18px; font-size: clamp(13px, 2.6vw, 18px); font-weight: bold; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; white-space: nowrap; }
@@ -435,7 +437,7 @@ function setTask(i, quiet) {
   document.getElementById('pickArrow').style.display = pickTime ? '' : 'none';
   const pg = document.querySelector('.petg');
   if (pg) pg.classList.toggle('drag', !!t && (t.icon === 'scale' || t.icon === 'bubbles'));   // drag the pet to the scale or the tub
-  guide(t ? say(t.guide) : `${pet.name} is all clean and happy.`);
+  if (t) guide(say(t.guide)); else guideEl.classList.add('hide');   // all done: the All Done card says it
 }
 
 const guideEl = document.getElementById('guide');
@@ -488,7 +490,7 @@ function openPicker(k) {
     s += '<div class="pk-page">';
     for (let i = p * 8; i < p * 8 + 8; i++) {
       const a = list[i];
-      s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt="" style="height: ${Math.round(100 * sizeK(a) ** 2.2)}%"><span class="pk-name">${a.name}</span><span class="pk-sex" aria-hidden="true">${PAW(a.boy ? '#4a9be0' : '#e0457b')}</span></button>`
+      s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt="" style="height: ${Math.round(Math.min(90, 100 * sizeK(a) ** 2.2))}%"><span class="pk-name">${a.name}</span><span class="pk-sex" aria-hidden="true">${PAW(a.boy ? '#4a9be0' : '#e0457b')}</span></button>`
              : `<div class="pk-card empty" aria-hidden="true">${EMPTY_PAW}<span class="pk-name">Coming soon</span></div>`;
     }
     s += '</div>';
@@ -957,7 +959,7 @@ room.addEventListener('pointermove', e => {
   const p = svgPoint(e); wdrag.dx = p.x - wdrag.start.x; wdrag.dy = p.y - wdrag.start.y;
   wbMove(wdrag.dx, wdrag.dy, 0);
   wdrag.over = atSink(wdrag.dx, wdrag.dy);
-  dropHint(wdrag.over ? 'water' : null);
+  if (wdrag.over) room.querySelector('[data-t="water"]').classList.add('used');   // at the sink: no more ring there
   faucet(wdrag.over ? WB.bottom + wdrag.dy - FLOOR_BOWL * 236 / 360 * (1 - BOWL_OPEN.cy) : null);
 });
 // while the bowl is held over the sink, the faucet runs and the bowl fills; full = done
@@ -1299,6 +1301,7 @@ document.getElementById('btClose').addEventListener('click', () => { dropTool();
 document.getElementById('adAgain').addEventListener('click', () => {
   closeOverlay(document.getElementById('allDone'));
   pet = null; fed = false; watered = false;
+  room.querySelectorAll('.tgt.used').forEach(g => g.classList.remove('used'));
   document.getElementById('petLayer').innerHTML = '';
   document.getElementById('extras').innerHTML = extrasSvg();   // everything back in its place
   setTask(0);
