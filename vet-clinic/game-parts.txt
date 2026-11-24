@@ -268,10 +268,13 @@
 @@JS@@
 // The room picture is 1984 x 1116; everything on it uses those numbers.
 // To add a pet: make its pictures with vet-clinic/pet_art.py, put them in ART (build.py), then add a line to PETS:
-// its own name (the breed only shows on its info card), weight in pounds, boy: true or false, breed, and one thing it loves. The picker fills 8 a page.
+// its own name (the breed only shows on its info card), weight in pounds, boy: true or false, breed, one thing it loves,
+// and nose: where its nose is in the eating picture, if not the same as Ralphie's. The picker fills 8 a page.
 const PETS = {
   dog: [ { id: 'ralphie', name: 'Ralphie', art: 'dachshundSit', eat: 'ralphieEat', bath: 'ralphieBath', done: 'ralphieDone', weight: 16,
-      boy: true, breed: 'Dachshund', loves: 'playing fetch' } ],
+      boy: true, breed: 'Dachshund', loves: 'playing fetch' },
+    { id: 'bella', name: 'Bella', art: 'bellaSit', eat: 'bellaEat', bath: 'bellaBath', done: 'bellaDone', weight: 65,
+      boy: false, breed: 'Labrador Retriever', loves: 'swimming', nose: [.165, .785] } ],
   cat: [],
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will
@@ -828,9 +831,9 @@ function feedPet() {
   fed = true;
   room.querySelector('[data-t="food"]').classList.remove('on');
   const EH = eatH(), left = EAT.cx - EH * 647 / 440 / 2, top = RUG.bottom - EH;
-  const nx = left + EH * 647 / 440 * EAT.nose[0], ny = top + EH * EAT.nose[1];
+  const nose = pet.nose || EAT.nose, nx = left + EH * 647 / 440 * nose[0], ny = top + EH * nose[1];
   // the bowl goes behind the pet, and a copy of its front rim goes in front, so the face dips into the bowl
-  const bw = FLOOR_BOWL, bh = bw * 236 / 360, bx = nx - bw / 2 - 10, by = ny - bh * BOWL_OPEN.cy - 16;
+  const bw = FLOOR_BOWL, bh = bw * 236 / 360, bx = nx - bw / 2 - 10, by = Math.min(ny - bh * BOWL_OPEN.cy - 16, RUG.bottom + 12 - bh);   // never above the floor
   const ocy = by + bh * BOWL_OPEN.cy, ory = bh * BOWL_OPEN.ry;
   const layer = document.getElementById('petLayer');
   layer.insertAdjacentHTML('afterbegin', `<g id="foodBowl" class="bowlfood"><image href="${ART.bowlFood}" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>

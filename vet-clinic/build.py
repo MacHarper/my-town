@@ -21,7 +21,9 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "ralphieEat": (A + "pets/ralphie-eat.webp", "image/webp"), "ralphieBath": (A + "pets/ralphie-bath.webp", "image/webp"),
        "ralphieDone": (A + "pets/ralphie-done.webp", "image/webp"), "cup": (A + "cup.webp", "image/webp"),
        "bowlFood": (A + "bowl-food.webp", "image/webp"), "bowlWater": (A + "bowl-water.webp", "image/webp"),
-       "soap": (A + "soap.webp", "image/webp"), "towel": (A + "towel.webp", "image/webp"), "brush": (A + "brush.webp", "image/webp")}
+       "soap": (A + "soap.webp", "image/webp"), "towel": (A + "towel.webp", "image/webp"), "brush": (A + "brush.webp", "image/webp"),
+       "bellaSit": (A + "pets/bella-sit.webp", "image/webp"), "bellaEat": (A + "pets/bella-eat.webp", "image/webp"),
+       "bellaBath": (A + "pets/bella-bath.webp", "image/webp"), "bellaDone": (A + "pets/bella-done.webp", "image/webp")}
 page = page.replace("const ART = {};", "const ART = {\n" + "".join("  %s: '%s',\n" % (k, d(*v)) for k, v in ART.items()) + "};", 1)
 page = page.replace("// ---------- The game ----------\n", "// ---------- The game ----------\n" + js, 1)
 open("vet-clinic/vet-clinic.html", "w").write(page); print("vet-clinic.html", len(page) // 1024, "KB")
