@@ -101,6 +101,8 @@
   .pk-card.empty { background: #f6f3f9; cursor: default; align-items: center; }
   .pk-card.empty svg { width: 38%; max-height: 60%; opacity: .5; }
   .pk-name { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); background: #fff; border: 3px solid #8a5a3b; border-radius: 999px; padding: 4px 14px; font-size: clamp(11px, 1.6vw, 16px); font-weight: bold; color: #6b4329; white-space: nowrap; }
+  .pk-sex { position: absolute; top: -6px; right: -6px; width: 24%; max-width: 54px; transform: rotate(14deg); pointer-events: none; }   /* boy or girl: blue or pink paw on the corner */
+  .pk-sex svg { display: block; width: 100%; height: auto; }
   .pk-card.empty .pk-name { border-color: #d8d0e2; color: #9b90a8; }
   .pk-card:not(.empty) .pk-name { border-color: #4a3b5c; color: #4a3b5c; }
   .pk-next { flex: 0 0 auto; width: 64px; height: 64px; border: none; border-radius: 50%; background: #3d8fe0; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #2a6db3; transition: transform .15s; }
@@ -486,7 +488,7 @@ function openPicker(k) {
     s += '<div class="pk-page">';
     for (let i = p * 8; i < p * 8 + 8; i++) {
       const a = list[i];
-      s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt="" style="height: ${Math.round(100 * sizeK(a) ** 2.2)}%"><span class="pk-name">${a.name}</span></button>`
+      s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt="" style="height: ${Math.round(100 * sizeK(a) ** 2.2)}%"><span class="pk-name">${a.name}</span><span class="pk-sex" aria-hidden="true">${PAW(a.boy ? '#4a9be0' : '#e0457b')}</span></button>`
              : `<div class="pk-card empty" aria-hidden="true">${EMPTY_PAW}<span class="pk-name">Coming soon</span></div>`;
     }
     s += '</div>';
