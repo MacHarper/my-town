@@ -82,6 +82,12 @@
   .cf-tool.on .ring, .cf-src.on .ring { opacity: 1; }
   .cf-tool.held .ring, .cf-tool.held .cf-tag { opacity: 0; }
   .cf-tool .cf-tag { transition: opacity .2s; }
+  .cf-tool.hint .ring { animation: blink .8s ease-in-out infinite; stroke: #ffc94d; }   /* after a wrong pick, the right tool blinks */
+  .cf-tool.held { cursor: grab; }
+  .cf-src.over .ring { opacity: 1; stroke-width: 22; }   /* let go here */
+  .cf-arrow { animation: march .7s linear infinite; }
+  @keyframes march { to { stroke-dashoffset: -26; } }
+  .cf-src .cf-label { pointer-events: none; }
   .cf-wig.shake { animation: shake .47s; transform-box: fill-box; transform-origin: center; }
   .cf-food { transform-box: fill-box; transform-origin: center; transition: transform .35s ease-out, opacity .3s; }
   .nail-spot { animation: blink 1.1s ease-in-out infinite; }
@@ -91,7 +97,7 @@
   .wand.drag { cursor: grab; }
   .wand.drag .ring { opacity: 1; }
   .wand.held .ring { opacity: 0; }
-  .wiggle .feather { animation: wiggle .5s ease-in-out infinite; transform-box: view-box; }
+  .wiggle .feather { animation: wiggle .5s ease-in-out infinite; transform-box: view-box; transition: translate .15s ease-out; }
   @keyframes wiggle { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(14deg); } }
   .petg image.bat { animation: bat .45s ease-in-out 4; transform-box: fill-box; transform-origin: 50% 100%; }
   @keyframes bat { 50% { transform: translateY(-16px) scale(1.03); } }
@@ -776,6 +782,7 @@ const msShow = (id, on) => document.getElementById(id).classList.toggle('away', 
 function openMeasure() {
   hideExtra('shelfFood');   // the bowl comes off the shelf
   ms = { step: 0, amount: 0, pouring: false, done: false, ready: false, drag: null };
+  document.getElementById('msSay').style.display = '';   // (cat food hides the words)
   document.getElementById('msTitle').textContent = `Measure ${pet.name}'s food`;
   drawMeasure();
   openOverlay(document.getElementById('measure'));
@@ -1361,8 +1368,10 @@ function bathDone() {
 // cats: two glowing front paws to snip with the clippers
 function nailSpots() {
   const b = poseBox('sit', TUB_DOG.cx, TUB_DOG.bottom, tubH()), sp = PAWS[pet.art], k = b.w / POSES.sit.w;
-  const mid = sp ? b.x + sp[1] * k : b.x + b.w / 2, pw = sp ? sp[0] * k : b.w * .6, y = b.y + b.h * .93;
-  bt.cells = [-.24, .24].map(f => ({ x: mid + f * pw, y, done: false }));
+  let mid = sp ? b.x + sp[1] * k : b.x + b.w / 2, pw = sp ? sp[0] * k : b.w * .6, y = b.y + b.h * .93, f = .24;
+  // cats: the curled tail sits beside the paws, so the paws' middle is under the collar (the middle of the chest)
+  if (kind === 'cat') { mid = sp ? b.x + sp[2] * k : mid; pw = b.w; f = .104; y = b.y + b.h * .92; }
+  bt.cells = [-f, f].map(d => ({ x: mid + d * pw, y, done: false }));
   document.getElementById('btFx').insertAdjacentHTML('beforeend', bt.cells.map((c, i) =>
     `<circle class="nail-spot" data-cell="${i}" cx="${c.x}" cy="${c.y}" r="28" fill="rgba(255,211,77,.3)" stroke="#ffc94d" stroke-width="7"/>`).join(''));
 }
@@ -1405,19 +1414,28 @@ function nameTarget(id, name) {
 }
 
 // ---------- Cat food: the cat's recipe, pick the right tool, scoop, then stir ----------
-// Every visit the cat wants a new mix of dry and wet food. Pick the teaspoon, tablespoon or cup for each,
-// tap the food to scoop it into the bowl, then stir. The words only show in the line at the top.
+// Every visit the cat wants a new mix of dry and wet food. A picture checklist (top left) says what the cat needs.
+// Pick the tsp, Tbsp or ¼ cup, drag it into the food to scoop, drag it to the bowl to tip it in, then stir.
+// A dashed arrow always shows where to drag next, so you don't need to read.
 const CF_TOOLS = {
-  tsp:  { name: 'Teaspoon',   one: 'teaspoon',   x: 330 },
-  tbsp: { name: 'Tablespoon', one: 'tablespoon', x: 550 },
-  cup:  { name: 'Cup',        one: 'cup',        x: 770 },
+  tsp:  { name: 'tsp',   x: 345 },
+  tbsp: { name: 'Tbsp',  x: 530 },
+  cup:  { name: '¼ cup', x: 715 },
 };
 const CF_DRY = [ { tool: 'tbsp', n: 2 }, { tool: 'tbsp', n: 3 }, { tool: 'cup', n: 1 } ];               // the cup is ¼ cup
 const CF_WET = [ { tool: 'tsp', n: 1 }, { tool: 'tsp', n: 2 }, { tool: 'tsp', n: 3 }, { tool: 'tbsp', n: 1 } ];
 const CF_HOME_Y = 140, CF_HELD = [558, 290];
-const CF_BOWL = { x: 420, y: 340, w: 260 }, CF_DRY_AT = [929, 262], CF_WET_AT = [155, 338];
-const cfAmount = r => r.tool === 'cup' ? '¼ cup' : `${r.n} ${CF_TOOLS[r.tool].one}${r.n > 1 ? 's' : ''}`;
+const CF_BOWL = { x: 420, y: 340, w: 260 };
+const CF_SRC = {   // the two open foods: where the tool dips in, where it waits once full, and the area you can let go on
+  dry: { at: [929, 262], dip: [929, 296], rest: [929, 185], box: [818, 170, 236, 320] },
+  wet: { at: [155, 320], dip: [155, 342], rest: [155, 250], box: [52, 282, 208, 208] },
+};
+const cfAmount = r => r.tool === 'cup' ? '¼ cup' : `${r.n} ${CF_TOOLS[r.tool].name}`;
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
+const cfFood = () => {   // the food's top in the bowl: center and size
+  const B = CF_BOWL, bh = B.w * 236 / 360;
+  return { cx: B.x + B.w * BOWL_OPEN.cx, cy: B.y + bh * BOWL_OPEN.cy, rx: B.w * BOWL_OPEN.rx * .86, ry: bh * BOWL_OPEN.ry * .8, bh };
+};
 let cf = null;
 
 function cfToolSvg(id) {
@@ -1428,11 +1446,13 @@ function cfToolSvg(id) {
   const art = id === 'cup' ? `<image href="${ART.cup}" x="-70" y="-24" width="140" height="${ch}"/>
       <ellipse class="cf-load" cx="2" cy="${-24 + ch * .74}" rx="30" ry="11" fill="#b98557" opacity="0"/>` : spoon(id === 'tsp' ? .72 : 1);
   return `<g class="cf-tool" id="cf-${id}" data-tool="${id}" role="button" tabindex="0" aria-label="${t.name}">
-    ${ringSvg(hx - 96, 2, 192, 300)}
-    <g class="cf-tag"><rect x="${hx - 82}" y="248" width="164" height="46" rx="23" fill="#fff" stroke="#8a5a3b" stroke-width="4"/>
-      <text x="${hx}" y="280" text-anchor="middle" font-size="24" font-weight="bold" fill="#6b4329">${t.name}</text></g>
+    ${ringSvg(hx - 88, 2, 176, 300)}
+    <g class="cf-tag"><rect x="${hx - 70}" y="248" width="140" height="46" rx="23" fill="#fff" stroke="#8a5a3b" stroke-width="4"/>
+      <text x="${hx}" y="281" text-anchor="middle" font-size="27" font-weight="bold" fill="#6b4329">${t.name}</text></g>
     <g class="cf-move" style="transform-origin: ${hx}px ${hy}px"><g class="cf-wig"><g transform="translate(${hx} ${hy})">${art}</g></g></g></g>`;
 }
+const cfLabel = (cx, y, text) => `<g class="cf-label"><rect x="${cx - 74}" y="${y}" width="148" height="40" rx="20" fill="#fff" stroke="#8a5a3b" stroke-width="4"/>
+  <text x="${cx}" y="${y + 28}" text-anchor="middle" font-size="23" font-weight="bold" fill="#6b4329">${text}</text></g>`;
 function cfBinSvg() {   // the dry food bin, open at the top (the same bin as the dogs' food)
   return `<g class="cf-src" id="cfDry" role="button" tabindex="0" aria-label="Dry food">${ringSvg(818, 170, 236, 320)}
     <g transform="translate(790 120) scale(.75)">
@@ -1440,7 +1460,8 @@ function cfBinSvg() {   // the dry food bin, open at the top (the same bin as th
       <path d="M78 250 Q120 232 160 250 T240 248 T292 250 V440 Q292 462 270 462 H100 Q78 462 78 440 Z" fill="#b98557"/>
       ${[[120, 300], [190, 340], [245, 290], [150, 400], [230, 410]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="#9a6a42"/>`).join('')}
       <rect x="92" y="170" width="22" height="270" rx="11" fill="#fff" opacity=".45"/>
-      <rect x="64" y="140" width="242" height="22" rx="11" fill="#c4a690"/></g></g>`;
+      <rect x="64" y="140" width="242" height="22" rx="11" fill="#c4a690"/></g>
+    ${cfLabel(929, 474, 'Dry food')}</g>`;
 }
 function cfCanSvg() {   // the wet food can, open, with a fish on its label
   return `<g class="cf-src" id="cfWet" role="button" tabindex="0" aria-label="Wet food">${ringSvg(52, 282, 208, 208)}
@@ -1449,51 +1470,102 @@ function cfCanSvg() {   // the wet food can, open, with a fish on its label
     <rect x="75" y="364" width="160" height="66" fill="#fde3ec"/>
     <ellipse cx="148" cy="397" rx="30" ry="16" fill="#f7b6cc"/><path d="M174 397 L196 383 L196 411 Z" fill="#f7b6cc"/><circle cx="134" cy="393" r="4" fill="#e0457b"/>
     <ellipse cx="155" cy="334" rx="80" ry="20" fill="#c9d3dc"/><ellipse cx="155" cy="335" rx="68" ry="14" fill="#a0563f"/>
-    <ellipse cx="138" cy="331" rx="22" ry="5" fill="#bb6f55"/></g>`;
+    <ellipse cx="138" cy="331" rx="22" ry="5" fill="#bb6f55"/>
+    ${cfLabel(155, 474, 'Wet food')}</g>`;
 }
 function cfBowlSvg() {
-  const B = CF_BOWL, bh = B.w * 236 / 360, cx = B.x + B.w * BOWL_OPEN.cx, cy = B.y + bh * BOWL_OPEN.cy, rx = B.w * BOWL_OPEN.rx, ry = bh * BOWL_OPEN.ry;
+  const B = CF_BOWL, f = cfFood(), bh = f.bh, { cx, cy, rx, ry } = f;
   return `<g class="cf-src" id="cfBowl" role="button" tabindex="0" aria-label="Food bowl">${ringSvg(B.x - 20, B.y - 20, B.w + 40, bh + 40)}
-    <image href="${ART.bowlFood}" x="${B.x}" y="${B.y}" width="${B.w}" height="${bh}"/>
-    <ellipse class="cf-food" id="cfDryIn" cx="${cx}" cy="${cy}" rx="${rx * .86}" ry="${ry * .8}" fill="#b98557" style="transform: scale(0)"/>
+    <g id="cfBowlArt"><image href="${ART.bowlFood}" x="${B.x}" y="${B.y}" width="${B.w}" height="${bh}"/>
+    <ellipse class="cf-food" id="cfDryIn" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#b98557" style="transform: scale(0)"/>
     <g id="cfKib"></g>
-    <ellipse class="cf-food" id="cfWetIn" cx="${cx + 8}" cy="${cy - 3}" rx="${rx * .48}" ry="${ry * .5}" fill="#a0563f" style="transform: scale(0)"/>
-    <g class="cf-food" id="cfMixIn" opacity="0"><ellipse cx="${cx}" cy="${cy}" rx="${rx * .86}" ry="${ry * .8}" fill="#a36b48"/>
-      ${[[-50, -4], [-20, 6], [14, -6], [44, 4], [-4, -12], [30, 12]].map(([x, y], i) => `<circle cx="${cx + x}" cy="${cy + y}" r="${6 - i % 2}" fill="${i % 2 ? '#7f4a32' : '#c08a5e'}"/>`).join('')}</g></g>`;
+    <ellipse class="cf-food" id="cfWetIn" cx="${cx + 8}" cy="${cy - 3}" rx="${rx * .56}" ry="${ry * .62}" fill="#a0563f" style="transform: scale(0)"/>
+    <g class="cf-food" id="cfMixIn" opacity="0"><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#a36b48"/>
+      ${[[-50, -4], [-20, 6], [14, -6], [44, 4], [-4, -12], [30, 12]].map(([x, y], i) => `<circle cx="${cx + x}" cy="${cy + y}" r="${6 - i % 2}" fill="${i % 2 ? '#7f4a32' : '#c08a5e'}"/>`).join('')}</g></g></g>`;
+}
+function cfFrontSvg() {   // the near half of the bowl and food, drawn again over the spoon, so the spoon goes into the food
+  const B = CF_BOWL, { cx, cy, rx, bh } = cfFood();
+  return `<g id="cfFront" style="opacity: 0; pointer-events: none"><clipPath id="cfFrontClip">
+    <path d="M${B.x - 10} ${cy} H${cx - rx} A${rx} ${cfFood().ry} 0 0 0 ${cx + rx} ${cy} H${B.x + B.w + 10} V${B.y + bh + 10} H${B.x - 10} Z"/></clipPath>
+    <use href="#cfBowlArt" clip-path="url(#cfFrontClip)"/></g>`;
+}
+// the checklist: little pictures of the can, the bin and a spoon, the amount, and a dot for each scoop
+const CF_MINI = {
+  dry: `<rect x="-14" y="-14" width="28" height="30" rx="6" fill="#e3eef0" stroke="#c4a690" stroke-width="2"/><rect x="-12" y="-4" width="24" height="18" rx="4" fill="#b98557"/><rect x="-16" y="-17" width="32" height="5" rx="2.5" fill="#c4a690"/>`,
+  wet: `<rect x="-15" y="-9" width="30" height="24" rx="6" fill="#f28fb0"/><rect x="-15" y="-2" width="30" height="10" fill="#fde3ec"/><ellipse cx="0" cy="-9" rx="15" ry="5" fill="#c9d3dc"/><ellipse cx="0" cy="-9" rx="12" ry="3.5" fill="#a0563f"/>`,
+  stir: `<ellipse cx="0" cy="8" rx="17" ry="7" fill="#a36b48"/><path d="M-10 6 A10 4 0 1 0 10 6" stroke="#fff" stroke-width="2.5" fill="none" stroke-dasharray="4 3"/><rect x="2" y="-18" width="5" height="24" rx="2.5" fill="#9aa6b2" transform="rotate(20 4 0)"/>`,
+};
+function cfListSvg() {
+  const c = cf, step = { pickDry: 0, scoopDry: 0, pickWet: 1, scoopWet: 1, stir: 2, done: 3 }[c.phase];
+  const rows = [
+    { mini: 'dry', name: 'Dry food', r: c.dry, count: step > 0 ? (c.dry.tool === 'cup' ? 1 : c.dry.n) : step === 0 ? c.count : 0 },
+    { mini: 'wet', name: 'Wet food', r: c.wet, count: step > 1 ? c.wet.n : step === 1 ? c.count : 0 },
+    { mini: 'stir', name: 'Stir' } ];
+  let s = `<rect x="8" y="6" width="236" height="262" rx="22" fill="#fffdf3" stroke="#8a5a3b" stroke-width="4"/>
+    <text x="24" y="44" font-size="26" font-weight="bold" fill="#4a3b5c">${pet.name} needs:</text>`;
+  rows.forEach((row, i) => {
+    const y = 64 + i * 66, done = i < step, cur = i === step;
+    if (cur) s += `<rect x="16" y="${y}" width="220" height="60" rx="14" fill="#fff1a8" stroke="#ffc94d" stroke-width="3"/>`;
+    s += done ? `<g transform="translate(36 ${y + 30}) scale(.62)">${ICONS.check}</g>` : `<circle cx="36" cy="${y + 30}" r="6" fill="#6b4329"/>`;
+    s += `<g transform="translate(70 ${y + 30})" opacity="${done ? .55 : 1}">${CF_MINI[row.mini]}</g>`;
+    const col = done ? '#8d8597' : '#4a3b5c';
+    if (!row.r) { s += `<text x="96" y="${y + 39}" font-size="24" font-weight="bold" fill="${col}">${row.name}</text>`; return; }
+    const n = row.r.tool === 'cup' ? 1 : row.r.n;
+    s += `<text x="96" y="${y + 25}" font-size="20" font-weight="bold" fill="${col}">${row.name}</text>
+      <text class="cf-amt" x="96" y="${y + 51}" font-size="22" font-weight="bold" fill="${done ? col : '#b8336a'}">${cfAmount(row.r)}</text><g class="cf-dots">`;
+    if (n > 1) for (let k = 0; k < n; k++)   // a dot for each scoop, filled in as you scoop (moved to just after the amount below)
+      s += `<circle cx="${k * 15}" cy="${y + 44}" r="5.5" fill="${k < row.count ? '#5fae7a' : '#fff'}" stroke="${k < row.count ? '#5fae7a' : '#b9a99a'}" stroke-width="2.5"/>`;
+    s += '</g>';
+  });
+  return s;
+}
+function cfArrow(from, to) {   // the dashed arrow that shows where to drag next
+  const h = document.getElementById('cfHint');
+  if (!from) { h.innerHTML = ''; return; }
+  const [x1, y1] = from, [x2, y2] = to, mx = (x1 + x2) / 2, my = Math.min(y1, y2) - 90;
+  const a = Math.atan2(y2 - my, x2 - mx), back = 22, hx = x2 - Math.cos(a) * 8, hy = y2 - Math.sin(a) * 8;
+  const head = [[hx, hy], [hx - Math.cos(a - .5) * back, hy - Math.sin(a - .5) * back], [hx - Math.cos(a + .5) * back, hy - Math.sin(a + .5) * back]];
+  h.innerHTML = `<path class="cf-arrow" d="M${x1} ${y1} Q${mx} ${my} ${hx - Math.cos(a) * 14} ${hy - Math.sin(a) * 14}" fill="none" stroke="#e0457b" stroke-width="7" stroke-linecap="round" stroke-dasharray="14 12"/>
+    <polygon points="${head.map(p => p.join(',')).join(' ')}" fill="#e0457b"/>`;
 }
 
 function openCatFood() {
   hideExtra('shelfFood');   // the bowl comes off the shelf
   ms = null;                // (the dogs' measuring cup is not used)
   if (!pet.recipe) pet.recipe = { dry: pickOne(CF_DRY), wet: pickOne(CF_WET) };   // what this cat wants today
-  cf = { dry: pet.recipe.dry, wet: pet.recipe.wet, phase: 'pickDry', held: null, count: 0, mix: 0, anim: false, stir: null };
+  cf = { dry: pet.recipe.dry, wet: pet.recipe.wet, phase: 'pickDry', held: null, count: 0, mix: 0, anim: false, stir: null, loaded: false, hint: null, pos: null, drag: null };
   document.getElementById('msTitle').textContent = `Make ${pet.name}'s food`;
-  document.getElementById('msStage').innerHTML = cfCanSvg() + cfBinSvg() + cfBowlSvg() + Object.keys(CF_TOOLS).map(cfToolSvg).join('');
+  document.getElementById('msSay').style.display = 'none';   // no sentences: the checklist and arrows show what to do
+  document.getElementById('msStage').innerHTML = cfCanSvg() + cfBinSvg() + cfBowlSvg() + Object.keys(CF_TOOLS).map(cfToolSvg).join('')
+    + cfFrontSvg() + '<g id="cfHint" style="pointer-events: none"></g><g id="cfList"></g>';
   msView(MS_VIEW.full); msButtons(null);
   openOverlay(document.getElementById('measure'));
   cfUpdate();
 }
-function cfUpdate() {   // the words at the top and which things glow
-  const c = cf, r = c.phase === 'scoopDry' ? c.dry : c.wet, left = r.tool === 'cup' ? '' : ` (${c.count} of ${r.n})`;
-  const say = {
-    pickDry: `${pet.name} wants <b>${cfAmount(c.dry)}</b> of dry food and <b>${cfAmount(c.wet)}</b> of wet food. Pick the tool for the dry food.`,
-    scoopDry: `Tap the dry food to scoop <b>${cfAmount(c.dry)}</b>.${left}`,
-    pickWet: `Now the wet food: <b>${cfAmount(c.wet)}</b>. Pick the tool for it.`,
-    scoopWet: `Tap the wet food to scoop <b>${cfAmount(c.wet)}</b>.${left}`,
-    stir: `Stir the food to mix it.`,
-    done: `Just right! That's ${pet.name}'s favorite.`,
-  }[c.phase];
-  msSay(say);
-  const picking = c.phase === 'pickDry' || c.phase === 'pickWet';
-  document.querySelectorAll('.cf-tool').forEach(g => { g.classList.toggle('on', picking); g.classList.toggle('held', g.dataset.tool === c.held); });
-  document.getElementById('cfDry').classList.toggle('on', c.phase === 'scoopDry');
-  document.getElementById('cfWet').classList.toggle('on', c.phase === 'scoopWet');
-  document.getElementById('cfBowl').classList.toggle('on', c.phase === 'stir' && !c.stir && c.mix === 0);
+const cfSrcKey = () => cf.phase === 'scoopDry' ? 'dry' : cf.phase === 'scoopWet' ? 'wet' : null;
+function cfUpdate() {   // the checklist, which things glow, and where the arrow points
+  const c = cf, picking = c.phase === 'pickDry' || c.phase === 'pickWet', k = cfSrcKey();
+  document.getElementById('cfList').innerHTML = cfListSvg();
+  document.querySelectorAll('#cfList .cf-amt').forEach(t => t.nextElementSibling.setAttribute('transform', `translate(${96 + t.getComputedTextLength() + 13} 0)`));
+  document.querySelectorAll('.cf-tool').forEach(g => {
+    const hint = picking && c.hint === g.dataset.tool;
+    g.classList.toggle('on', picking && (!c.hint || hint)); g.classList.toggle('hint', hint);
+    g.classList.toggle('held', g.dataset.tool === c.held);
+  });
+  document.getElementById('cfDry').classList.toggle('on', k === 'dry' && !c.loaded);
+  document.getElementById('cfWet').classList.toggle('on', k === 'wet' && !c.loaded);
+  document.getElementById('cfBowl').classList.toggle('on', (k && c.loaded) || (c.phase === 'stir' && c.mix === 0 && !c.stir));
+  document.getElementById('cfFront').style.opacity = c.phase === 'stir' ? 1 : 0;
+  if (c.anim || c.drag || c.stir) return cfArrow(null);
+  if (k && !c.loaded) cfArrow([c.pos[0], c.pos[1] - 40], [CF_SRC[k].at[0], CF_SRC[k].at[1] - 20]);
+  else if (k) cfArrow([c.pos[0], c.pos[1] - 40], [CF_BOWL.x + 130, CF_BOWL.y + 10]);
+  else cfArrow(null);
 }
 function cfMove(id, x, y, rot, ms_) {
   const t = CF_TOOLS[id], el = document.querySelector(`#cf-${id} .cf-move`);
   el.style.transition = ms_ ? `transform ${ms_}ms ease-in-out` : 'none';
   el.style.transform = `translate(${x - t.x}px, ${y - CF_HOME_Y}px) rotate(${rot}deg)`;
+  if (cf && id === cf.held) cf.pos = [x, y];
 }
 function cfLoad(id, wet, on) {
   const l = document.querySelector(`#cf-${id} .cf-load`);
@@ -1503,39 +1575,51 @@ function cfPickTool(id) {
   const c = cf, dry = c.phase === 'pickDry';
   if (c.anim || !(dry || c.phase === 'pickWet')) return;
   const r = dry ? c.dry : c.wet;
-  if (id !== r.tool) {   // not this one: a little shake, and the line says which one
+  if (id !== r.tool) {   // not this one: it shakes, and the right one lights up
     const w = document.querySelector(`#cf-${id} .cf-wig`);
     w.classList.remove('shake'); void w.getBBox(); w.classList.add('shake');
-    msSay(`That's the ${CF_TOOLS[id].one}. The ${dry ? 'dry' : 'wet'} food needs the <b>${CF_TOOLS[r.tool].one}</b>.`);
+    c.hint = r.tool; cfUpdate();
     return;
   }
-  c.held = id; c.count = 0; c.phase = dry ? 'scoopDry' : 'scoopWet';
+  c.held = id; c.count = 0; c.hint = null; c.loaded = false; c.phase = dry ? 'scoopDry' : 'scoopWet';
   cfMove(id, ...CF_HELD, 0, 450);
-  cfUpdate();
+  c.anim = true; cfUpdate();
+  setTimeout(() => { c.anim = false; cfUpdate(); }, 460);
 }
-function cfScoop(wet) {
-  const c = cf, r = wet ? c.wet : c.dry, id = c.held, at = wet ? CF_WET_AT : CF_DRY_AT, n = r.tool === 'cup' ? 1 : r.n;
-  c.anim = true;
-  document.getElementById(wet ? 'cfWet' : 'cfDry').classList.remove('on');   // once you use it, no ring
-  cfMove(id, at[0], at[1], 0, 420);                                            // into the food
-  setTimeout(() => { cfLoad(id, wet, true); cfMove(id, CF_BOWL.x + 150, CF_BOWL.y - 30, 0, 420); }, 520);   // over the bowl
-  setTimeout(() => cfMove(id, CF_BOWL.x + 160, CF_BOWL.y - 10, -60, 220), 980);                            // tip it in
+function cfDip() {   // into the open food: down, a little scoop, and back up full
+  const c = cf, k = cfSrcKey(), S = CF_SRC[k], id = c.held;
+  c.anim = true; cfUpdate();
+  cfMove(id, ...S.at, 0, 300);
+  setTimeout(() => cfMove(id, ...S.dip, 18, 260), 320);
+  setTimeout(() => { cfLoad(id, k === 'wet', true); cfMove(id, ...S.rest, 0, 320); }, 620);
+  setTimeout(() => { c.anim = false; c.loaded = true; cfUpdate(); }, 960);
+}
+function cfTip() {   // over the bowl, tip it in
+  const c = cf, wet = cfSrcKey() === 'wet', r = wet ? c.wet : c.dry, id = c.held, n = r.tool === 'cup' ? 1 : r.n;
+  c.anim = true; cfUpdate();
+  cfMove(id, CF_BOWL.x + 150, CF_BOWL.y - 30, 0, 300);
+  setTimeout(() => cfMove(id, CF_BOWL.x + 160, CF_BOWL.y - 10, -60, 220), 320);
   setTimeout(() => {
-    cfLoad(id, wet, false); c.count++;
+    cfLoad(id, wet, false); c.count++; c.loaded = false;
     const k = Math.min(1, .45 + .55 * c.count / n);
     document.getElementById(wet ? 'cfWetIn' : 'cfDryIn').style.transform = `scale(${k})`;
     if (!wet) document.getElementById('cfKib').insertAdjacentHTML('beforeend', [0, 1, 2].map(i => {
-      const B = CF_BOWL, bh = B.w * 236 / 360, x = B.x + B.w * BOWL_OPEN.cx + ((c.count * 37 + i * 29) % 90 - 45) * k, y = B.y + bh * BOWL_OPEN.cy + ((c.count * 13 + i * 11) % 20 - 10) * k;
+      const f = cfFood(), x = f.cx + ((c.count * 37 + i * 29) % 90 - 45) * k, y = f.cy + ((c.count * 13 + i * 11) % 20 - 10) * k;
       return `<circle cx="${x}" cy="${y}" r="6" fill="#9a6a42"/>`; }).join(''));
     cfMove(id, ...CF_HELD, 0, 260);
     setTimeout(() => {
       c.anim = false;
-      if (c.count < n) return cfUpdate();
-      if (!wet) { c.phase = 'pickWet'; c.held = null; cfMove(id, CF_TOOLS[id].x, CF_HOME_Y, 0, 420); }   // back in its place
-      else c.phase = 'stir';
+      if (c.count >= n) {
+        if (!wet) { c.phase = 'pickWet'; c.held = null; c.count = 0; cfMove(id, CF_TOOLS[id].x, CF_HOME_Y, 0, 420); }   // back in its place
+        else { c.phase = 'stir'; cfMove(id, ...cfStirAt(0, 0), 0, 400); }                                                // down into the food
+      }
       cfUpdate();
     }, 280);
-  }, 1220);
+  }, 560);
+}
+function cfStirAt(dx, dy) {   // where the spoon sits while stirring: its tip down in the food, behind the bowl's front
+  const f = cfFood();
+  return [f.cx + Math.max(-f.rx * .62, Math.min(f.rx * .62, dx)), f.cy + 15 + Math.max(0, Math.min(f.ry * .5, dy))];
 }
 function cfStirBy(d) {   // mixing: the two foods turn into one
   const c = cf;
@@ -1545,45 +1629,77 @@ function cfStirBy(d) {   // mixing: the two foods turn into one
   ['cfDryIn', 'cfWetIn', 'cfKib'].forEach(i => { document.getElementById(i).style.opacity = 1 - c.mix; });
   if (c.mix >= 1 && c.phase === 'stir') {
     c.phase = 'done'; c.stir = null;
-    cfMove(c.held, CF_TOOLS[c.held].x, CF_HOME_Y, 0, 420); c.held = null;
+    const id = c.held; cfMove(id, ...CF_HELD, 0, 300); c.held = null;
+    setTimeout(() => cfMove(id, CF_TOOLS[id].x, CF_HOME_Y, 0, 420), 320);   // up out of the food, then back in its place
     cfUpdate();
+    const fx = document.createElementNS('http://www.w3.org/2000/svg', 'g'); document.getElementById('msStage').appendChild(fx);
+    const f = cfFood(); starBurst(f.cx, f.cy, fx);
     setTimeout(() => { closeOverlay(document.getElementById('measure')); cf = null; feedPet(); }, 1500);
   }
 }
-function cfTap(el) {
-  if (!cf || cf.anim) return;
-  const tool = el.closest('.cf-tool'), src = el.closest('.cf-src');
+function cfTap(el) {   // taps (and Enter) still work: tap a tool to pick it, the food to scoop, the bowl to tip it in or stir
+  if (!cf || cf.anim || cf.drag) return;
+  const tool = el.closest('.cf-tool'), src = el.closest('.cf-src'), k = cfSrcKey();
   if (tool && !tool.classList.contains('held')) return cfPickTool(tool.dataset.tool);
-  if (src && src.id === 'cfDry' && cf.phase === 'scoopDry') return cfScoop(false);
-  if (src && src.id === 'cfWet' && cf.phase === 'scoopWet') return cfScoop(true);
+  if (k && !cf.loaded && src && src.id === (k === 'dry' ? 'cfDry' : 'cfWet')) return cfDip();
+  if (k && cf.loaded && src && src.id === 'cfBowl') return cfTip();
   if ((src && src.id === 'cfBowl' || tool) && cf.phase === 'stir' && performance.now() - (cf.tapped || 0) > 400) cfStirTap();
 }
 function cfStirTap() {   // a tap on the bowl stirs a little
   if (!cf || !cf.held) return;
   cf.tapped = performance.now();
-  { const [x, y] = CF_HELD; cfMove(cf.held, x - 30, y + 60, 20, 150); setTimeout(() => cf && cf.held && cfMove(cf.held, x + 30, y + 60, -20, 150), 160);
-    setTimeout(() => cf && cf.held && cfMove(cf.held, ...CF_HELD, 0, 150), 320);
-    cfStirBy(.25);
-  }
+  const id = cf.held;
+  cfMove(id, ...cfStirAt(-40, 6), 14, 150); setTimeout(() => cf && cf.held && cfMove(id, ...cfStirAt(40, 10), -14, 150), 160);
+  setTimeout(() => cf && cf.held && cfMove(id, ...cfStirAt(0, 0), 0, 150), 320);
+  cfStirBy(.25);
 }
 stage.addEventListener('click', e => { if (cf) cfTap(e.target); });
 stage.addEventListener('keydown', e => { if (cf && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); cfTap(e.target); } });
-// stirring by dragging: hold the spoon (or the bowl) and move it around in the bowl
+const cfIn = (b, p) => p.x >= b[0] && p.x <= b[0] + b[2] && p.y >= b[1] && p.y <= b[1] + b[3];
+const cfBowlBox = () => { const B = CF_BOWL; return [B.x - 20, B.y - 40, B.w + 40, cfFood().bh + 60]; };
+function cfDropBox() {   // where the tool in your hand can be let go: the food when it's empty, the bowl when it's full
+  const k = cfSrcKey(); return !k ? null : cf.loaded ? cfBowlBox() : CF_SRC[k].box;
+}
 stage.addEventListener('pointerdown', e => {
-  if (!cf || cf.phase !== 'stir' || cf.anim || !e.target.closest('#cfBowl, .cf-tool.held')) return;
-  e.preventDefault(); cf.stir = msPoint(e); cf.moved = false; stage.setPointerCapture(e.pointerId);
-  cfUpdate();
+  if (!cf || cf.anim) return;
+  if (cf.phase === 'stir') {   // stirring: hold the spoon (or the bowl) and move it around in the food
+    if (!e.target.closest('#cfBowl, .cf-tool.held')) return;
+    e.preventDefault(); cf.stir = msPoint(e); cf.moved = false; stage.setPointerCapture(e.pointerId);
+    return cfUpdate();
+  }
+  if (!cfSrcKey() || !e.target.closest('.cf-tool.held')) return;   // dragging the tool to the food, then to the bowl
+  e.preventDefault(); const p = msPoint(e);
+  cf.drag = { off: [cf.pos[0] - p.x, cf.pos[1] - p.y], from: cf.pos.slice(), moved: false };
+  stage.setPointerCapture(e.pointerId); cfUpdate();
 });
 stage.addEventListener('pointermove', e => {
-  if (!cf || !cf.stir) return;
+  if (!cf) return;
+  if (cf.drag) {
+    const p = msPoint(e), d = cf.drag, x = p.x + d.off[0], y = p.y + d.off[1];
+    if (Math.hypot(x - d.from[0], y - d.from[1]) > 8) d.moved = true;
+    cfMove(cf.held, x, y, 0, 0);
+    const box = cfDropBox(), over = box && cfIn(box, { x, y });
+    document.getElementById(cf.loaded ? 'cfBowl' : cfSrcKey() === 'dry' ? 'cfDry' : 'cfWet').classList.toggle('over', !!over);
+    return;
+  }
+  if (!cf.stir) return;
   const p = msPoint(e), d = Math.hypot(p.x - cf.stir.x, p.y - cf.stir.y);
   if (d > 6) cf.moved = true;
-  const B = CF_BOWL, x = Math.max(B.x + 60, Math.min(B.x + B.w - 60, p.x)), y = Math.max(B.y - 40, Math.min(B.y + 30, p.y - 30));
-  cfMove(cf.held, x, y, (x - CF_HELD[0]) / 6, 0);
+  const f = cfFood(), [x, y] = cfStirAt(p.x - f.cx, p.y - f.cy);
+  cfMove(cf.held, x, y, (x - f.cx) / 5, 0);
   cf.stir = p;
   cfStirBy(d / 1400);
 });
-const cfStirEnd = () => { if (cf && cf.stir) { cf.stir = null; if (!cf.moved) return cfStirTap(); if (cf.held) cfMove(cf.held, ...CF_HELD, 0, 250); cf.tapped = performance.now(); } };
+const cfStirEnd = () => {
+  if (cf && cf.drag) {
+    const d = cf.drag, box = cfDropBox(), ok = d.moved && box && cfIn(box, { x: cf.pos[0], y: cf.pos[1] });
+    cf.drag = null; document.querySelectorAll('.cf-src.over').forEach(g => g.classList.remove('over'));
+    if (ok) return cf.loaded ? cfTip() : cfDip();
+    cfMove(cf.held, ...d.from, 0, 250);   // not there yet: back where it was
+    return cfUpdate();
+  }
+  if (cf && cf.stir) { cf.stir = null; if (!cf.moved) return cfStirTap(); if (cf.held) cfMove(cf.held, ...cfStirAt(0, 0), 0, 250); cf.tapped = performance.now(); }
+};
 stage.addEventListener('pointerup', cfStirEnd);
 stage.addEventListener('pointercancel', cfStirEnd);
 
@@ -1601,7 +1717,7 @@ function wandSvg() {
       <path d="M0 0 L190 -110" stroke="#c98a5a" stroke-width="13" stroke-linecap="round"/>
       <path d="M6 -6 L150 -88" stroke="#e2b07e" stroke-width="4" stroke-linecap="round"/>
       <path d="M190 -110 Q236 -126 ${fx} ${fy}" stroke="#8a7a9c" stroke-width="3" fill="none"/>
-      <g class="feather" style="transform-origin: ${WAND.x + fx}px ${WAND.y + fy}px">
+      <g class="feather" style="transform-origin: ${fx}px ${fy}px">
         <path d="M${fx} ${fy} C ${fx - 22} ${fy + 20}, ${fx - 18} ${fy + 58}, ${fx - 4} ${fy + 78} C ${fx + 12} ${fy + 56}, ${fx + 14} ${fy + 22}, ${fx} ${fy} Z" fill="#e0457b"/>
         <path d="M${fx} ${fy} C ${fx + 8} ${fy + 22}, ${fx + 30} ${fy + 46}, ${fx + 42} ${fy + 58} C ${fx + 42} ${fy + 34}, ${fx + 24} ${fy + 10}, ${fx} ${fy} Z" fill="#a77bd1"/>
         <path d="M${fx - 1} ${fy + 4} L${fx - 4} ${fy + 66}" stroke="#f7b6cc" stroke-width="3" stroke-linecap="round"/>
@@ -1641,16 +1757,37 @@ function petImg(pose, cx, bottom, h) {   // a pose on the rug, the same size as 
   img.setAttribute('href', ART[POSES[pose].art(pet)]); img.setAttribute('x', b.x); img.setAttribute('y', b.y); img.setAttribute('width', b.w); img.setAttribute('height', b.h);
   return img;
 }
-function jumpPet(from, to, ms_, done) {   // a hop along an arc: from and to are [dx, dy, scale]
-  const g = document.querySelector('.petg'), t0 = performance.now();
+function jumpPet(from, to, ms_, done) {   // a cat leap: crouch and wiggle, spring up along an arc (stretched out), land with a little squash
+  const g = document.querySelector('.petg'), t0 = performance.now(), crouch = 380, land = 220, lean = to[0] < from[0] ? -1 : 1;
   g.style.transition = 'none'; g.style.transformOrigin = `${RUG.cx}px ${RUG.bottom}px`;
+  const put = (x, y, s, sx, sy, rot) => { g.style.transform = `translate(${x}px, ${y}px) scale(${s * sx}, ${s * sy}) rotate(${rot}deg)`; };
   const step = t => {
-    const k = Math.min(1, (t - t0) / ms_), up = 4 * 170 * k * (1 - k);
-    const x = from[0] + (to[0] - from[0]) * k, y = from[1] + (to[1] - from[1]) * k - up, s = from[2] + (to[2] - from[2]) * k;
-    g.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
-    if (k < 1) requestAnimationFrame(step); else done();
+    const e = t - t0;
+    if (e < crouch) {   // down low, with a little side to side wiggle, leaning toward where it will jump
+      const k = e / crouch, low = Math.sin(Math.min(1, k * 1.6) * Math.PI / 2);
+      put(from[0] + Math.sin(k * Math.PI * 4) * 4, from[1], from[2], 1 + .06 * low, 1 - .1 * low, lean * 3 * low);
+    } else if (e < crouch + ms_) {   // in the air: long and stretched in the middle, tipped the way it is going
+      const k = (e - crouch) / ms_, up = 4 * 170 * k * (1 - k), str = Math.sin(k * Math.PI);
+      const x = from[0] + (to[0] - from[0]) * k, y = from[1] + (to[1] - from[1]) * k - up, sc = from[2] + (to[2] - from[2]) * k;
+      put(x, y, sc, 1 - .05 * str, 1 + .09 * str, lean * 8 * (1 - 2 * k));
+    } else if (e < crouch + ms_ + land) {   // landing: squash, then back to normal
+      const k = (e - crouch - ms_) / land, sq = Math.sin(k * Math.PI);
+      put(to[0], to[1], to[2], 1 + .07 * sq, 1 - .1 * sq, 0);
+    } else { put(to[0], to[1], to[2], 1, 1, 0); return done(); }
+    requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
+}
+function swats(n, done) {   // batting at the feather: the paw goes up (play picture) and down (sitting), and the feather flicks away each time
+  const fea = document.querySelector('#wand .feather');
+  let i = 0;
+  const one = () => {
+    if (i++ >= n) { petImg('play', RUG.cx, RUG.bottom, rugH()); return done(); }
+    petImg('play', RUG.cx, RUG.bottom, rugH());
+    if (fea) { fea.style.translate = `${i % 2 ? 14 : -10}px -16px`; setTimeout(() => { fea.style.translate = '0 0'; }, 170); }
+    setTimeout(() => { petImg('sit', RUG.cx, RUG.bottom, rugH()); setTimeout(one, 230 + (i % 2) * 90); }, 260);
+  };
+  one();
 }
 function playAtTree(fromDx, fromDy) {
   if (busy || !TASKS[task] || TASKS[task].icon !== 'feather') return;
@@ -1660,24 +1797,23 @@ function playAtTree(fromDx, fromDy) {
   room.querySelector('[data-t="tree"]').classList.remove('on');
   guideEl.classList.add('hide');
   // the wand glides up so the feather dangles just above the bed, and wiggles
-  const tx = TREE_BED.cx - (WAND.x + FEATHER[0]) + 20, ty = TREE_BED.bottom - 190 - (WAND.y + FEATHER[1]);
+  const tx = TREE_BED.cx - (WAND.x + FEATHER[0]) + 46, ty = TREE_BED.bottom - 217 - (WAND.y + FEATHER[1]);   // just above the paw she lifts
   if (fromDx !== undefined) wandMove(fromDx, fromDy, 0);
   requestAnimationFrame(() => wandMove(tx, ty, 500));
   setTimeout(() => wand.classList.add('wiggle'), 450);
   const bed = [TREE_BED.cx - RUG.cx, TREE_BED.bottom - RUG.bottom, TREE_BED.k];
-  setTimeout(() => {   // up the tree after it
-    petImg('play', RUG.cx, RUG.bottom, rugH());
-    jumpPet([0, 0, 1], bed, 750, () => {
+  setTimeout(() => {   // up the tree after it, paws tucked in (the sitting picture)
+    petImg('sit', RUG.cx, RUG.bottom, rugH());
+    jumpPet([0, 0, 1], bed, 620, () => {
       document.getElementById('treeFront').style.opacity = 1;
-      const img = petImg('play', RUG.cx, RUG.bottom, rugH()); img.classList.add('bat');   // batting at the feather
-      setTimeout(() => {   // back down, happy
-        img.classList.remove('bat');
+      swats(5, () => setTimeout(() => {   // back down, happy
         document.getElementById('treeFront').style.opacity = 0;
+        petImg('sit', RUG.cx, RUG.bottom, rugH());
         wand.classList.remove('wiggle'); wand.style.transition = 'opacity .4s'; wand.style.opacity = 0;
-        jumpPet(bed, [0, 0, 1], 750, playDone);
-      }, 1900);
+        jumpPet(bed, [0, 0, 1], 620, playDone);
+      }, 350));
     });
-  }, 900);
+  }, 700);
 }
 function playDone() {
   const img = petImg('done', RUG.cx, RUG.bottom, rugH());
