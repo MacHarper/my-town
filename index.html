@@ -241,7 +241,7 @@
   $('tbPanel').innerHTML = Array(6).fill('<div class="tb-slot">' + STAR + '</div>').join('');   // empty for now: things to collect
   function render() {
     const has = !!data.avatar;
-    $('tbMeImg').hidden = !has; $('tbEmpty').hidden = has;
+    $('tbMeImg').hidden = !has; $('tbEmpty').toggleAttribute('hidden', has);
     if (has) $('tbMeImg').src = data.avatar;
   }
   let ac;
