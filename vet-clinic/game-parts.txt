@@ -1325,8 +1325,8 @@ const frame = document.getElementById('frame');
 const short = matchMedia('(max-height: 600px)'), backBtn = document.querySelector('header .backtown');
 function placeBack() { if (short.matches) document.querySelector('.taskbar').prepend(backBtn); else document.querySelector('header').prepend(backBtn); fitFrame(); }
 short.addEventListener('change', placeBack);
-// the building's badge in the task bar (a stand-in paw until the Vet Clinic logo is added)
-document.getElementById('bldgLogo').innerHTML = `<svg viewBox="-6 -6 112 104">${PAW_SHAPE('#5fae7a')}</svg>`;
+// the building's badge in the task bar: the Vet Clinic logo (mint cross with a cat and a dog) on a raised white badge
+document.getElementById('bldgLogo').innerHTML = `<img src="${ART.vetLogo}" alt="Vet Clinic logo">`;
 function fitFrame() {
   const g = document.getElementById('game'), cs = getComputedStyle(g), hd = document.querySelector('header');
   const w = g.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);

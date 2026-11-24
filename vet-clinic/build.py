@@ -24,7 +24,7 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "soap": (A + "soap.webp", "image/webp"), "towel": (A + "towel.webp", "image/webp"), "brush": (A + "brush.webp", "image/webp"),
        "bellaSit": (A + "pets/bella-sit.webp", "image/webp"), "bellaEat": (A + "pets/bella-eat.webp", "image/webp"),
        "bellaBath": (A + "pets/bella-bath.webp", "image/webp"), "bellaDone": (A + "pets/bella-done.webp", "image/webp"),
-       "zuzuSit": (A + "pets/zuzu-sit.webp", "image/webp"), "zuzuEat": (A + "pets/zuzu-eat.webp", "image/webp"),
+       "vetLogo": (A + "vet-logo.webp", "image/webp"), "zuzuSit": (A + "pets/zuzu-sit.webp", "image/webp"), "zuzuEat": (A + "pets/zuzu-eat.webp", "image/webp"),
        "zuzuBath": (A + "pets/zuzu-bath.webp", "image/webp"), "zuzuDone": (A + "pets/zuzu-done.webp", "image/webp")}
 # every pet pose (sit, bath, done) is measured across its paws, so the game can draw each pose the same size as sitting
 from PIL import Image
