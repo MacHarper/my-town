@@ -52,7 +52,8 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "finnDone": (A + "pets/finn-done.webp", "image/webp"), "finnSleep": (A + "pets/finn-sleep.webp", "image/webp"),
        "roxySit": (A + "pets/roxy-sit.webp", "image/webp"), "roxyEat": (A + "pets/roxy-eat.webp", "image/webp"), "roxyBath": (A + "pets/roxy-bath.webp", "image/webp"), "roxyDone": (A + "pets/roxy-done.webp", "image/webp"),
        "misoSit": (A + "pets/miso-sit.webp", "image/webp"), "misoEat": (A + "pets/miso-eat.webp", "image/webp"), "misoGroom": (A + "pets/miso-groom.webp", "image/webp"), "misoPlay": (A + "pets/miso-play.webp", "image/webp"), "misoDone": (A + "pets/miso-done.webp", "image/webp"), "misoSleep": (A + "pets/miso-sleep.webp", "image/webp"),
-       "griffinSit": (A + "pets/griffin-sit.webp", "image/webp"), "griffinEat": (A + "pets/griffin-eat.webp", "image/webp"), "griffinBath": (A + "pets/griffin-bath.webp", "image/webp"), "griffinDone": (A + "pets/griffin-done.webp", "image/webp")}
+       "griffinSit": (A + "pets/griffin-sit.webp", "image/webp"), "griffinEat": (A + "pets/griffin-eat.webp", "image/webp"), "griffinBath": (A + "pets/griffin-bath.webp", "image/webp"), "griffinDone": (A + "pets/griffin-done.webp", "image/webp"),
+       "jaxSit": (A + "pets/jax-sit.webp", "image/webp"), "jaxEat": (A + "pets/jax-eat.webp", "image/webp"), "jaxGroom": (A + "pets/jax-groom.webp", "image/webp"), "jaxPlay": (A + "pets/jax-play.webp", "image/webp"), "jaxDone": (A + "pets/jax-done.webp", "image/webp"), "jaxSleep": (A + "pets/jax-sleep.webp", "image/webp")}
 # every pet pose (sit, bath, done) is measured across its paws, so the game can draw each pose the same size as sitting
 from PIL import Image
 def paws(f):
