@@ -357,19 +357,19 @@ const PETS = {
       boy: false, breed: 'Pit Bull', loves: 'doing zoomies in the yard', nose: [.143, .822]  },
     { id: 'griffin', name: 'Griffin', art: 'griffinSit', eat: 'griffinEat', bath: 'griffinBath', done: 'griffinDone', weight: 75,
       boy: true, breed: 'German Shepherd', loves: 'learning new tricks', nose: [.145, .773] } ],
-  cat: [ { id: 'luna', name: 'Luna', art: 'lunaSit', eat: 'lunaEat', bath: 'lunaGroom', play: 'lunaPlay', done: 'lunaDone',
+  cat: [ { id: 'luna', name: 'Luna', art: 'lunaSit', eat: 'lunaEat', bath: 'lunaGroom', play: 'lunaPlay', play2: 'lunaPlay2', done: 'lunaDone',
       boy: false, breed: 'American Shorthair', loves: 'chasing feathers', nose: [.156, .70] },   // cats: no weight; bath is the groom pose
-    { id: 'peaches', name: 'Peaches', art: 'peachesSit', eat: 'peachesEat', bath: 'peachesGroom', play: 'peachesPlay', playDown: 'peachesPlayDown', playFit: [-84.5, -100.2, 527.5, 659.4], paw: 'left',
+    { id: 'peaches', name: 'Peaches', art: 'peachesSit', eat: 'peachesEat', bath: 'peachesGroom', play: 'peachesPlay', play2: 'peachesPlay2', playDown: 'peachesPlayDown', playFit: [-84.5, -100.2, 527.5, 659.4], paw: 'left',
       done: 'peachesDone', boy: false, breed: 'Persian', loves: 'being brushed', nose: [.19, .847] },
-    { id: 'felix', name: 'Felix', art: 'felixSit', eat: 'felixEat', bath: 'felixGroom', play: 'felixPlay', done: 'felixDone',
+    { id: 'felix', name: 'Felix', art: 'felixSit', eat: 'felixEat', bath: 'felixGroom', play: 'felixPlay', play2: 'felixPlay2', done: 'felixDone',
       boy: true, breed: 'American Shorthair', loves: 'batting at toy mice', nose: [.108, .711] },
-    { id: 'tucker', name: 'Tucker', art: 'tuckerSit', eat: 'tuckerEat', bath: 'tuckerGroom', play: 'tuckerPlay', done: 'tuckerDone',
+    { id: 'tucker', name: 'Tucker', art: 'tuckerSit', eat: 'tuckerEat', bath: 'tuckerGroom', play: 'tuckerPlay', play2: 'tuckerPlay2', done: 'tuckerDone',
       boy: true, breed: 'Russian Blue', loves: 'chasing crinkle balls', nose: [.138, .667] },
-    { id: 'finn', name: 'Finn', art: 'finnSit', eat: 'finnEat', bath: 'finnGroom', play: 'finnPlay', done: 'finnDone',
+    { id: 'finn', name: 'Finn', art: 'finnSit', eat: 'finnEat', bath: 'finnGroom', play: 'finnPlay', play2: 'finnPlay2', done: 'finnDone',
       boy: true, breed: 'Bombay', loves: 'curling up in cozy boxes', nose: [.088, .675]  },
-    { id: 'miso', name: 'Miso', art: 'misoSit', eat: 'misoEat', bath: 'misoGroom', play: 'misoPlay', done: 'misoDone',
+    { id: 'miso', name: 'Miso', art: 'misoSit', eat: 'misoEat', bath: 'misoGroom', play: 'misoPlay', play2: 'misoPlay2', done: 'misoDone',
       boy: true, breed: 'Ragdoll', loves: 'flopping into laps for cuddles', nose: [.138, .641]  },
-    { id: 'jax', name: 'Jax', art: 'jaxSit', eat: 'jaxEat', bath: 'jaxGroom', play: 'jaxPlay', paw: 'left', done: 'jaxDone',
+    { id: 'jax', name: 'Jax', art: 'jaxSit', eat: 'jaxEat', bath: 'jaxGroom', play: 'jaxPlay', play2: 'jaxPlay2', paw: 'left', done: 'jaxDone',
       boy: true, breed: 'British Shorthair', loves: 'napping in sunny windows', nose: [.133, .547] } ],   // playDown: her play picture with the paw down
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will

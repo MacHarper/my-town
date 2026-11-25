@@ -54,6 +54,8 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "misoSit": (A + "pets/miso-sit.webp", "image/webp"), "misoEat": (A + "pets/miso-eat.webp", "image/webp"), "misoGroom": (A + "pets/miso-groom.webp", "image/webp"), "misoPlay": (A + "pets/miso-play.webp", "image/webp"), "misoDone": (A + "pets/miso-done.webp", "image/webp"), "misoSleep": (A + "pets/miso-sleep.webp", "image/webp"),
        "griffinSit": (A + "pets/griffin-sit.webp", "image/webp"), "griffinEat": (A + "pets/griffin-eat.webp", "image/webp"), "griffinBath": (A + "pets/griffin-bath.webp", "image/webp"), "griffinDone": (A + "pets/griffin-done.webp", "image/webp"),
        "jaxSit": (A + "pets/jax-sit.webp", "image/webp"), "jaxEat": (A + "pets/jax-eat.webp", "image/webp"), "jaxGroom": (A + "pets/jax-groom.webp", "image/webp"), "jaxPlay": (A + "pets/jax-play.webp", "image/webp"), "jaxDone": (A + "pets/jax-done.webp", "image/webp"), "jaxSleep": (A + "pets/jax-sleep.webp", "image/webp")}
+for c in ["luna", "peaches", "felix", "tucker", "finn", "miso", "jax"]:   # cats: "play 2", crouched playing with a toy (made by play2_art.py)
+    ART[c + "Play2"] = (A + "pets/%s-play2.webp" % c, "image/webp")
 # every pet pose (sit, bath, done) is measured across its paws, so the game can draw each pose the same size as sitting
 from PIL import Image
 def paws(f):
@@ -74,7 +76,7 @@ def collar(f):   # the middle of the collar band: the widest row of a color that
     if not rows: return [W / 2, H * .45]
     m = max(v[0] for v in rows.values()); ys = [y for y, v in rows.items() if v[0] > .5 * m]
     return [round(sum(rows[y][1] for y in ys) / len(ys)), round(sum(ys) / len(ys))]
-PAW = {k: paws(f) for k, (f, m) in ART.items() if "/pets/" in f and not f.endswith(("-eat.webp", "-sleep.webp"))}
+PAW = {k: paws(f) for k, (f, m) in ART.items() if "/pets/" in f and not f.endswith(("-eat.webp", "-sleep.webp", "-play2.webp"))}
 for k, v in PAW.items(): print("  paws", k, v[0], "collar", v[2], v[3])
 page = page.replace("const ART = {};", "const ART = {\n" + "".join("  %s: '%s',\n" % (k, d(*v)) for k, v in ART.items()) + "};", 1)
 page = page.replace("// ---------- The game ----------\n", "// ---------- The game ----------\n" + js, 1)
