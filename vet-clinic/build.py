@@ -32,6 +32,8 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "millyBath": (A + "pets/milly-bath.webp", "image/webp"), "millyDone": (A + "pets/milly-done.webp", "image/webp"),
        "suzySit": (A + "pets/suzy-sit.webp", "image/webp"), "suzyEat": (A + "pets/suzy-eat.webp", "image/webp"),
        "suzyBath": (A + "pets/suzy-bath.webp", "image/webp"), "suzyDone": (A + "pets/suzy-done.webp", "image/webp"),
+       "willowSit": (A + "pets/willow-sit.webp", "image/webp"), "willowEat": (A + "pets/willow-eat.webp", "image/webp"),
+       "willowBath": (A + "pets/willow-bath.webp", "image/webp"), "willowDone": (A + "pets/willow-done.webp", "image/webp"),
        "lunaSit": (A + "pets/luna-sit.webp", "image/webp"), "lunaEat": (A + "pets/luna-eat.webp", "image/webp"),
        "lunaGroom": (A + "pets/luna-groom.webp", "image/webp"), "lunaPlay": (A + "pets/luna-play.webp", "image/webp"),
        "lunaDone": (A + "pets/luna-done.webp", "image/webp"), "lunaSleep": (A + "pets/luna-sleep.webp", "image/webp"),

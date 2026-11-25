@@ -350,7 +350,9 @@ const PETS = {
     { id: 'milly', name: 'Milly', art: 'millySit', eat: 'millyEat', bath: 'millyBath', done: 'millyDone', weight: 65,
       boy: false, breed: 'Golden Retriever', loves: 'fetching tennis balls', nose: [.082, .809] },
     { id: 'suzy', name: 'Suzy', art: 'suzySit', eat: 'suzyEat', bath: 'suzyBath', done: 'suzyDone', weight: 50,
-      boy: false, breed: 'Poodle', loves: 'getting her curls fluffed', nose: [.18, .79] } ],
+      boy: false, breed: 'Poodle', loves: 'getting her curls fluffed', nose: [.18, .79] },
+    { id: 'willow', name: 'Willow', art: 'willowSit', eat: 'willowEat', bath: 'willowBath', done: 'willowDone', weight: 12,
+      boy: false, breed: 'Shih Tzu', loves: 'getting her hair tied up in a bow', nose: [.092, .613] } ],
   cat: [ { id: 'luna', name: 'Luna', art: 'lunaSit', eat: 'lunaEat', bath: 'lunaGroom', play: 'lunaPlay', done: 'lunaDone',
       boy: false, breed: 'American Shorthair', loves: 'chasing feathers', nose: [.156, .70] },   // cats: no weight; bath is the groom pose
     { id: 'peaches', name: 'Peaches', art: 'peachesSit', eat: 'peachesEat', bath: 'peachesGroom', play: 'peachesPlay', playDown: 'peachesPlayDown', playFit: [-84.5, -100.2, 527.5, 659.4], paw: 'left',
@@ -1457,7 +1459,7 @@ const CF_TOOLS = {
 };
 const CF_DRY = [ { tool: 'tbsp', n: 2 }, { tool: 'tbsp', n: 3 }, { tool: 'tbsp', n: 4 } ];
 const CF_WET = [ { tool: 'tsp', n: 1 }, { tool: 'tsp', n: 2 }, { tool: 'tsp', n: 3 }, { tool: 'tbsp', n: 1 } ];
-const CF_HOME_Y = 140, CF_HELD = [558, 290];
+const CF_HOME_Y = 205, CF_HELD = [558, 290];   // the spoons' place (their name tags are above them)
 const CF_BOWL = { x: 420, y: 340, w: 260 };
 const CF_SRC = {   // the two open foods: where the tool dips in, where it waits once full, and the area you can let go on
   dry: { at: [929, 262], dip: [929, 296], rest: [929, 185], box: [818, 170, 236, 320] },
@@ -1479,10 +1481,11 @@ function cfToolSvg(id) {
   const art = id === 'cup' ? `<image href="${ART.cup}" x="-70" y="-24" width="140" height="${ch}"/>
       <ellipse class="cf-load" cx="2" cy="${-24 + ch * .74}" rx="30" ry="11" fill="#b98557" opacity="0"/>` : spoon(id === 'tsp' ? .72 : 1);
   return `<g class="cf-tool" id="cf-${id}" data-tool="${id}" role="button" tabindex="0" aria-label="${t.name}">
-    ${ringSvg(hx - 88, 2, 176, 300)}
-    <g class="cf-tag"><rect x="${hx - 70}" y="248" width="140" height="46" rx="23" fill="#fff" stroke="#8a5a3b" stroke-width="4"/>
-      <text x="${hx}" y="281" text-anchor="middle" font-size="27" font-weight="bold" fill="#6b4329">${t.name}</text></g>
-    <g class="cf-move" style="transform-origin: ${hx}px ${hy}px"><g class="cf-wig"><g transform="translate(${hx} ${hy})">${art}</g></g></g></g>`;
+    ${ringSvg(hx - 88, 2, 176, 258)}
+    <g class="cf-tag"><rect x="${hx - 70}" y="10" width="140" height="46" rx="23" fill="#fff" stroke="#8a5a3b" stroke-width="4"/>
+      <text x="${hx}" y="43" text-anchor="middle" font-size="27" font-weight="bold" fill="#6b4329">${t.name}</text></g>
+    <clipPath id="cfDipClip-${id}"><rect x="${hx - 400}" y="-2000" width="800" height="${2000 + hy - 20}"/></clipPath>
+    <g class="cf-move" style="transform-origin: ${hx}px ${hy}px"><g class="cf-wig"><g transform="translate(${hx} ${hy})">${art}</g></g></g></g>`;   // (the clip hides the tip while it is down in the food)
 }
 const cfLabel = (cx, y, text) => `<g class="cf-label"><rect x="${cx - 74}" y="${y}" width="148" height="40" rx="20" fill="#fff" stroke="#8a5a3b" stroke-width="4"/>
   <text x="${cx}" y="${y + 28}" text-anchor="middle" font-size="23" font-weight="bold" fill="#6b4329">${text}</text></g>`;
@@ -1596,6 +1599,9 @@ function cfUpdate() {   // the checklist, which things glow, and where the arrow
   document.getElementById('cfWet').classList.toggle('on', k === 'wet' && !c.loaded);
   document.getElementById('cfBowl').classList.toggle('on', (k && c.loaded) || (c.phase === 'stir' && c.mix === 0 && !c.stir));
   document.getElementById('cfFront').style.opacity = c.phase === 'stir' ? 1 : 0;
+  document.querySelectorAll('.cf-tool').forEach(g => {   // stirring: the spoon's tip is down in the food, wherever it is
+    const w = g.querySelector('.cf-wig'), dip = c.phase === 'stir' && g.dataset.tool === c.held;
+    if (dip) w.setAttribute('clip-path', `url(#cfDipClip-${g.dataset.tool})`); else w.removeAttribute('clip-path'); });
   if (c.anim || c.drag || c.stir) return cfArrow(null);
   if (k && !c.loaded) cfArrow([c.pos[0], c.pos[1] - 40], [CF_SRC[k].at[0], CF_SRC[k].at[1] - 20]);
   else if (k) cfArrow([c.pos[0], c.pos[1] - 40], [CF_BOWL.x + 130, CF_BOWL.y + 10]);
@@ -1658,10 +1664,12 @@ function cfTip() {   // over the bowl, tip it in
     }, 280);
   }, 560);
 }
-function cfStirAt(dx, dy) {   // where the spoon sits while stirring: its tip down in the food, behind the bowl's front
-  const f = cfFood();
-  return [f.cx + Math.max(-f.rx * .62, Math.min(f.rx * .62, dx)), f.cy + 15 + Math.max(0, Math.min(f.ry * .5, dy))];
+function cfStirAt(dx, dy) {   // where the spoon sits while stirring: anywhere in the food (near and far side), its tip down in it
+  const f = cfFood(), ax = f.rx * .66, ay = f.ry * .7, r = Math.hypot(dx / ax, dy / ay);
+  if (r > 1) { dx /= r; dy /= r; }
+  return [f.cx + dx, f.cy + 12 + dy];
 }
+const cfStirTilt = (x, y) => { const f = cfFood(); return (x - f.cx) / 4; };   // leans toward the side it is on
 function cfStirBy(d) {   // mixing: the two foods turn into one
   const c = cf;
   c.mix = Math.min(1, c.mix + d);
@@ -1684,14 +1692,17 @@ function cfTap(el) {   // taps (and Enter) still work: tap a tool to pick it, th
   if (tool && !tool.classList.contains('cf-held')) return cfPickTool(tool.dataset.tool);
   if (k && !cf.loaded && src && src.id === (k === 'dry' ? 'cfDry' : 'cfWet')) return cfDip();
   if (k && cf.loaded && src && src.id === 'cfBowl') return cfTip();
-  if ((src && src.id === 'cfBowl' || tool) && cf.phase === 'stir' && performance.now() - (cf.tapped || 0) > 400) cfStirTap();
+  if ((src && src.id === 'cfBowl' || tool) && cf.phase === 'stir' && performance.now() - (cf.tapped || 0) > 700) cfStirTap();
 }
 function cfStirTap() {   // a tap on the bowl stirs a little
   if (!cf || !cf.held) return;
   cf.tapped = performance.now();
-  const id = cf.held;
-  cfMove(id, ...cfStirAt(-40, 6), 14, 150); setTimeout(() => cf && cf.held && cfMove(id, ...cfStirAt(40, 10), -14, 150), 160);
-  setTimeout(() => cf && cf.held && cfMove(id, ...cfStirAt(0, 0), 0, 150), 320);
+  const id = cf.held, f = cfFood();   // one full circle around the food
+  [0, 1, 2, 3, 4, 5, 6].forEach(i => setTimeout(() => {
+    if (!cf || !cf.held) return;
+    const a = i * Math.PI / 3, [x, y] = i === 6 ? cfStirAt(0, 0) : cfStirAt(Math.cos(a) * f.rx, Math.sin(a) * f.ry);
+    cfMove(id, x, y, i === 6 ? 0 : cfStirTilt(x, y), 110);
+  }, i * 110));
   cfStirBy(.25);
 }
 stage.addEventListener('click', e => { if (cf) cfTap(e.target); });
@@ -1739,6 +1750,10 @@ stage.addEventListener('pointermove', e => {
     if (Math.hypot(x - d.from[0], y - d.from[1]) > 8) d.moved = true;
     cfMove(cf.held, x, y, d.tilt || 0, 0);
     const box = cfDropBox(), over = box && (cfIn(box, { x, y }) || cfIn(box, p));   // the tool or your finger
+    if (over && cf.loaded && d.moved) {   // a full spoon over the bowl: it tips the food in right away
+      cf.drag = null; cf.dragEnd = performance.now(); document.getElementById('cfBowl').classList.remove('over');
+      return cfTip();
+    }
     if (over && !cf.loaded) {   // touching the food: it fills right away, no need to let go, and a little scoop tilt
       const k = cfSrcKey(); cf.loaded = true; d.filled = true; d.tilt = 22;
       cfLoad(cf.held, k === 'wet', true);
@@ -1753,7 +1768,7 @@ stage.addEventListener('pointermove', e => {
   const p = msPoint(e), d = Math.hypot(p.x - cf.stir.x, p.y - cf.stir.y);
   if (d > 6) cf.moved = true;
   const f = cfFood(), [x, y] = cfStirAt(p.x - f.cx, p.y - f.cy);
-  cfMove(cf.held, x, y, (x - f.cx) / 5, 0);
+  cfMove(cf.held, x, y, cfStirTilt(x, y), 0);
   cf.stir = p;
   cfStirBy(d / 1400);
 });
