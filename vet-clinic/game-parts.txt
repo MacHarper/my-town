@@ -354,7 +354,9 @@ const PETS = {
     { id: 'willow', name: 'Willow', art: 'willowSit', eat: 'willowEat', bath: 'willowBath', done: 'willowDone', weight: 12,
       boy: false, breed: 'Shih Tzu', loves: 'getting her hair tied up in a bow', nose: [.092, .613]  },
     { id: 'roxy', name: 'Roxy', art: 'roxySit', eat: 'roxyEat', bath: 'roxyBath', done: 'roxyDone', weight: 55,
-      boy: false, breed: 'Pit Bull', loves: 'doing zoomies in the yard', nose: [.143, .822] } ],
+      boy: false, breed: 'Pit Bull', loves: 'doing zoomies in the yard', nose: [.143, .822]  },
+    { id: 'griffin', name: 'Griffin', art: 'griffinSit', eat: 'griffinEat', bath: 'griffinBath', done: 'griffinDone', weight: 75,
+      boy: true, breed: 'German Shepherd', loves: 'learning new tricks', nose: [.145, .773] } ],
   cat: [ { id: 'luna', name: 'Luna', art: 'lunaSit', eat: 'lunaEat', bath: 'lunaGroom', play: 'lunaPlay', done: 'lunaDone',
       boy: false, breed: 'American Shorthair', loves: 'chasing feathers', nose: [.156, .70] },   // cats: no weight; bath is the groom pose
     { id: 'peaches', name: 'Peaches', art: 'peachesSit', eat: 'peachesEat', bath: 'peachesGroom', play: 'peachesPlay', playDown: 'peachesPlayDown', playFit: [-84.5, -100.2, 527.5, 659.4], paw: 'left',
