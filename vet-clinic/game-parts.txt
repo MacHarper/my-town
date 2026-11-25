@@ -370,7 +370,9 @@ const PETS = {
     { id: 'miso', name: 'Miso', art: 'misoSit', eat: 'misoEat', bath: 'misoGroom', play: 'misoPlay', play2: 'misoPlay2', done: 'misoDone',
       boy: true, breed: 'Ragdoll', loves: 'flopping into laps for cuddles', nose: [.138, .641]  },
     { id: 'jax', name: 'Jax', art: 'jaxSit', eat: 'jaxEat', bath: 'jaxGroom', play: 'jaxPlay', play2: 'jaxPlay2', paw: 'left', done: 'jaxDone',
-      boy: true, breed: 'British Shorthair', loves: 'napping in sunny windows', nose: [.133, .547] } ],   // playDown: her play picture with the paw down
+      boy: true, breed: 'British Shorthair', loves: 'napping in sunny windows', nose: [.133, .547] },
+    { id: 'finley', name: 'Finley', art: 'finleySit', eat: 'finleyEat', bath: 'finleyGroom', play: 'finleyPlay', play2: 'finleyPlay2', done: 'finleyDone',
+      boy: true, breed: 'Scottish Fold', loves: 'curling up in cardboard boxes', nose: [.036, .644] } ],   // playDown: her play picture with the paw down
 };
 // How much food a pet gets for its weight. The weigh step shows this card, and the food step will
 // ask the player to measure this much in the measuring cup (lines at 1/4, 1/2, 3/4 and 1 cup).

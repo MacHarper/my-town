@@ -54,7 +54,10 @@ ART = {"room": ("images/vet-room.jpg", "image/jpeg"), "dachshundSit": (A + "pets
        "misoSit": (A + "pets/miso-sit.webp", "image/webp"), "misoEat": (A + "pets/miso-eat.webp", "image/webp"), "misoGroom": (A + "pets/miso-groom.webp", "image/webp"), "misoPlay": (A + "pets/miso-play.webp", "image/webp"), "misoDone": (A + "pets/miso-done.webp", "image/webp"), "misoSleep": (A + "pets/miso-sleep.webp", "image/webp"),
        "griffinSit": (A + "pets/griffin-sit.webp", "image/webp"), "griffinEat": (A + "pets/griffin-eat.webp", "image/webp"), "griffinBath": (A + "pets/griffin-bath.webp", "image/webp"), "griffinDone": (A + "pets/griffin-done.webp", "image/webp"),
        "jaxSit": (A + "pets/jax-sit.webp", "image/webp"), "jaxEat": (A + "pets/jax-eat.webp", "image/webp"), "jaxGroom": (A + "pets/jax-groom.webp", "image/webp"), "jaxPlay": (A + "pets/jax-play.webp", "image/webp"), "jaxDone": (A + "pets/jax-done.webp", "image/webp"), "jaxSleep": (A + "pets/jax-sleep.webp", "image/webp")}
-for c in ["luna", "peaches", "felix", "tucker", "finn", "miso", "jax"]:   # cats: "play 2", crouched playing with a toy (made by play2_art.py)
+for c in ["finley"]:   # cats added later: every pose
+    for pose in ["sit", "eat", "groom", "play", "done", "sleep"]:
+        ART[c + pose.capitalize()] = (A + "pets/%s-%s.webp" % (c, pose), "image/webp")
+for c in ["luna", "peaches", "felix", "tucker", "finn", "miso", "jax", "finley"]:   # cats: "play 2", crouched playing with a toy (made by play2_art.py)
     ART[c + "Play2"] = (A + "pets/%s-play2.webp" % c, "image/webp")
 # every pet pose (sit, bath, done) is measured across its paws, so the game can draw each pose the same size as sitting
 from PIL import Image
