@@ -213,7 +213,7 @@
 
 <!-- ===== toolbar (same on every screen; paste right after <body>; follows style-guide.md) ===== -->
 <style>
-  #tb { position: fixed; right: 12px; bottom: 12px; z-index: 40; display: flex; align-items: flex-end; gap: 12px;
+  #tb { position: fixed; right: 12px; bottom: 12px; z-index: 40; display: flex; align-items: flex-end; gap: 16px;
     padding: 11px 11px 15px 13px; background: #fff; border-radius: 28px;
     box-shadow: 0 0 0 2px #f3edf8, 0 10px 30px rgba(120, 60, 120, .18); font-family: Verdana, Geneva, sans-serif;
     animation: tbIn .525s cubic-bezier(.3, 1.5, .5, 1); }
@@ -244,6 +244,8 @@
   #tb .tb-bagcount { position: absolute; right: -7px; top: -7px; min-width: 24px; height: 24px; padding: 0 5px; box-sizing: border-box; border-radius: 12px; background: #fff; color: #4a3b5c;
     font-size: 13px; font-weight: bold; line-height: 24px; text-align: center; box-shadow: 0 2px 4px rgba(74, 59, 92, .25); }
   #tb .tb-bagcount[hidden] { display: none; }
+  /* even spacing (Mac, Nov 26, 2026): a number badge counts as the button's edge, so the gap is measured from the badge */
+  #tb .tb-btn:has(.tb-bagcount:not([hidden])) { margin-right: 7px; }
   #tb .tb-me { --e: #f5bcd0; position: relative; width: 96px; height: 128px; margin-top: -58px; padding: 7px; border-radius: 20px; cursor: pointer;
     background: linear-gradient(#fff 55%, #ffe8f0); box-shadow: 0 4px 0 #f5bcd0, 0 8px 18px rgba(74, 59, 92, .15);
     transition: transform .126s, box-shadow .126s; }
@@ -278,6 +280,7 @@
   #tb .tb-big { --c: #5fae7a; --e: #468a5e; min-height: 54px; border-radius: 16px; background: var(--c); color: #fff; font-size: 19px; font-weight: bold; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 0 var(--e), 0 8px 18px rgba(74, 59, 92, .15); transition: transform .126s, box-shadow .126s; }
   #tb .tb-big.blue { --c: #4a9be0; --e: #3479b8; }
+  #tb .tb-big.pink { --c: #e0457b; --e: #b8336a; }
   #tb .tb-big:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--e); }
   #tb .tb-big svg { width: 26px; height: 26px; }
   /* every pop-up message in every game looks the same (Mac, Nov 25, 2026: the Vet Clinic's "Your backpack is empty" box):
@@ -288,7 +291,7 @@
     text-align: center; white-space: normal; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; }
   html body #toast.show, html body #tbToast.show { opacity: 1; transform: translate(-50%, 0); }
   @media (max-width: 600px) {
-    #tb { right: 6px; bottom: 6px; gap: 6px; padding: 7px 7px 10px 8px; border-radius: 22px; }
+    #tb { right: 6px; bottom: 6px; gap: 9px; padding: 7px 7px 10px 8px; border-radius: 22px; }
     #tb .tb-btn { width: 46px; height: 46px; padding: 5px; border-radius: 14px; }
     #tb .tb-badge { border-radius: 9px; padding: 2px; }
     #tb .tb-card { width: auto; min-width: 80px; gap: 5px; padding: 4px 8px; } #tb .tb-card .tb-plain { width: 30px; height: 20px; } #tb .tb-money { font-size: 14px; }
@@ -299,6 +302,10 @@
   @media (prefers-reduced-motion: reduce) { #tb, #tb .tb-me.stamp, #tb .tb-btn.wiggle .tb-badge, #tb .tb-card.bump .tb-money, #tb .tb-slot.new img { animation: none !important; } }
 </style>
 <nav id="tb" aria-label="My things">
+  <!-- Start over: for testing the game from scratch (Mac, Nov 26, 2026); remove this button, its panel and its script lines when done -->
+  <button class="tb-btn tb-blue tb-save" id="tbRestartBtn" aria-label="Start over">
+    <svg class="tb-plain" viewBox="0 0 40 40"><path d="M29.5 13.5 A12 12 0 1 0 32 22" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M33 5 L33 16 L22 16 Z" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>
+  </button>
   <button class="tb-btn tb-gray tb-save" id="tbSaveBtn" aria-label="Save or load my game">
     <svg class="tb-plain" viewBox="0 0 40 40"><rect x="6" y="5" width="28" height="30" rx="5" fill="#fff"/><rect x="12" y="5" width="16" height="10" rx="2" fill="#ddd0ec"/><rect x="22" y="7" width="4" height="6" rx="1" fill="#5f5a6b"/><rect x="11" y="21" width="18" height="10" rx="2.5" fill="#ffc94d"/></svg>
   </button>
@@ -320,6 +327,11 @@
     <h4>My money</h4>
     <div class="tb-lines" id="tbLines"></div>
     <div class="tb-total"><span>Balance</span><span id="tbTotal">$20</span></div>
+  </div>
+  <div class="tb-panel tb-savebox" id="tbRestartPanel" aria-label="Start over">
+    <h4>Start over?</h4>
+    <p>This clears everything: money, backpack, clothes and games. The town starts fresh.</p>
+    <button class="tb-big pink" id="tbRestartGo">Start over</button>
   </div>
   <div class="tb-panel tb-savebox" id="tbSavePanel" aria-label="Save or load">
     <h4>My game</h4>
@@ -456,7 +468,7 @@
   window.tbOpenBag = () => { closePanels(); $('tbPanel').classList.add('open'); };
 
   // ---- pop-ups: one open at a time ----
-  const PANELS = { tbBag: 'tbPanel', tbCard: 'tbMoneyPanel', tbSaveBtn: 'tbSavePanel' };
+  const PANELS = { tbBag: 'tbPanel', tbCard: 'tbMoneyPanel', tbSaveBtn: 'tbSavePanel', tbRestartBtn: 'tbRestartPanel' };
   function closePanels(except) { Object.values(PANELS).forEach(p => { if (p !== except) $(p).classList.remove('open'); }); }
   Object.entries(PANELS).forEach(([btn, panel]) => {
     $(btn).onclick = e => {
@@ -476,6 +488,17 @@
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       beep([[523, 0, .1], [659, .08, .1], [784, .16, .2]]); tbSparkle($('tbSaveFile'), 14); tbToast('Your game is saved.');
     } catch (e) { tbToast('Saving did not work here.'); }
+  };
+  // ---- Start over (testing): wipe the save and go to the town map ----
+  $('tbRestartGo').onclick = () => {
+    try { localStorage.removeItem(KEY); sessionStorage.clear(); } catch (e) {}
+    for (const k in data) delete data[k];   // nothing left to save back
+    window.tbSave = () => {};
+    beep([[784, 0, .1], [659, .08, .1], [523, .16, .2]]);
+    setTimeout(() => {   // a fresh load of the town map (on the map itself, a hash change alone would not reload)
+      const u = new URL(ROOT + 'index.html', location.href);
+      if (u.pathname === location.pathname) { location.hash = 'town'; location.reload(); } else location.href = u.href + '#town';
+    }, 300);
   };
   $('tbLoadFile').onclick = () => $('tbFile').click();
   $('tbFile').onchange = () => {
