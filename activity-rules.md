@@ -28,6 +28,7 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
   - The towel leaves a green puff (`#bae5ca`) and the brush a yellow puff (`#fff6b0`). Each puff floats up and fades in 0.5 s.
 - What happens when a step is done:
   - After rinsing, the pet shows its wet picture. After drying, it's back to normal.
+- **Steps match what you see** (Mac, Nov 26, 2026, Hair Salon wash): soap keeps adding bubbles while you rub (never stops after the cells are covered); rinsing is done when **no bubbles are left**; the towel keeps leaving puffs while you rub and the wet look fades as you dry, so drying is done when the hair looks dry (70%). Still at least 3 seconds and only after you let go; if you let go before 3 seconds with the step looking done, it finishes when the 3 seconds are up (you don't have to pick the tool up again).
 
 ## 4. Pacing between steps
 - **No step moves on by itself.** When a step is done, the words go quiet, the next step's pill blinks (`blink 1.1s`: opacity 1 to .4 and back), and the next tool's ring lights up. The player keeps rubbing as long as they like, then picks up the next tool (or taps the blinking pill) to move on.

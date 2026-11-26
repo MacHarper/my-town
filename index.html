@@ -1308,6 +1308,8 @@ const TOP_ORDER = ['sweaters', 'shirts', 'blouses', 'coats', 'other'];   // tops
 let clCat = 'top', clFilter = '';
 const clCap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const closet = () => (window.tbData.closet = window.tbData.closet || []);
+// each graphic tee is its own item in the store, with its own name and price (Mac, Nov 26, 2026)
+Object.keys(CL_GROUP).forEach(k => { if (CL_GROUP[k][0] === 'Graphic Tee') delete CL_GROUP[k]; });
 function clColors(id) { const k = CL_GROUP[id][0]; return CLOTHES.filter(c => CL_GROUP[c[0]] && CL_GROUP[c[0]][0] === k); }   // every color of a group in the store
 function renderClothes() {
   document.querySelectorAll('.sh-tab').forEach(b => b.classList.toggle('active', b.dataset.cat === clCat));
