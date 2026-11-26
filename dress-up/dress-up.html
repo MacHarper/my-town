@@ -602,9 +602,10 @@
   #salonBar { display: none; }
   html.salon #salonBar { display: flex; align-items: center; gap: 12px; justify-content: flex-start; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 8px 14px; background: #fff; border-radius: 24px; box-shadow: 0 10px 30px rgba(74, 59, 92, .15), 0 0 0 2px #f3edf8; font-family: Verdana, Geneva, sans-serif; }
   html.salon header h2 { display: none; }
+html.salon header { max-width: none; justify-content: flex-start; }   /* Back sits at the left, lined up with the task bar's left edge (Mac, Nov 26, 2026) */
   #salonBar .bldg { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; }
   #salonBar .bldg-logo { width: 54px; height: 54px; box-sizing: border-box; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 7px; box-shadow: 0 4px 0 #d9cfe6, 0 8px 18px rgba(74, 59, 92, .15), 0 0 0 2px #f3edf8; }
-  #salonBar .bldg-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  #salonBar .bldg-logo img { width: 100%; height: 100%; object-fit: contain; display: block; box-sizing: border-box; padding: 5px; }   /* the scissors sit a little in from the box edge (Mac, Nov 26, 2026) */
   #salonBar .bldg-name { margin: 0; font-size: 24px; font-weight: bold; color: #4a3b5c; white-space: nowrap; }
   #salonBar .bar-div { flex: 0 0 auto; width: 4px; height: 44px; border-radius: 2px; background: #ece4f4; }
   #salonBar .tasks { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
