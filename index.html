@@ -158,8 +158,10 @@
   .guide-say.nudge { animation: nudgeSay .45s ease-out; }
   @keyframes nudgeSay { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.1); } }
   /* Vet Clinic room: a task bar like the Vet Clinic game's (logo badge, name, divider) with one step, Pick a pet (Mac, Nov 25, 2026) */
-  #roomBar { position: absolute; z-index: 3; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 8px 14px;
-    background: #fff; border-radius: 24px; box-shadow: 0 10px 30px rgba(74, 59, 92, .15), 0 0 0 2px #f3edf8; white-space: nowrap; }
+  #roomBar { position: absolute; z-index: 3; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 8px 14px;
+    background: #fff; border-bottom: 2px solid #f3edf8; box-shadow: 0 6px 18px rgba(74, 59, 92, .10); white-space: nowrap; }
+  /* task bar rule: always full width across the top, steps start at the left, never centered; Back sits at the bar's right end */
+  #roomBar:not([hidden]) ~ #backMap { left: auto; right: 14px; top: 9px; z-index: 4; }
   #roomBar[hidden] { display: none; }
   .rb-logo { width: 54px; height: 54px; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 5px;
     box-shadow: 0 4px 0 #d9cfe6, 0 8px 18px rgba(74, 59, 92, .15), 0 0 0 2px #f3edf8; }
@@ -172,7 +174,7 @@
   .rb-task:hover svg { transform: translateY(-2px) rotate(-6deg); }
   .rb-task:active { transform: translateY(3px); box-shadow: 0 1px 0 #d9a531; }
   @media (max-width: 760px) { .rb-name { display: none; } }
-  @media (max-width: 600px) { #roomBar { left: auto; right: 10px; top: 10px; transform: none; padding: 5px 10px; gap: 8px; }
+  @media (max-width: 600px) { #roomBar { padding: 5px 10px; gap: 8px; } #roomBar:not([hidden]) ~ #backMap { top: 4px; right: 10px; height: 46px; }
     .rb-logo { width: 42px; height: 42px; border-radius: 13px; } .rb-div { height: 34px; } .rb-task { height: 44px; font-size: 16px; } .rb-task svg { width: 34px; height: 34px; } }
   /* Back: arrow, town icon and words, like the other rounded shadowed buttons */
   .backtown { display: inline-flex; align-items: center; gap: 6px; width: auto; padding: 0 14px 0 8px; color: #fff; font-weight: bold; font-size: 16px; white-space: nowrap; text-decoration: none; }
