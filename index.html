@@ -467,8 +467,8 @@
     { id: 'cat-bell-ball', name: 'Bell Ball', kind: 'catToy', price: 4 },
     { id: 'cat-feather-ball', name: 'Feather Ball', kind: 'catToy', price: 5 },
     { id: 'cat-ball-tower', name: 'Ball Tower', kind: 'catToy', price: 8 },
-    { id: 'cat-couch-blue', name: 'Blue Cat Couch', kind: 'catToy', price: 8 },
-    { id: 'cat-couch-pink', name: 'Pink Cat Couch', kind: 'catToy', price: 8 },
+    { id: 'cat-couch-blue', name: 'Blue Cat Couch', kind: 'catToy', price: 8, about: 'A comfy couch for cats. Give it to a cat at the Vet Clinic.' },
+    { id: 'cat-couch-pink', name: 'Pink Cat Couch', kind: 'catToy', price: 8, about: 'A comfy couch for cats. Give it to a cat at the Vet Clinic.' },
     { id: 'game-four-in-a-row', name: '4 in a Row', kind: 'game', price: 20, play: 'four-in-a-row/four-in-a-row.html' },   // play: the game it opens
     { id: 'puzzle-candy', name: 'Candy Puzzle', kind: 'game', price: 15, play: 'candy-puzzle/candy-puzzle.html' },
   ];
@@ -627,6 +627,8 @@
     #tbPlay .tp-pic { width: 100%; height: min(36vh, 260px); border-radius: 22px; background: #f3edf8; display: flex; align-items: center; justify-content: center; padding: 18px; box-sizing: border-box; }
     #tbPlay .tp-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
     #tbPlay h3 { margin: 4px 0 0; font-size: clamp(20px, 3.4vw, 28px); line-height: 1.2; }
+    #tbPlay .tp-text { margin: 0 0 4px; font-size: clamp(16px, 2.6vw, 21px); line-height: 1.45; color: #2b2340; }
+    #tbPlay .tp-text[hidden] { display: none; }
     #tbPlay .tp-btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
     #tbPlay .tp-btns button { min-height: 54px; padding: 0 26px; border: none; border-radius: 16px; color: #fff; font: bold 20px Verdana, Geneva, sans-serif; cursor: pointer; transition: transform .1s, box-shadow .1s; }
     #tbPlay .tp-go { background: #5fae7a; box-shadow: 0 5px 0 #468a5e; }
@@ -639,7 +641,7 @@
   document.head.appendChild(playCss);
   const play = document.createElement('div'); play.id = 'tbPlay'; play.setAttribute('aria-hidden', 'true');
   play.innerHTML = `<div class="tp-box" role="dialog" aria-labelledby="tpName"><button class="tp-x" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg></button>
-    <div class="tp-pic"><img alt=""></div><h3 id="tpName"></h3>
+    <div class="tp-pic"><img alt=""></div><h3 id="tpName"></h3><p class="tp-text" hidden></p>
     <div class="tp-btns"><button class="tp-go">Play now</button><button class="tp-save">Save in backpack</button></div></div>`;
   document.body.appendChild(play);
   const closePlay = () => { play.classList.remove('open'); play.setAttribute('aria-hidden', 'true'); };
@@ -649,10 +651,28 @@
     play.querySelector('img').src = tbItemPic(id);
     play.querySelector('#tpName').textContent = bought ? `You got ${it.name}!` : it.name;
     play.querySelector('.tp-save').hidden = !bought; play.querySelector('.tp-x').hidden = !!bought;
+    play.querySelector('.tp-text').hidden = true; play.querySelector('.tp-go').textContent = 'Play now';
     play.querySelector('.tp-go').onclick = () => { beep([[523, 0, .1], [659, .08, .1], [784, .16, .2]]); location.href = ROOT + it.play; };
     play.classList.add('open'); play.setAttribute('aria-hidden', 'false');
     beep([[587, 0, .08], [784, .07, .12]]);
     return true;
+  };
+  // ---- other things in the backpack: tap one and a pop-up says what it is and where to use it (Mac, Nov 26, 2026) ----
+  const USE = {
+    catToy: 'A toy for cats. Give it to a cat at the Vet Clinic.',
+    dogToy: 'A toy for dogs. Give it to a dog at the Vet Clinic.',
+  };
+  const about = it => it.about || USE[it.kind] || 'You bought this at the Department Store.';
+  window.tbItemInfo = id => {
+    const it = item(id);
+    closePanels();
+    play.querySelector('img').src = tbItemPic(id);
+    play.querySelector('#tpName').textContent = it.name;
+    const tx = play.querySelector('.tp-text'); tx.textContent = about(it); tx.hidden = false;
+    play.querySelector('.tp-save').hidden = true; play.querySelector('.tp-x').hidden = false;
+    const go = play.querySelector('.tp-go'); go.textContent = 'OK'; go.onclick = () => { closePlay(); beep([[660, 0, .1], [440, .07, .15]]); };
+    play.classList.add('open'); play.setAttribute('aria-hidden', 'false');
+    beep([[587, 0, .08], [784, .07, .12]]);
   };
   play.querySelector('.tp-save').onclick = () => { closePlay(); wiggle($('tbBag')); tbSparkle($('tbBag'), 14); beep([[659, 0, .1], [523, .08, .15]]); };
   play.querySelector('.tp-x').onclick = () => { closePlay(); beep([[660, 0, .1], [440, .07, .15]]); };
@@ -660,7 +680,9 @@
   $('tbPanel').addEventListener('click', e => {
     const slot = e.target.closest('.tb-slot'); if (!slot) return;
     const id = data.backpack[[...slot.parentNode.children].indexOf(slot)];
-    if (id && item(id).play) tbAskPlay(id);
+    if (!id) return;
+    if (item(id).play) return tbAskPlay(id);
+    setTimeout(() => { if (!e.tbHandled) tbItemInfo(id); }, 0);   // a game can use the tap itself (the Vet Clinic gives the toy to the pet)
   });
   render();
 })();
@@ -1418,7 +1440,9 @@ function openShop(sp) {
   document.getElementById('shTitle').textContent = sp.name.charAt(0).toUpperCase() + sp.name.slice(1);
   document.getElementById('shTabs').hidden = !cl; document.getElementById('shGrid').classList.toggle('clothes', cl);
   if (cl) { renderClothes(); document.getElementById('shGrid').scrollTop = 0; } else document.getElementById('shFilters').hidden = true;
-  if (!cl) document.getElementById('shGrid').innerHTML = items.map(i => `<button class="sh-card" data-id="${i.id}" aria-label="${i.name}, ${i.price} dollars">
+  if (!cl) document.getElementById('shGrid').innerHTML = items.map(i => i.play && tbBag().includes(i.id)   // a game you already have: Yours, no price (Mac, Nov 26, 2026)
+      ? `<button class="sh-card owned" data-id="${i.id}" aria-label="${i.name}, in your backpack"><img src="${tbItemPic(i.id)}" alt=""><span class="sh-own">Yours</span><span class="sh-name">${i.name}</span></button>`
+      : `<button class="sh-card" data-id="${i.id}" aria-label="${i.name}, ${i.price} dollars">
       <img src="${tbItemPic(i.id)}" alt=""><span class="sh-price">$${i.price}</span><span class="sh-name">${i.name}</span></button>`).join('');
   const [W, H] = ROOMS[roomId].view, r = roomSvg.getBoundingClientRect(), [cx, cy] = sp.sign || [sp.x + sp.w / 2, sp.y + sp.h / 2];
   const pn = el.querySelector('.sh-panel');   // the pop-up grows from the area you tapped
@@ -1447,7 +1471,7 @@ function buyItem(card) {
 }
 // tap an item: a pop-up shows it big, with its name, price and a Buy button (Mac, Nov 25, 2026)
 function openBuy(card) {
-  if (card.classList.contains('owned')) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); beep([[330, 0, .15], [262, .12, .2]], 'sine'); tbToast('This is already in your closet.'); return; }
+  if (card.classList.contains('owned')) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); beep([[330, 0, .15], [262, .12, .2]], 'sine'); tbToast(card.dataset.id ? 'This game is already in your backpack.' : 'This is already in your closet.'); return; }
   const el = document.getElementById('buy'), box = document.getElementById('byBox');
   let name, price;
   const sws = document.getElementById('bySw'); sws.hidden = true;
