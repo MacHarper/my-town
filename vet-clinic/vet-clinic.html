@@ -291,6 +291,19 @@
   .pi-blank { display: inline-block; width: 64px; border-bottom: 3px solid #6b5a80; height: 1.1em; }
   .pi-btns { display: flex; gap: 12px; align-items: center; margin-top: 6px; }
   @media (max-width: 600px) { .pk-info { flex-direction: column; gap: 10px; padding: 14px; } .pi-pic { height: 34%; max-width: 80%; } }
+  /* toys from the backpack: tap one to give it to the pet (the toy pops in by its paws, the pet plays, hearts float up, the toy is used up) */
+  #tb #tbPanel .tb-slot:has(img) { cursor: pointer; transition: transform .126s; }
+  #tb #tbPanel .tb-slot:has(img):hover { transform: translateY(-3px) rotate(-4deg); }
+  .toy-given { transform-box: fill-box; transform-origin: 50% 100%; animation: toyIn .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+  .toy-given.wiggle { animation: toyWiggle .4s ease-in-out 4; }
+  .toy-given.gone { transition: opacity .5s, transform .5s; opacity: 0; transform: scale(.3); }
+  @keyframes toyIn { from { transform: translateY(-120px) scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes toyWiggle { 25% { transform: rotate(-12deg) translateX(-6px); } 75% { transform: rotate(10deg) translateX(6px); } }
+  .petg image.toy-hop { animation: toyHop .45s ease-in-out 3; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes toyHop { 0%, 100% { transform: none; } 20% { transform: scale(1.05, .93); } 55% { transform: translateY(-34px) scale(.97, 1.04); } }
+  .toy-heart { transform-box: fill-box; transform-origin: center; animation: toyHeart 1.4s ease-out forwards; }
+  @keyframes toyHeart { 0% { opacity: 0; transform: translate(0, 0) scale(.4); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--hx), -170px) scale(1.1); } }
+  @media (prefers-reduced-motion: reduce) { .toy-given, .petg image.toy-hop, .toy-heart { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -2399,6 +2412,69 @@ function playDone() {
   if (window.tbEarn) setTimeout(() => tbEarn(10, `Helped ${pet.name} at the Vet Clinic`), 1200);
   setTimeout(() => openOverlay(document.getElementById('allDone')), 900);
 }
+
+// ---------- Toys from the backpack: open the backpack and tap a toy to give it to the pet (it is used up) ----------
+const TOY_FOR = { catToy: 'cat', dogToy: 'dog' };
+const toyBeep = (n, t) => { if (window.tbBeep) tbBeep(n, t); };
+const TOY_SAD = [[330, 0, .15], [262, .12, .2]];
+function closeBag() { const p = document.getElementById('tbPanel'); if (p) p.classList.remove('open'); }
+function heartSvg(cx, cy, r, col, hx, delay) {   // a little heart that floats up and fades
+  return `<path class="toy-heart" style="--hx:${hx}px; animation-delay:${delay}ms; opacity:0" fill="${col}" stroke="#fff" stroke-width="5"
+    d="M${cx} ${cy + r * .9} C${cx - r * 1.6} ${cy - r * .1} ${cx - r * .9} ${cy - r * 1.3} ${cx} ${cy - r * .45} C${cx + r * .9} ${cy - r * 1.3} ${cx + r * 1.6} ${cy - r * .1} ${cx} ${cy + r * .9} Z"/>`;
+}
+function giveToy(id) {
+  const it = (window.tbItems || []).find(t => t.id === id) || { id, name: 'that' };
+  if (!pet) { toyBeep(TOY_SAD, 'sine'); return showToast('Pick a pet first, then give a toy.'); }
+  const forKind = TOY_FOR[it.kind];
+  if (!forKind) { toyBeep(TOY_SAD, 'sine'); return showToast(`${pet.name} can't play with that.`); }
+  if (forKind !== kind) { toyBeep(TOY_SAD, 'sine'); return showToast(`${it.name} is for ${forKind}s. ${pet.name} is a ${kind}!`); }
+  const ad = document.getElementById('allDone'), endCard = ad.classList.contains('open');
+  const busyNow = busy || drag || document.querySelector('.overlay.open:not(#allDone)');
+  const g = document.querySelector('.petg'), img = g && g.querySelector('image');
+  if (busyNow || !img || g.dataset.toy) { toyBeep(TOY_SAD, 'sine'); return showToast(`Give the toy when ${pet.name} is back on the rug.`); }
+  if (!window.tbRemoveItem || !tbRemoveItem(id)) return;   // used up
+  closeBag(); if (endCard) closeOverlay(ad);
+  g.dataset.toy = id;
+  const keep = ['href', 'x', 'y', 'width', 'height'].map(a => [a, img.getAttribute(a)]);
+  const toyH = rugH() * .42, tx = RUG.cx + rugH() * .38, ty = RUG.bottom - toyH;   // on the rug, by the pet's front paws
+  const ns = 'http://www.w3.org/2000/svg', fx = document.createElementNS(ns, 'g'); fx.style.pointerEvents = 'none';
+  fx.innerHTML = `<image class="toy-given" href="${tbItemPic(id)}" x="${tx}" y="${ty}" width="${toyH}" height="${toyH}" preserveAspectRatio="xMidYMax meet"/>`;
+  g.appendChild(fx);
+  const toy = fx.querySelector('.toy-given');
+  toyBeep([[523, 0, .1], [659, .08, .1], [784, .16, .1], [1047, .26, .3]]);
+  setTimeout(() => {   // the pet plays: cats bat at it, dogs hop
+    if (kind === 'cat' && pet.play) { petImg('play', RUG.cx, RUG.bottom, rugH()).classList.add('bat'); }
+    else img.classList.add('toy-hop');
+    toy.classList.add('wiggle');
+    let hearts = '';
+    for (let i = 0; i < 5; i++) hearts += heartSvg(RUG.cx + (i - 2) * 46, RUG.bottom - rugH() * .82, 26, ['#e0457b', '#ff8fb1', '#e0457b', '#ff8fb1', '#e0457b'][i], (i - 2) * 30, i * 160);
+    fx.insertAdjacentHTML('beforeend', hearts);
+    starBurst(tx + toyH / 2, ty + toyH / 2, fx.appendChild(document.createElementNS(ns, 'g')));
+    showToast(`${pet.name} loves the ${it.name}!`);
+    toyBeep([[784, 0, .12], [988, .12, .12], [1319, .24, .3]]);
+  }, 450);
+  setTimeout(() => toy.classList.add('gone'), 1900);
+  setTimeout(() => {   // back the way it was
+    const now = document.querySelector('.petg image');
+    if (now) { now.classList.remove('bat', 'toy-hop'); keep.forEach(([a, v]) => now.setAttribute(a, v)); }
+    fx.remove(); delete g.dataset.toy;
+    if (endCard && pet) openOverlay(ad);
+  }, 2500);
+}
+document.getElementById('tbPanel')?.addEventListener('click', e => {   // the toolbar draws the slots; this listens for taps on them
+  const slot = e.target.closest('.tb-slot'); if (!slot) return;
+  const id = tbBag()[[...slot.parentNode.children].indexOf(slot)];
+  if (id) return giveToy(id);
+  if (!tbBag().length) { toyBeep(TOY_SAD, 'sine'); showToast('Your backpack is empty. Toys are at the Department Store.'); }
+});
+document.getElementById('tbBag')?.addEventListener('click', () => {   // opening the backpack with a pet out: say what to do
+  setTimeout(() => {
+    if (!document.getElementById('tbPanel').classList.contains('open')) return;
+    const n = tbBag().length;
+    if (!n) showToast('Your backpack is empty. Toys are at the Department Store.');
+    else if (pet && tbBag().some(t => ((window.tbItems || []).find(x => x.id === t) || {}).kind === kind + 'Toy')) showToast(`Tap a toy to give it to ${pet.name}.`);
+  }, 0);
+});
 
 // ---------- Taps and keys ----------
 room.addEventListener('click', e => { const g = e.target.closest('.tgt'); if (g) useTarget(g); });
