@@ -562,11 +562,15 @@
   /* ---------- Hair Salon (Mac, Nov 25, 2026): you stand in the salon room in front of the chair, and the
      hairstyles are sold like the Department Store (cards with a price tag, a pop-up with a Buy button and the debit card) ---------- */
   #salonRoom { display: none; }
-  html.salon #salonRoom { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none; }
+  /* Salon close-up (Mac, Nov 25, 2026): the doll is shown big from the waist up, in front of the salon chair and mirror.
+     The wall, mirror and chair are drawn (crisp at any size), not the room picture. */
+  html.salon body { background: #e6d1fc; }
+  html.salon #stage { aspect-ratio: 0.9; overflow: hidden; background: #eeb969; border: 4px solid #fff; border-radius: 28px; box-shadow: 0 10px 30px rgba(74, 59, 92, .22); }
+  html.salon .doll { left: 6.75%; top: 2.9%; width: 86.5%; height: 147%; }
+  #salonBack { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   html.salon #game { z-index: 1; }
   html.salon .progress, html.salon .tabs, html.salon .floor, html.salon #hint { display: none !important; }
   html.salon header h2 { background: #fff; border: 3px solid #4a3b5c; border-radius: 999px; padding: 4px 18px; color: #4a3b5c; font-size: clamp(18px, 2.6vw, 26px); margin-right: auto; margin-left: 10px; }
-  html.salon #stage { background: transparent; border: none; box-shadow: none; border-radius: 0; }
   html.salon #stage .worn { pointer-events: none; cursor: default; }
   html.salon .wrap[data-slot="hat"] { display: none; }   /* hats come off in the salon chair (they stay on when you leave) */
   html.salon .tray { box-shadow: 0 0 0 2px #f3edf8, 0 12px 34px rgba(74, 59, 92, .25); border-radius: 28px; }
@@ -588,6 +592,15 @@
   .by-box.shake { animation: shake .42s; }
   .by-pic { width: 100%; height: min(36vh, 280px); border-radius: 22px; background: #f3edf8; display: flex; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; }
   .by-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  /* the try-on pop-up fills most of the screen, with you in front of the salon chair (Mac, Nov 25, 2026) */
+  html.salon .by-box { width: min(860px, 100%); padding: 16px 18px 20px; gap: 8px; }
+  html.salon #buy { padding-bottom: 96px; }
+  html.salon .by-box .sh-close { z-index: 3; }   /* clear of the money toolbar */
+  html.salon .by-pic { position: relative; height: auto; aspect-ratio: 3 / 2; max-height: calc(100vh - 330px); min-height: 220px; padding: 0; overflow: hidden; background: #eeb969; }
+  html.salon .by-pic svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  html.salon .by-pic img { position: absolute; left: 50%; bottom: 0; height: 96%; max-width: none; max-height: none; transform: translateX(-50%); }
+  html.salon .by-row { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+  html.salon .by-go { margin-top: 0; }
   .by-box h3 { margin: 4px 0 0; font-size: clamp(20px, 3.4vw, 28px); line-height: 1.2; }
   .by-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
   .by-colors:empty { display: none; }
@@ -613,7 +626,7 @@
   </header>
   <div class="play">
     <div class="stage-wrap">
-      <div id="stage"><div id="coach" role="status" aria-live="polite"><span class="cpic" id="coachPic"></span><span id="coachSay"></span></div><div class="floor"></div><div class="doll" id="doll"></div><div class="hint" id="hint">Drop clothes here!</div></div>
+      <div id="stage"><template id="salonBackTpl"><svg id="salonBack" viewBox="0 0 900 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><pattern id="slats" width="64" height="1000" patternUnits="userSpaceOnUse"><rect width="64" height="1000" fill="#eeb969"/><rect x="0" width="5" height="1000" fill="#d39a5c"/><rect x="5" width="4" height="1000" fill="#f6c983"/></pattern></defs><rect width="900" height="1000" fill="url(#slats)"/><circle cx="450" cy="372" r="352" fill="#d9a15f" opacity=".45"/><circle cx="450" cy="360" r="345" fill="#ebe7f7"/><circle cx="450" cy="360" r="312" fill="#c3cbe0"/><circle cx="450" cy="360" r="304" fill="#dcedfb"/><path d="M250 560 L560 120 L610 150 L300 590 Z" fill="#fff" opacity=".35"/><path d="M360 640 L640 240 L665 258 L385 658 Z" fill="#fff" opacity=".3"/><rect x="95" y="540" width="710" height="560" rx="120" fill="#b97fa0"/><rect x="110" y="530" width="680" height="560" rx="110" fill="#cf9db8"/><rect x="180" y="590" width="540" height="500" rx="80" fill="#d9adc5"/><rect x="270" y="455" width="360" height="130" rx="62" fill="#98466a"/><rect x="290" y="465" width="320" height="50" rx="25" fill="#ad5a80" opacity=".7"/></svg></template><div id="coach" role="status" aria-live="polite"><span class="cpic" id="coachPic"></span><span id="coachSay"></span></div><div class="floor"></div><div class="doll" id="doll"></div><div class="hint" id="hint">Drop clothes here!</div></div>
     </div>
     <div class="tray">
       <div class="tabs">
@@ -634,11 +647,11 @@
 <div id="buy" aria-hidden="true">
   <div class="by-box" id="byBox" role="dialog" aria-labelledby="byName">
     <button class="sh-close" id="byClose" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg></button>
-    <div class="by-pic"><img id="byImg" alt=""></div>
+    <div class="by-pic"><svg viewBox="0 0 1500 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><pattern id="slatsPop" width="64" height="1000" patternUnits="userSpaceOnUse"><rect width="64" height="1000" fill="#eeb969"/><rect width="5" height="1000" fill="#d39a5c"/><rect x="5" width="4" height="1000" fill="#f6c983"/></pattern></defs><rect width="1500" height="1000" fill="url(#slatsPop)"/><circle cx="750" cy="412" r="352" fill="#d9a15f" opacity=".45"/><circle cx="750" cy="400" r="345" fill="#ebe7f7"/><circle cx="750" cy="400" r="312" fill="#c3cbe0"/><circle cx="750" cy="400" r="304" fill="#dcedfb"/><path d="M550 600 L860 160 L910 190 L600 630 Z" fill="#fff" opacity=".35"/><path d="M660 680 L940 280 L965 298 L685 698 Z" fill="#fff" opacity=".3"/><rect x="420" y="700" width="660" height="460" rx="120" fill="#b97fa0"/><rect x="435" y="690" width="630" height="460" rx="110" fill="#cf9db8"/><rect x="500" y="750" width="500" height="400" rx="80" fill="#d9adc5"/><rect x="580" y="610" width="340" height="125" rx="60" fill="#98466a"/><rect x="600" y="620" width="300" height="48" rx="24" fill="#ad5a80" opacity=".7"/></svg><img id="byImg" alt=""></div>
     <h3 id="byName"></h3>
     <div class="by-colors" id="byColors"></div>
-    <div class="by-price" id="byPrice"></div>
-    <button class="by-go" id="byGo"><span id="byCardIc"></span>Buy</button>
+    <div class="by-row"><div class="by-price" id="byPrice"></div>
+    <button class="by-go" id="byGo"><span id="byCardIc"></span>Buy</button></div>
   </div>
 </div>
 <img id="ghost" alt="">
@@ -2091,7 +2104,7 @@ function renderSalon() {
 }
 if (SALON) renderTray = renderSalon;
 async function hairPicture(id) {   // you with this hairstyle (no hat), head and shoulders
-  const full = await loadImg(await dollPicture(Object.assign({}, wearing, { hair: id, hat: null }), 400));
+  const full = await loadImg(await dollPicture(Object.assign({}, wearing, { hair: id, hat: null }), 900));
   const c = document.createElement('canvas'), cw = Math.round(full.width * 0.84), ch = Math.round(full.height * 0.5);
   c.width = cw; c.height = ch; c.getContext('2d').drawImage(full, (full.width - cw) / 2, 0, cw, ch, 0, 0, cw, ch);
   return c.toDataURL('image/png');
@@ -2145,7 +2158,7 @@ renderFilters();
 renderTray();
 updateProgress();
 if (!TUTORIAL) restoreOutfit();   // the tutorial starts with a plain doll
-if (SALON) { fitSalon(); addEventListener('resize', fitSalon); setTimeout(() => toast('Tap a hairstyle to see it on you.'), 400); }
+if (SALON) { stage.insertBefore(document.getElementById('salonBackTpl').content.cloneNode(true), document.getElementById('doll')); setTimeout(() => toast('Tap a hairstyle to see it on you.'), 400); }
 hideLoading();
 </script>
 </body>

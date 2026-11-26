@@ -318,7 +318,7 @@
   .toy-given.wiggle { animation: toyWiggle .6s ease-in-out 6; }
   @keyframes toyWiggle { 25% { transform: rotate(-6deg) translateX(-3px); } 75% { transform: rotate(5deg) translateX(3px); } }
   .toy-given.still { animation: none; }
-  #toyRest.gone { transition: opacity .45s; opacity: 0; }
+  .toy-rest.gone { transition: opacity .45s; opacity: 0; }
   .petg.toy-away { transition: opacity .35s; opacity: 0; }
   .toy-nap { animation: popSoft .4s ease-out; }
   #tb #tbPanel .tb-slot { touch-action: none; }
@@ -1784,8 +1784,8 @@ ART.nails = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w
 const TOOL_SIZE = { soap: 0, towel: 0, brush: 0, nails: 0 };   // height / width of each tool picture, filled in below
 ['soap', 'towel', 'brush', 'nails'].forEach(k => { const im = new Image(); im.onload = () => { TOOL_SIZE[k] = im.height / im.width; }; im.src = ART[k]; });
 
-const IN_TUB = { cx: 1795, bottom: 606, k: .52 };   // where the pet sits in the room's tub: back by the wall, so smaller (Mac, Nov 25, 2026)
-const TUB_FRONT = 'M1600 582 L1975 582 L1975 700 L1600 700 Z';   // the tub's front, drawn over the pet's paws
+const IN_TUB = { cx: 1760, bottom: 560, k: .52 };   // where the pet sits in the room's tub: inside it, behind the front wall, seen through the step-in opening (Mac, Nov 25, 2026)
+const TUB_FRONT = 'M1600 340 L1632 345 L1672 500 L1695 500 L1695 585 L1815 585 L1815 500 L1975 500 L1975 700 L1600 700 Z';   // the tub's left side and front wall (with its step-in opening), drawn over the pet
 function goToBath() {
   if (busy || !TASKS[task] || !['bubbles', 'brush'].includes(TASKS[task].icon)) return;
   busy = true;
@@ -2538,7 +2538,19 @@ function toyCheck(id) {   // says what is wrong, or nothing when this toy can be
 // How each cat plays with each toy (Mac's Pet Store pictures): crouched, a front paw on the toy, the toy on the floor at the paw.
 // The Cat Couches are for napping: the cat curls up asleep in the couch. The toy then stays on the rug by the pet until a new pet is picked.
 const TOY_W = { 'cat-ball-tower': .62, 'cat-couch-blue': 1.35, 'cat-couch-pink': 1.35 };   // couches: big enough for the cat at its own size (Mac, Nov 25, 2026)   // how wide each toy is, as parts of the pet's height (others .3)
-const TOY_REST = { cx: 610, bottom: 995 };   // where the toy waits on the floor, left of the rug, clear of the food bowl
+const TOY_REST = { cx: 610, bottom: 995 };   // where a Cat Couch waits on the floor, left of the rug, clear of the food bowl (a second couch goes on the right)
+// where toys wait after playing: on the light middle of the rug, close to the pet; every toy given stays (up to 6, then the oldest goes).
+// x is how far from the pet's middle (left), bottom is where the toy sits. The first two are the closest; dogs use the mirror image (they play on the right).
+const TOY_SPOTS = [{ dx: -205, bottom: 975 }, { dx: 210, bottom: 975 }, { dx: -300, bottom: 940 }, { dx: 300, bottom: 940 }, { dx: -270, bottom: 885 }, { dx: 270, bottom: 885 }];
+function toySpot(couch) {   // the first free resting spot (the oldest toy makes room when all are taken)
+  const rest = [...document.querySelectorAll('#petLayer .toy-rest:not(.gone)')].filter(t => (t.dataset.couch === '1') === couch);
+  const n = couch ? 2 : TOY_SPOTS.length, used = rest.map(t => +t.dataset.spot);
+  let i = [...Array(n).keys()].find(k => !used.includes(k));
+  if (i === undefined) { const old = rest[0]; i = +old.dataset.spot; old.classList.add('gone'); setTimeout(() => old.remove(), 500); }
+  if (couch) return Object.assign({ i }, i ? { cx: 2 * RUG.cx - TOY_REST.cx, bottom: TOY_REST.bottom } : TOY_REST);
+  const s = TOY_SPOTS[i], k = rugH() / RUG.h;   // a little closer in for smaller pets
+  return { i, cx: RUG.cx + s.dx * (kind === 'dog' ? -1 : 1) * (.55 + .45 * k), bottom: s.bottom };
+}
 const PAW_TIP = { finley: .1 };   // where the front paw is in the playing picture, as part of its width (most are right at the left edge)
 const isCouch = id => /^cat-couch/.test(id);
 function toySize(id) {
@@ -2561,15 +2573,13 @@ function giveToy(id) {
   closeBag(); if (endCard) closeOverlay(ad);
   const g = document.querySelector('.petg'), img = g.querySelector('image'), layer = document.getElementById('petLayer');
   g.dataset.toy = id;
-  const old = document.getElementById('toyRest');   // the toy it had before goes away; the new one takes its place
-  if (old) { old.classList.add('gone'); setTimeout(() => old.remove(), 500); old.removeAttribute('id'); }
   const keep = ['href', 'x', 'y', 'width', 'height'].map(a => [a, img.getAttribute(a)]);
-  const couch = isCouch(id), sz = toySize(id), cat = kind === 'cat' && ART[pet.play2] && !couch, pb = cat ? play2Box() : null;
+  const couch = isCouch(id), sz = toySize(id), cat = kind === 'cat' && ART[pet.play2] && !couch, pb = cat ? play2Box() : null, spot = toySpot(couch);
   // where it plays: cats with a toy, at the front paw; a couch, at the waiting spot; dogs, by their front paws
   const at = cat ? { cx: pb.x + pb.w * (PAW_TIP[pet.id] || .02) + sz.w * .12, bottom: RUG.bottom + 4 }
-    : couch ? TOY_REST : { cx: RUG.cx + rugH() * .38, bottom: RUG.bottom };
+    : couch ? spot : { cx: RUG.cx + rugH() * .38, bottom: RUG.bottom };
   const ns = 'http://www.w3.org/2000/svg', toy = document.createElementNS(ns, 'g');
-  toy.id = 'toyRest'; toy.style.pointerEvents = 'none';
+  toy.setAttribute('class', 'toy-rest'); toy.dataset.spot = spot.i; toy.dataset.couch = couch ? '1' : '0'; toy.style.pointerEvents = 'none';
   toy.innerHTML = `<g class="toy-slide"><image class="toy-given${couch ? ' soft' : ''}" href="${tbItemPic(id)}" x="${at.cx - sz.w / 2}" y="${at.bottom - sz.h}" width="${sz.w}" height="${sz.h}"/></g>`;
   layer.insertBefore(toy, g);   // on the floor, behind the pet (the paw goes over it)
   const fx = document.createElementNS(ns, 'g'); fx.style.pointerEvents = 'none'; layer.appendChild(fx);
@@ -2593,12 +2603,12 @@ function giveToy(id) {
     toyToast(couch ? `${pet.name} loves the new bed! Time for a cat nap.` : `${pet.name} loves the ${it.name}!`);
     toySound(id);
   }, 450);
-  setTimeout(() => {   // back the way it was, and the toy goes to wait on the floor
+  setTimeout(() => {   // back the way it was, and the toy goes to wait on the rug by the pet
     const now = document.querySelector('.petg image');
     if (now) { now.classList.remove('toy-tap', 'toy-hop'); keep.forEach(([a, v]) => now.setAttribute(a, v)); }
     g.classList.remove('toy-away'); if (nap) nap.remove();
     const t = toy.querySelector('.toy-given'); if (t) { t.classList.remove('wiggle'); t.classList.add('still'); }
-    toy.querySelector('.toy-slide').style.transform = `translate(${TOY_REST.cx - at.cx}px, ${TOY_REST.bottom - at.bottom}px)`;
+    toy.querySelector('.toy-slide').style.transform = `translate(${spot.cx - at.cx}px, ${spot.bottom - at.bottom}px)`;   // to its own spot by the pet
     delete g.dataset.toy;
     if (endCard && pet) openOverlay(ad);
   }, couch ? 6200 : 4200);   // a little longer to enjoy it (Mac, Nov 25, 2026)
