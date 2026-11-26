@@ -303,7 +303,26 @@
   @keyframes toyHop { 0%, 100% { transform: none; } 20% { transform: scale(1.05, .93); } 55% { transform: translateY(-34px) scale(.97, 1.04); } }
   .toy-heart { transform-box: fill-box; transform-origin: center; animation: toyHeart 1.4s ease-out forwards; }
   @keyframes toyHeart { 0% { opacity: 0; transform: translate(0, 0) scale(.4); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--hx), -170px) scale(1.1); } }
-  @media (prefers-reduced-motion: reduce) { .toy-given, .petg image.toy-hop, .toy-heart { animation: none !important; } }
+  #tb #tbPanel .tb-slot { touch-action: none; }
+  .toy-ghost { position: fixed; z-index: 95; width: 84px; height: 84px; object-fit: contain; pointer-events: none; transform: translate(-50%, -50%) scale(1.1) rotate(-6deg);
+    filter: drop-shadow(0 8px 10px rgba(74, 59, 92, .3)); transition: transform .126s; }
+  .toy-ghost.back { transition: left .3s, top .3s, opacity .3s; opacity: 0; }
+  .petg.toy-over image.pet, .petg.toy-over image { filter: drop-shadow(0 0 14px #fff6b0) drop-shadow(0 0 6px #ffc94d); }
+  .petg image.toy-pounce { animation: toyPounce .55s ease-in-out 3; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes toyPounce { 0%, 100% { transform: none; } 30% { transform: scale(1.04, .92) translateX(6px); } 65% { transform: translate(-22px, -26px) rotate(-4deg); } }
+  /* crates: once a pet is out, tap a crate to pick a different one */
+  .tgt.done.swap { cursor: pointer; }
+  .tgt.done.swap:hover .ring, .tgt.done.swap:hover .tag, .tgt.done.swap:focus-visible .ring { opacity: .75 !important; }
+  /* earning money: a big coin card in the middle, then coins fly to the money button */
+  .pay-card { position: fixed; z-index: 95; left: 50%; top: 42%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 14px; padding: 16px 28px 16px 18px;
+    background: #fff; border-radius: 26px; box-shadow: 0 0 0 4px #ffc94d, 0 14px 34px rgba(120, 60, 120, .25); font: bold clamp(26px, 5vw, 44px) Verdana, Geneva, sans-serif; color: #3e6e4b;
+    pointer-events: none; animation: payIn .6s cubic-bezier(.3, 1.6, .5, 1) both; }
+  .pay-card svg { width: 1.6em; height: 1.6em; animation: paySpin 1.2s ease-in-out infinite; }
+  .pay-card.out { transition: opacity .4s, transform .4s; opacity: 0; transform: translate(-50%, -50%) scale(.7); }
+  @keyframes payIn { from { transform: translate(-50%, -50%) scale(.3); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+  @keyframes paySpin { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.35); } }
+  .pay-coin { position: fixed; z-index: 96; width: 44px; height: 44px; margin: -22px 0 0 -22px; pointer-events: none; transition: left .75s cubic-bezier(.5, 0, .7, 1), top .75s cubic-bezier(.3, -.6, .7, 1), transform .75s; }
+  @media (prefers-reduced-motion: reduce) { .toy-given, .petg image.toy-hop, .petg image.toy-pounce, .toy-heart, .pay-card, .pay-card svg { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -841,7 +860,7 @@ const PETS = {
     { id: 'finn', name: 'Finn', art: 'finnSit', eat: 'finnEat', bath: 'finnGroom', play: 'finnPlay', play2: 'finnPlay2', done: 'finnDone',
       boy: true, breed: 'Bombay', loves: 'curling up in cozy boxes', nose: [.088, .675]  },
     { id: 'miso', name: 'Miso', art: 'misoSit', eat: 'misoEat', bath: 'misoGroom', play: 'misoPlay', play2: 'misoPlay2', done: 'misoDone',
-      boy: true, breed: 'Ragdoll', loves: 'flopping into laps for cuddles', nose: [.138, .641]  },
+      boy: false, breed: 'Ragdoll', loves: 'flopping into laps for cuddles', nose: [.138, .641]  },
     { id: 'jax', name: 'Jax', art: 'jaxSit', eat: 'jaxEat', bath: 'jaxGroom', play: 'jaxPlay', play2: 'jaxPlay2', paw: 'left', done: 'jaxDone',
       boy: true, breed: 'British Shorthair', loves: 'napping in sunny windows', nose: [.133, .547] },
     { id: 'finley', name: 'Finley', art: 'finleySit', eat: 'finleyEat', bath: 'finleyGroom', play: 'finleyPlay', play2: 'finleyPlay2', done: 'finleyDone',
@@ -907,7 +926,7 @@ const CRATES = (() => {
 })();
 function crateDogH(d) {   // bigger dogs sit taller in the bed (the same size groups as the food chart)
   const k = SIZES[Math.max(0, FOOD.dog.findIndex(r => d.weight <= r.upTo))] || 1;
-  return EXTRAS.dogSlots[0].h * k / SIZES[1];
+  return EXTRAS.dogSlots[0].h * k / SIZES[1] * (d.weight <= 20 ? .9 : 1);   // small dogs a little smaller, so they don't look as big as the big dogs
 }
 function extrasSvg() {
   let s = '';
@@ -996,6 +1015,7 @@ function setTask(i, quiet) {
   const pickTime = task === 0;   // picking a pet: an arrow points at the crates instead of a glow
   room.querySelectorAll('.tgt').forEach(g => { const mine = !!t && t.targets.includes(g.dataset.t); g.classList.toggle('on', mine && !pickTime); g.classList.toggle('named', mine && pickTime); });
   document.getElementById('pickArrow').style.display = pickTime ? '' : 'none';
+  room.querySelectorAll('[data-t="dogs"], [data-t="cats"]').forEach(g => g.classList.toggle('swap', !!pet));
   const pg = document.querySelector('.petg');
   if (pg) pg.classList.toggle('drag', !!t && ['scale', 'bubbles', 'brush'].includes(t.icon));   // drag the pet to the scale or the tub
   if (t) guide(say(t.guide)); else guideEl.classList.add('hide');   // all done: the All Done card says it
@@ -1013,15 +1033,19 @@ function nudgeGuide() {   // a little bounce on the line that already says what 
   const a = document.getElementById('pickArrow'); if (a && a.style.display !== 'none') { a.classList.remove('nudge'); void a.getBBox(); a.classList.add('nudge'); }
 }
 let toastTimer;
-function showToast(msg) {
+function showToast(msg, ms) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms || 1900);
 }
 
 function useTarget(g) {
   if (busy) return;
   const id = g.dataset.t;
+  if ((id === 'dogs' || id === 'cats') && pet) {   // a pet is out: tap a crate to pick a different one (only while it sits on the rug)
+    if (drag || wdrag || wd || document.querySelector('.overlay.open')) return;
+    return openPicker(id === 'dogs' ? 'dog' : 'cat');
+  }
   if (g.classList.contains('done')) return;   // already done
   if (!TASKS[task]) return;
   const allowed = TASKS[task].targets.includes(id) || (id === 'water' && fed && !watered);
@@ -1045,6 +1069,7 @@ function closeOverlay(el) { el.classList.remove('open'); el.setAttribute('aria-h
 
 function openPicker(k) {
   kind = k; page = 0;
+  if (!pet) { TASKS = TASK_LISTS[k]; nameTarget('bath', k === 'cat' ? 'Groom' : 'Bath'); setTask(0, true); }   // picking a cat shows the cat list
   const list = PETS[k], pages = Math.max(1, Math.ceil(list.length / 8));
   document.getElementById('pkTitle').textContent = k === 'dog' ? 'Pick a dog' : 'Pick a cat';
   let s = '';
@@ -1069,9 +1094,10 @@ nextBtn.addEventListener('click', () => {
   page = (page + 1) % pages;
   strip.style.transform = `translateX(${-100 * page}%)`;
 });
-document.getElementById('pkClose').addEventListener('click', () => closeOverlay(picker));
+function closePicker() { closeOverlay(picker); if (pet) kind = pet.kind; }   // not picking after all: the pet you have stays
+document.getElementById('pkClose').addEventListener('click', closePicker);
 picker.addEventListener('click', e => {
-  if (e.target === picker) return closeOverlay(picker);
+  if (e.target === picker) return closePicker();
   const c = e.target.closest('.pk-card[data-pet]');
   if (c) openInfo(PETS[kind].find(a => a.id === c.dataset.pet), c);
 });
@@ -1096,8 +1122,17 @@ function closeInfo() { const el = document.getElementById('pkInfo'); el.classLis
 document.getElementById('piBack').addEventListener('click', closeInfo);
 document.getElementById('piPick').addEventListener('click', () => { const a = infoPet; closeInfo(); choosePet(a); });
 
+function clearPet() {   // the pet goes back to its crate and the room is put back (nothing is paid)
+  pet = null; fed = false; watered = false;
+  room.querySelectorAll('.tgt.used').forEach(g => g.classList.remove('used'));
+  document.getElementById('treeFront').style.opacity = 0;
+  document.getElementById('readout').classList.remove('show');
+  document.getElementById('petLayer').innerHTML = '';
+  document.getElementById('extras').innerHTML = extrasSvg();   // everything back in its place
+}
 function choosePet(a) {
-  pet = Object.assign({}, a); closeOverlay(picker);
+  if (pet) clearPet();   // picking a different pet partway through: start over with the new one
+  pet = Object.assign({ kind }, a); closeOverlay(picker);
   hideExtra('crate-' + a.id);   // out of its crate (if it was napping in one)
   const pic = new Image();
   pic.onload = () => {
@@ -1803,7 +1838,7 @@ btStage.addEventListener('pointermove', e => {
   if (d.el.dataset.tool === 'brush') {   // turn the bristles toward the pet
     const w = +d.img.getAttribute('width'), h = +d.img.getAttribute('height'), cx = x + w * .3, cy = y + h * .35;
     const dogX = bt.box.x + bt.box.w / 2, dogY = bt.box.y + bt.box.h * .4;
-    const a = Math.atan2(dogY - cy, dogX - cx) * 180 / Math.PI + 90;   // the bristles point up in the picture
+    const a = (Math.atan2(dogY - cy, dogX - cx) * 180 / Math.PI + 90) * .95;   // the bristles point up in the picture (turned 5% less)
     d.img.setAttribute('transform', `rotate(${a} ${cx} ${cy})`);
   }
   rubAt(p.x, p.y, 46);
@@ -1853,7 +1888,7 @@ function stepReady(step) {
   if (step === 'soap') { const st = document.getElementById('btStink'); if (st) st.remove(); }
   if (step === 'rinse') setDogPose('bath');
   if (step === 'towel') setDogPose('sit');
-  if (step === 'nails') return groomDone();
+  if (step === 'nails') return setTimeout(groomDone, 1500);   // a moment to see both paws snipped
   if (step === 'brush' && kind === 'cat') { setDogPose('bath'); return bathStep(); }   // happy and fluffy; the clippers blink next
   if (step === 'brush') { bt.brushEnd = setTimeout(() => { bt.brushEnd = null; dropTool(); bathDone(); }, 3000); return bathStep(); }
   bathStep();
@@ -1881,7 +1916,7 @@ function bathDone() {
     busy = false; setTask(4);
     document.getElementById('adTitle').textContent = `${pet.name} is all done!`;
     document.getElementById('adSay').textContent = `You weighed, fed and bathed ${pet.name}. Great job! You earned $10.`;
-    if (window.tbEarn) setTimeout(() => tbEarn(10, `Helped ${pet.name} at the Vet Clinic`), 1200);
+    const paid = pet.name; setTimeout(() => payMe(10, `Helped ${paid} at the Vet Clinic`), 1200);
     setTimeout(() => openOverlay(document.getElementById('allDone')), 700);
   }, 1600);
 }
@@ -1918,11 +1953,7 @@ function starPts(cx, cy, R, r) {
 document.getElementById('btClose').addEventListener('click', () => { dropTool(); busy = false; closeOverlay(document.getElementById('bath')); setTask(task, true); });
 document.getElementById('adAgain').addEventListener('click', () => {
   closeOverlay(document.getElementById('allDone'));
-  pet = null; fed = false; watered = false;
-  room.querySelectorAll('.tgt.used').forEach(g => g.classList.remove('used'));
-  TASKS = TASK_LISTS.dog; nameTarget('bath', 'Bath'); document.getElementById('treeFront').style.opacity = 0;
-  document.getElementById('petLayer').innerHTML = '';
-  document.getElementById('extras').innerHTML = extrasSvg();   // everything back in its place
+  clearPet(); TASKS = TASK_LISTS.dog; nameTarget('bath', 'Bath');
   setTask(0);
 });
 
@@ -2412,72 +2443,142 @@ function playDone() {
   busy = false; setTask(task + 1);
   document.getElementById('adTitle').textContent = `${pet.name} is all done!`;
   document.getElementById('adSay').textContent = `You fed, groomed and played with ${pet.name}. Great job! You earned $10.`;
-  if (window.tbEarn) setTimeout(() => tbEarn(10, `Helped ${pet.name} at the Vet Clinic`), 1200);
+  const paid = pet.name; setTimeout(() => payMe(10, `Helped ${paid} at the Vet Clinic`), 1200);
   setTimeout(() => openOverlay(document.getElementById('allDone')), 900);
 }
 
-// ---------- Toys from the backpack: open the backpack and tap a toy to give it to the pet (it is used up) ----------
+// ---------- Toys from the backpack: open the backpack and drag a toy to the pet (or tap it) to give it; it is used up ----------
 const TOY_FOR = { catToy: 'cat', dogToy: 'dog' };
 const toyBeep = (n, t) => { if (window.tbBeep) tbBeep(n, t); };
 const TOY_SAD = [[330, 0, .15], [262, .12, .2]];
+const toyToast = msg => showToast(msg, 3800);   // long enough to read
 function closeBag() { const p = document.getElementById('tbPanel'); if (p) p.classList.remove('open'); }
 function heartSvg(cx, cy, r, col, hx, delay) {   // a little heart that floats up and fades
   return `<path class="toy-heart" style="--hx:${hx}px; animation-delay:${delay}ms; opacity:0" fill="${col}" stroke="#fff" stroke-width="5"
     d="M${cx} ${cy + r * .9} C${cx - r * 1.6} ${cy - r * .1} ${cx - r * .9} ${cy - r * 1.3} ${cx} ${cy - r * .45} C${cx + r * .9} ${cy - r * 1.3} ${cx + r * 1.6} ${cy - r * .1} ${cx} ${cy + r * .9} Z"/>`;
 }
-function giveToy(id) {
+const PLAY2_K = 1.1;   // the playing-with-a-toy pictures are all cut at the same scale; this makes them the sitting size on the rug
+function play2Box() {   // the crouched playing picture on the rug (it faces left, so the toy goes in front of its paws on the left)
+  const im = new Image(); im.src = ART[pet.play2];
+  const k = rugH() / 560 * PLAY2_K, w = (im.naturalWidth || 500) * k, h = (im.naturalHeight || 400) * k;
+  return { x: RUG.cx - w / 2, y: RUG.bottom - h, w, h };
+}
+function toyCheck(id) {   // says what is wrong, or nothing when this toy can be given now
   const it = (window.tbItems || []).find(t => t.id === id) || { id, name: 'that' };
-  if (!pet) { toyBeep(TOY_SAD, 'sine'); return showToast('Pick a pet first, then give a toy.'); }
+  if (!pet) return 'Pick a pet first, then give a toy.';
   const forKind = TOY_FOR[it.kind];
-  if (!forKind) { toyBeep(TOY_SAD, 'sine'); return showToast(`${pet.name} can't play with that.`); }
-  if (forKind !== kind) { toyBeep(TOY_SAD, 'sine'); return showToast(`${it.name} is for ${forKind}s. ${pet.name} is a ${kind}!`); }
-  const ad = document.getElementById('allDone'), endCard = ad.classList.contains('open');
-  const busyNow = busy || drag || document.querySelector('.overlay.open:not(#allDone)');
-  const g = document.querySelector('.petg'), img = g && g.querySelector('image');
-  if (busyNow || !img || g.dataset.toy) { toyBeep(TOY_SAD, 'sine'); return showToast(`Give the toy when ${pet.name} is back on the rug.`); }
+  if (!forKind) return `${pet.name} can't play with that.`;
+  if (forKind !== kind) return `${it.name} is for ${forKind}s. ${pet.name} is a ${kind}!`;
+  const g = document.querySelector('.petg');
+  if (busy || drag || wdrag || wd || document.querySelector('.overlay.open:not(#allDone)') || !g || g.dataset.toy) return `Give the toy when ${pet.name} is back on the rug.`;
+  return '';
+}
+function giveToy(id) {
+  const no = toyCheck(id);
+  if (no) { toyBeep(TOY_SAD, 'sine'); return toyToast(no); }
+  const it = tbItems.find(t => t.id === id);
   if (!window.tbRemoveItem || !tbRemoveItem(id)) return;   // used up
+  const ad = document.getElementById('allDone'), endCard = ad.classList.contains('open');
   closeBag(); if (endCard) closeOverlay(ad);
+  const g = document.querySelector('.petg'), img = g.querySelector('image');
   g.dataset.toy = id;
   const keep = ['href', 'x', 'y', 'width', 'height'].map(a => [a, img.getAttribute(a)]);
-  const toyH = rugH() * .42, tx = RUG.cx + rugH() * .38, ty = RUG.bottom - toyH;   // on the rug, by the pet's front paws
+  const cat = kind === 'cat' && ART[pet.play2], pb = cat ? play2Box() : null;
+  const toyH = rugH() * (cat ? .3 : .42);
+  const tx = cat ? pb.x - toyH * .55 : RUG.cx + rugH() * .38, ty = RUG.bottom - toyH;   // on the rug, by the pet's front paws
   const ns = 'http://www.w3.org/2000/svg', fx = document.createElementNS(ns, 'g'); fx.style.pointerEvents = 'none';
   fx.innerHTML = `<image class="toy-given" href="${tbItemPic(id)}" x="${tx}" y="${ty}" width="${toyH}" height="${toyH}" preserveAspectRatio="xMidYMax meet"/>`;
   g.appendChild(fx);
   const toy = fx.querySelector('.toy-given');
   toyBeep([[523, 0, .1], [659, .08, .1], [784, .16, .1], [1047, .26, .3]]);
-  setTimeout(() => {   // the pet plays: cats bat at it, dogs hop
-    if (kind === 'cat' && pet.play) { petImg('play', RUG.cx, RUG.bottom, rugH()).classList.add('bat'); }
-    else img.classList.add('toy-hop');
+  setTimeout(() => {   // the pet plays: cats crouch and pounce at it (their playing picture), dogs hop
+    if (cat) {
+      img.setAttribute('href', ART[pet.play2]); img.setAttribute('x', pb.x); img.setAttribute('y', pb.y); img.setAttribute('width', pb.w); img.setAttribute('height', pb.h);
+      img.classList.add('toy-pounce');
+    } else img.classList.add('toy-hop');
     toy.classList.add('wiggle');
     let hearts = '';
-    for (let i = 0; i < 5; i++) hearts += heartSvg(RUG.cx + (i - 2) * 46, RUG.bottom - rugH() * .82, 26, ['#e0457b', '#ff8fb1', '#e0457b', '#ff8fb1', '#e0457b'][i], (i - 2) * 30, i * 160);
+    for (let i = 0; i < 5; i++) hearts += heartSvg(RUG.cx + (i - 2) * 46, RUG.bottom - rugH() * .82, 26, i % 2 ? '#ff8fb1' : '#e0457b', (i - 2) * 30, i * 160);
     fx.insertAdjacentHTML('beforeend', hearts);
     starBurst(tx + toyH / 2, ty + toyH / 2, fx.appendChild(document.createElementNS(ns, 'g')));
-    showToast(`${pet.name} loves the ${it.name}!`);
+    toyToast(`${pet.name} loves the ${it.name}!`);
     toyBeep([[784, 0, .12], [988, .12, .12], [1319, .24, .3]]);
   }, 450);
-  setTimeout(() => toy.classList.add('gone'), 1900);
+  setTimeout(() => toy.classList.add('gone'), 2100);
   setTimeout(() => {   // back the way it was
     const now = document.querySelector('.petg image');
-    if (now) { now.classList.remove('bat', 'toy-hop'); keep.forEach(([a, v]) => now.setAttribute(a, v)); }
+    if (now) { now.classList.remove('toy-pounce', 'toy-hop'); keep.forEach(([a, v]) => now.setAttribute(a, v)); }
     fx.remove(); delete g.dataset.toy;
     if (endCard && pet) openOverlay(ad);
-  }, 2500);
+  }, 2700);
 }
-document.getElementById('tbPanel')?.addEventListener('click', e => {   // the toolbar draws the slots; this listens for taps on them
+const bagPanel = document.getElementById('tbPanel');
+const slotToy = slot => tbBag()[[...slot.parentNode.children].indexOf(slot)];
+function emptyBag() { toyBeep(TOY_SAD, 'sine'); toyToast('Your backpack is empty. Toys are at the Department Store.'); }
+let toyDrag = null, toyDragged = false;
+const overPet = (x, y) => { const g = document.querySelector('.petg'); if (!g) return false; const r = g.getBoundingClientRect(); return x > r.left && x < r.right && y > r.top && y < r.bottom; };
+bagPanel?.addEventListener('pointerdown', e => {   // pick a toy up out of the backpack
+  const slot = e.target.closest('.tb-slot'), id = slot && slotToy(slot);
+  if (!id) return;
+  const r = slot.getBoundingClientRect();
+  toyDrag = { id, x0: e.clientX, y0: e.clientY, home: [r.left + r.width / 2, r.top + r.height / 2], ghost: null };
+});
+document.addEventListener('pointermove', e => {
+  const d = toyDrag; if (!d) return;
+  if (!d.ghost) {
+    if (Math.hypot(e.clientX - d.x0, e.clientY - d.y0) < 8) return;
+    d.ghost = Object.assign(document.createElement('img'), { className: 'toy-ghost', src: tbItemPic(d.id), alt: '' });
+    document.body.appendChild(d.ghost); toyBeep([[523, 0, .08], [659, .06, .1]]);
+  }
+  d.ghost.style.left = e.clientX + 'px'; d.ghost.style.top = e.clientY + 'px';
+  const g = document.querySelector('.petg'); if (g) g.classList.toggle('toy-over', overPet(e.clientX, e.clientY));
+});
+function toyDrop(e) {
+  const d = toyDrag; toyDrag = null; if (!d || !d.ghost) return;
+  toyDragged = true; setTimeout(() => { toyDragged = false; }, 0);   // a drag is not also a tap
+  const g = document.querySelector('.petg'); if (g) g.classList.remove('toy-over');
+  if (e.type === 'pointerup' && overPet(e.clientX, e.clientY)) { d.ghost.remove(); return giveToy(d.id); }
+  d.ghost.classList.add('back'); d.ghost.style.left = d.home[0] + 'px'; d.ghost.style.top = d.home[1] + 'px';   // let go somewhere else: back into the backpack
+  setTimeout(() => d.ghost.remove(), 320);
+}
+document.addEventListener('pointerup', toyDrop);
+document.addEventListener('pointercancel', toyDrop);
+bagPanel?.addEventListener('click', e => {   // a tap on a toy gives it too
+  if (toyDragged) return;
   const slot = e.target.closest('.tb-slot'); if (!slot) return;
-  const id = tbBag()[[...slot.parentNode.children].indexOf(slot)];
+  const id = slotToy(slot);
   if (id) return giveToy(id);
-  if (!tbBag().length) { toyBeep(TOY_SAD, 'sine'); showToast('Your backpack is empty. Toys are at the Department Store.'); }
+  if (!tbBag().length) emptyBag();
 });
 document.getElementById('tbBag')?.addEventListener('click', () => {   // opening the backpack with a pet out: say what to do
   setTimeout(() => {
-    if (!document.getElementById('tbPanel').classList.contains('open')) return;
-    const n = tbBag().length;
-    if (!n) showToast('Your backpack is empty. Toys are at the Department Store.');
-    else if (pet && tbBag().some(t => ((window.tbItems || []).find(x => x.id === t) || {}).kind === kind + 'Toy')) showToast(`Tap a toy to give it to ${pet.name}.`);
+    if (!bagPanel.classList.contains('open')) return;
+    if (!tbBag().length) return toyToast('Your backpack is empty. Toys are at the Department Store.');
+    if (pet && tbBag().some(t => ((window.tbItems || []).find(x => x.id === t) || {}).kind === kind + 'Toy')) toyToast(`Drag a toy to ${pet.name}, or tap it.`);
   }, 0);
 });
+
+// ---------- Getting paid: a big coin card, then coins fly to the money button ----------
+const COIN = '<svg viewBox="0 0 44 44"><circle cx="22" cy="23" r="19" fill="#d9a531"/><circle cx="22" cy="21" r="19" fill="#ffc94d"/><circle cx="22" cy="21" r="14" fill="none" stroke="#fff3c4" stroke-width="3"/>' +
+  '<text x="22" y="28.5" text-anchor="middle" font-family="Verdana, Geneva, sans-serif" font-size="20" font-weight="bold" fill="#b07d12">$</text></svg>';
+function payMe(amount, words) {
+  const card = document.createElement('div'); card.className = 'pay-card'; card.innerHTML = `${COIN}<span>+$${amount}</span>`;
+  document.body.appendChild(card);
+  toyBeep([[523, 0, .1], [659, .1, .1], [784, .2, .1], [1047, .3, .35]]);
+  const to = document.getElementById('tbCard');
+  setTimeout(() => {
+    const c = card.getBoundingClientRect(), t = to ? to.getBoundingClientRect() : { left: innerWidth - 80, top: innerHeight - 60, width: 60, height: 40 };
+    for (let i = 0; i < 6; i++) setTimeout(() => {   // the coins fly into your money
+      const coin = document.createElement('div'); coin.className = 'pay-coin'; coin.innerHTML = COIN;
+      coin.style.left = (c.left + 40 + i * 6) + 'px'; coin.style.top = (c.top + c.height / 2) + 'px';
+      document.body.appendChild(coin); void coin.offsetWidth;
+      coin.style.left = (t.left + t.width / 2) + 'px'; coin.style.top = (t.top + t.height / 2) + 'px'; coin.style.transform = 'scale(.6) rotate(200deg)';
+      setTimeout(() => { coin.remove(); toyBeep([[1319 + i * 60, 0, .08]]); }, 760);
+    }, i * 110);
+    card.classList.add('out'); setTimeout(() => card.remove(), 420);
+    setTimeout(() => { if (window.tbEarn) tbEarn(amount, words); }, 6 * 110 + 760);
+  }, 1500);
+}
 
 // ---------- Taps and keys ----------
 room.addEventListener('click', e => { const g = e.target.closest('.tgt'); if (g) useTarget(g); });
@@ -2486,7 +2587,7 @@ room.addEventListener('keydown', e => {
   const g = e.target.closest('.tgt'), p = e.target.closest('.petg.drag');
   if (g || p) { e.preventDefault(); g ? useTarget(g) : ['bubbles', 'brush'].includes(TASKS[task].icon) ? goToBath() : weigh(); }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(picker); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && picker.classList.contains('open')) closePicker(); });
 // the yellow task in the task bar starts that task, the same as tapping its spot in the room
 document.getElementById('tasks').addEventListener('click', e => {
   const t = TASKS[task];
