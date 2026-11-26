@@ -1086,7 +1086,6 @@ function useTarget(g) {
   if (id === 'tree') return playAtTree();
   g.classList.remove('shake'); void g.getBBox(); g.classList.add('shake');   // not built yet
   setTimeout(() => g.classList.remove('shake'), 500);
-  showToast(`${TARGETS[id].name}: coming soon`);
 }
 
 // ---------- Picker ----------
@@ -1106,7 +1105,7 @@ function openPicker(k) {
     for (let i = p * 8; i < p * 8 + 8; i++) {
       const a = list[i];
       s += a ? `<button class="pk-card" data-pet="${a.id}" aria-label="${a.name}"><img src="${ART[a.art]}" alt="" style="height: ${kind === 'cat' ? 75 : Math.round(Math.min(90, 100 * sizeK(a) ** 2.2))}%"><span class="pk-name">${a.name}</span><span class="pk-sex" aria-hidden="true">${PAW(a.boy ? '#4a9be0' : '#e0457b')}</span></button>`
-             : `<div class="pk-card empty" aria-hidden="true">${EMPTY_PAW}<span class="pk-name">Coming soon</span></div>`;
+             : `<div class="pk-card empty" aria-hidden="true">${EMPTY_PAW}</div>`;
     }
     s += '</div>';
   }
