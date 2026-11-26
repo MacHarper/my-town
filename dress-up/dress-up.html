@@ -1713,7 +1713,7 @@ PIECES.forEach(p => {
 });
 ((window.tbData || {}).closet || []).forEach(id => OWN.add(id));   // bought at the Department Store
 function own(p) { p = typeof p === 'string' ? BY_ID[p] : p; return !!p && OWN.has(p.id); }
-function groupOwned(p) { return p.group ? PIECES.some(q => q.cat === p.cat && q.group === p.group && own(q)) : own(p); }
+function groupOwned(p) { return groupKey(p) ? PIECES.some(q => q.cat === p.cat && q.group === p.group && own(q)) : own(p); }
 if (!TUTORIAL) {   // My Closet: only your pieces, and only the filters that have some
   for (let i = PIECES.length - 1; i >= 0; i--) if (!own(PIECES[i])) PIECES.splice(i, 1);
   Object.keys(FILTERS).forEach(cat => {
@@ -1767,7 +1767,7 @@ Object.values(GROUPS).forEach(list => {   // the color shown on the tile comes f
   if (d) { list.splice(list.indexOf(d), 1); list.unshift(d); }
 });
 let openGroup = null;
-function groupKey(p) { return p.group ? p.cat + ':' + p.group : null; }
+function groupKey(p) { return p.group && p.group !== 'Graphic Tee' ? p.cat + ':' + p.group : null; }   // each graphic tee is its own item (Mac, Nov 26, 2026)
 function shownFor(key) {   // the color shown on a group's tray tile: the one being worn, else the first
   const list = GROUPS[key]; const w = list.find(q => wearing[q.cat] === q.id); const mine = list.filter(own);
   return w || mine.find(q => q.def) || mine[0] || list.find(q => q.def) || list.find(q => q.clr === 'Black') || list[0];
@@ -1820,7 +1820,7 @@ function renderTray() {
     if (key) b.dataset.group = key;
     b.className = 'thumb' + (wearing[p.cat] === p.id ? ' wearing' : '');
     b.style.animationDelay = Math.min(i * 0.0084, 0.084) + 's';
-    b.title = p.group || p.name; b.setAttribute('role', 'button'); b.setAttribute('aria-label', p.group || p.name);
+    b.title = key ? p.group : p.name; b.setAttribute('role', 'button'); b.setAttribute('aria-label', key ? p.group : p.name);
     b.dataset.id = p.id;
     const img = document.createElement('img'); img.src = ART[p.id].thumb || ART[p.id].src; img.alt = p.name;
     b.appendChild(img);
@@ -1967,7 +1967,7 @@ function wear(id, picked) {   // picked: chosen from the color row, so the toast
   wrap.appendChild(img);
   dollEl.appendChild(wrap);
   updateHairMask();
-  if (!rolling) { sparkles(); sndPut(); toast((picked ? (p.clr ? p.clr + ' ' + p.name : p.name) : (p.group || p.name)) + '!'); }
+  if (!rolling) { sparkles(); sndPut(); toast((picked ? (p.clr ? p.clr + ' ' + p.name : p.name) : (groupKey(p) ? p.group : p.name)) + '!'); }
   if (!rolling && BOUGHT_SETS.includes(id)) { rolling = true; SET_EXTRAS[id].forEach(x => wear(x)); rolling = false; }   // the outfit's own hat and shoes
   markTray(); updateProgress();
 }
