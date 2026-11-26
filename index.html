@@ -327,6 +327,8 @@
     .tu-things { gap: 8px; } .tu-thing .tu-chip { min-width: 50px; height: 50px; } .tu-chip img, .tu-chip svg { width: 34px; height: 34px; } .tu-chip .bd { width: 40px; height: 40px; } }
   @media (prefers-reduced-motion: reduce) { .tu-tap, #tuPtr.on, html.touring #tb .tu-lit { animation: none; } .tu-card { transition: none; } }
 </style>
+<script>if (/^#(?!town$)\w/.test(location.hash)) document.documentElement.classList.add('room-first');   /* opening a room: don't flash the town map first (Mac, Nov 26, 2026) */</script>
+<style>.room-first #wrap { visibility: hidden; }</style>
 </head>
 <body>
 <!-- ===== toolbar (same on every screen; paste right after <body>; follows style-guide.md) ===== -->
@@ -1139,7 +1141,7 @@ function drawRoom(id) {
 // Each building with a career meets you with a card: a doll in that career's outfit (from Dress Up), the career's name,
 // a few easy words (for Pre-K to 3rd grade), and a button. The card then flies to the first thing to do in the room.
 const CAREERS = {
-  department: { title: 'Department Store', kicker: 'WELCOME TO THE', color: '#4a9be0', shadow: '#3a7cb8', go: "Let's shop!", logo: true,
+  department: { title: 'Department Store', kicker: 'WELCOME TO THE', color: '#f68171', shadow: '#d4604f', go: "Let's shop!", logo: true,
          text: 'A store with clothes, toys and games. Tap a sign to see what it sells.',
          img: DEPT_LOGO },
   boutique: { title: 'Hair Salon', kicker: 'WELCOME TO THE', color: '#e0457b', shadow: '#b8336a', go: "Let's go!", logo: true,
@@ -1196,7 +1198,7 @@ function fitRoomFrame() {
 addEventListener('resize', fitRoomFrame); roomShort.addEventListener('change', fitRoomFrame);
 
 function showRoom(id, fromMap) {
-  roomId = id; roomLeaving = false;
+  roomId = id; roomLeaving = false; document.documentElement.classList.remove('room-first');
   const r = ROOMS[id];
   const bar = r.bar, wrapEl = document.getElementById('roomWrap');
   document.getElementById('roomBar').hidden = !bar;   // every new building has a task bar with its logo and name
@@ -1226,6 +1228,7 @@ function showRoom(id, fromMap) {
 }
 
 function showMap() {
+  document.documentElement.classList.remove('room-first');
   closeShop();
   const cc = document.getElementById('career'); cc.classList.remove('open', 'leave'); cc.setAttribute('aria-hidden', 'true');   // close a career card
   roomId = null; leaving = false; clearTimeout(hintTimer);
@@ -1288,11 +1291,14 @@ svg.addEventListener('keydown', e => {
 });
 
 // Reset when coming back with the Back button
-window.addEventListener('pageshow', () => {
+window.addEventListener('pageshow', e => {
   leaving = false; roomLeaving = false;
   toast.classList.remove('show');
   roomSvg.classList.remove('zoom');
   document.getElementById('roomFade').classList.remove('on');
+  document.getElementById('map').classList.remove('zoom'); document.getElementById('fade').classList.remove('on');
+  const h = location.hash.slice(1);
+  if (e.persisted && (ROOMS[h] ? roomId === h : !roomId)) return;   // back on the same screen: no welcome card popping up again (Mac, Nov 26, 2026)
   fromHash();
 });
 
