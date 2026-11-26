@@ -40,6 +40,19 @@ Use only these. If a new thing needs a color, pick from this list instead of add
   - Directions (what to do next): a soft cream bubble with no edge, a soft shadow, and plum words.
   - Buttons: a solid color with white words and a pressed edge (see Buttons).
 
+## Formatting standard (Mac, Nov 26, 2026)
+One look for these pieces in every game. The Vet Clinic and the Hair Salon are the examples; copy them exactly.
+- **Drag objects (tools):** shown at full color, never faded, sitting on the cream tool area `#fffaf6`. The tool you can use now has a soft rounded-rectangle highlight around it (the Vet bath's soap, the salon's brush).
+- **Labels on things in a room:** white pill, dark purple `#4a3b5c` outline about 4 px, bold dark purple words (the Vet Clinic's "Water" label).
+- **Standing directions** (what to do now): one white-cream box `#fffaf5`, bold dark purple words, rounded corners, **centered at the bottom** of the screen (the Vet Clinic's "Drag the water bowl to the sink.").
+- **Buildings:** every building screen has the full-width task bar (logo badge, name, divider, step pills), like the Vet Clinic.
+- **Pop-out tasks** (the bath): title centered at the top, dark round close button at the top right, step pills starting at the left, tools in a column on the left, the pet or person in the middle, the directions line centered at the bottom.
+- **Payment and closing:** the Vet Clinic thanks card: career doll on the left, career-name pill, "Thanks for your help!", the money, then the help-more button and pink "Back to town".
+- **Intro pop-ups:** with no career doll, the welcome card (building logo on lavender on the left, "WELCOME TO THE", the building name in its color, a short line, one button). When a career card exists it replaces the intro and looks like the Vet Clinic's "MEET A Veterinarian" card.
+- **Highlights:** every highlight uses the same line width and the same soft yellow as the salon chair's glow (thin `#fff6b0` line with a faint fill), following the object's outline in rooms.
+- **First tap in a building:** the guide line with the pink block arrow under it, pointing at the thing to tap (the salon's "Tap the chair for a new hairstyle.").
+- **Showing how to move:** a glowing yellow mitt outline that moves the way the player should (the salon's rub-in hint).
+
 ## Arrows (Nov 25, 2026)
 - Every arrow has depth, like the town's pick arrow: a thick rounded block arrow in one color, a copy about 20% darker just under it (7 units lower), and one small light streak on top. No flat line arrows.
 - An arrow that points at something outside a card (like the toolbar) sits outside the card, right next to the thing, and bobs toward it.

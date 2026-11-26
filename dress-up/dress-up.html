@@ -636,7 +636,7 @@ html.salon header { max-width: none; justify-content: flex-start; }   /* Back si
   .sb-tool { width: 120px; height: 130px; border: none; border-radius: 22px; background: #f3edf8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font: bold 16px Verdana, Geneva, sans-serif; color: #6b5a80; cursor: pointer; }
   .sb-tool svg { width: 72px; height: 72px; }
   .sb-tool.on { background: #ffc94d; color: #4a3b5c; box-shadow: 0 5px 0 #d9a531; animation: sbBob 1.2s ease-in-out infinite; }
-  .sb-tool.used { opacity: .45; }
+  .sb-tool.used { }   /* tools are never faded (Mac, Nov 26, 2026) */
   .sb-tool:disabled { cursor: default; }
   @keyframes sbBob { 50% { transform: translateY(-5px); } }
   .sb-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; max-width: 360px; }
@@ -664,10 +664,22 @@ html.salon header { max-width: none; justify-content: flex-start; }   /* Back si
   /* the end: just you with your new hair, and Looks great! */
   #sbDone { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px 16px 96px; background: rgba(43, 35, 64, .3); opacity: 0; pointer-events: none; transition: opacity .25s; font-family: Verdana, Geneva, sans-serif; }
   #sbDone.open { opacity: 1; pointer-events: auto; }
-  #sbDone .by-box { width: min(560px, 100%); }
-  #sbDone .by-pic { aspect-ratio: 3 / 2; }
-  #sbDone.open .by-box { transform: none; }
-  #sbDone .sb-go { min-height: 62px; padding: 0 36px; font-size: 26px; margin-top: 6px; }
+  /* the closing card follows the Vet Clinic thanks card (Mac, Nov 26, 2026): you on the left, the place's pill, a big line, help-more and Back to town */
+  .sd-card { width: min(94%, 640px); display: flex; align-items: center; gap: 18px; padding: 18px 22px; background: #fff; border-radius: 28px; box-shadow: 0 0 0 2px #f3edf8, 0 14px 38px rgba(74, 59, 92, .3); transform: scale(.9); transition: transform .3s cubic-bezier(.3, 1.5, .5, 1); }
+  #sbDone.open .sd-card { transform: none; }
+  .sd-doll { flex: 0 0 auto; height: min(34vh, 250px); border-radius: 22px; background: #f3edf8; padding: 8px 5px 3px; }
+  .sd-body { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+  .sd-place { padding: 6px 18px; border-radius: 999px; background: #fde6ee; color: #b8336a; font-size: clamp(16px, 2.4vw, 21px); font-weight: bold; letter-spacing: .5px; }
+  #sdTitle { margin: 0; font-size: clamp(24px, 4vw, 38px); line-height: 1.1; color: #e0457b; text-shadow: 0 3px 0 rgba(0, 0, 0, .08); }
+  .sd-btn { min-height: 56px; padding: 0 28px; border: none; border-radius: 16px; color: #fff; font: bold 22px Verdana, Geneva, sans-serif; cursor: pointer; }
+  .sd-btn:active { transform: translateY(3px); }
+  .sd-again { margin-top: 6px; background: #7b5cd6; box-shadow: 0 4px 0 #5e43b0; }
+  .sd-town { background: #e0457b; box-shadow: 0 4px 0 #b8336a; }
+  @media (max-width: 560px) { .sd-card { flex-direction: column; gap: 8px; padding: 14px; } .sd-doll { height: min(22vh, 160px); } }
+  /* the salon's directions line: centered at the bottom of the screen (Mac, Nov 26, 2026) */
+  #salonSay { display: none; }
+  html.salon #salonSay { display: block; position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); z-index: 25; max-width: calc(100% - 32px); box-sizing: border-box; background: #fffaf5; border-radius: 18px; box-shadow: 0 6px 16px rgba(74, 59, 92, .18); padding: 10px 22px; font: bold clamp(14px, 2.4vw, 22px) Verdana, Geneva, sans-serif; color: #4a3b5c; text-align: center; transition: opacity .25s; }
+  html.salon #salonSay.hide, html.salon:has(#sbDone.open) #salonSay, html.salon:has(#buy.open) #salonSay { opacity: 0; pointer-events: none; }
   /* the wash (Mac, Nov 25, 2026): the shampoo pours, a glowing hand shows how to rub it in; the hand shower and towel are the dog bath's */
   #sbWash { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 25; touch-action: none; }
   html.salon[data-sstep="wash"] #stage { touch-action: none; }
@@ -698,7 +710,7 @@ html.salon header { max-width: none; justify-content: flex-start; }   /* Back si
   .wt-steps .wt-step.done svg { background: none; padding: 0; }
   .wt-steps .wt-step.blink { cursor: pointer; animation: wtBlink 1.1s ease-in-out infinite; }
   @keyframes wtBlink { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
-  .wt-tools { flex: 1; min-height: 170px; display: flex; align-items: center; justify-content: space-around; gap: 10px; padding: 14px; border-radius: 22px; background: #fffaf5; }
+  .wt-tools { flex: 1; min-height: 170px; display: flex; align-items: center; justify-content: space-around; gap: 10px; padding: 14px; border-radius: 22px; background: #fffaf6; }
   .wt-tool { position: relative; width: 30%; max-width: 150px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
   .wt-ring { position: absolute; inset: 0; border-radius: 26px; background: rgba(255, 246, 176, .18); box-shadow: inset 0 0 0 7px #fff6b0; opacity: 0; transition: opacity .15s; pointer-events: none; }
   .wt-tool.on .wt-ring { opacity: 1; }
@@ -706,7 +718,7 @@ html.salon header { max-width: none; justify-content: flex-start; }   /* Back si
   .wt-tool.on:hover .wt-ring { opacity: 1; }
   .wt-tool.held .wt-ring { opacity: 0 !important; }
   .wt-tool.held .wt-art { visibility: hidden; }
-  .wt-tool.used { opacity: .35; cursor: default; }
+  .wt-tool.used { cursor: default; }   /* tools are never faded (Mac, Nov 26, 2026) */
   .wt-tool:not(.on):not(.next) { cursor: default; }
   .wt-art { width: 78%; height: 78%; display: flex; align-items: center; justify-content: center; pointer-events: none; }
   .wt-art svg, .wt-art img { max-width: 100%; max-height: 100%; display: block; }
@@ -781,7 +793,16 @@ html.salon header { max-width: none; justify-content: flex-start; }   /* Back si
     <button class="by-go" id="byGo"><span id="byCardIc"></span>Buy</button></div>
   </div>
 </div>
-<div id="sbDone" aria-hidden="true"><div class="by-box" role="dialog" aria-label="Your new hair"><div class="by-pic"><svg viewBox="0 0 1500 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><pattern id="slatsDone" width="64" height="1000" patternUnits="userSpaceOnUse"><rect width="64" height="1000" fill="#eeb969"/><rect width="5" height="1000" fill="#d39a5c"/><rect x="5" width="4" height="1000" fill="#f6c983"/></pattern></defs><rect width="1500" height="1000" fill="url(#slatsDone)"/><circle cx="750" cy="412" r="352" fill="#d9a15f" opacity=".45"/><circle cx="750" cy="400" r="345" fill="#ebe7f7"/><circle cx="750" cy="400" r="312" fill="#c3cbe0"/><circle cx="750" cy="400" r="304" fill="#c4daef"/><path d="M550 600 L860 160 L910 190 L600 630 Z" fill="#fff" opacity=".35"/><path d="M660 680 L940 280 L965 298 L685 698 Z" fill="#fff" opacity=".3"/><rect x="420" y="700" width="660" height="460" rx="120" fill="#b97fa0"/><rect x="435" y="690" width="630" height="460" rx="110" fill="#cf9db8"/><rect x="500" y="750" width="500" height="400" rx="80" fill="#d9adc5"/><rect x="580" y="610" width="340" height="125" rx="60" fill="#98466a"/><rect x="600" y="620" width="300" height="48" rx="24" fill="#ad5a80" opacity=".7"/></svg><img id="sbDoneImg" alt="You with your new hair"></div><button class="sb-go" id="sbLooks">Looks great!</button></div></div>
+<div id="sbDone" aria-hidden="true"><div class="sd-card" role="dialog" aria-labelledby="sdTitle">
+  <img class="sd-doll" id="sbDoneImg" alt="You with your new hair">
+  <div class="sd-body">
+    <div class="sd-place">Hair Salon</div>
+    <h3 id="sdTitle">You look great!</h3>
+    <button class="sd-btn sd-again" id="sbAgain">Get another style</button>
+    <button class="sd-btn sd-town" id="sbLooks">Back to town</button>
+  </div>
+</div></div>
+<div id="salonSay" class="hide" role="status"></div>
 <img id="ghost" alt="">
 <div id="toast"></div>
 <canvas id="confetti"></canvas>
@@ -2324,15 +2345,15 @@ function salonGo(n) {
   if (id === 'wash') {
     panel.innerHTML = `<h3>Wash your hair</h3><div class="wt-steps" id="wtSteps"></div>
       <div class="wt-tools" id="wtTools">${W_STEPS.map(t => `<div class="wt-tool" data-tool="${t.id}" role="button" tabindex="0" aria-label="${t.tool}"><span class="wt-ring"></span><div class="wt-art">${W_ART[t.id]()}</div></div>`).join('')}</div>
-      <p class="wt-say" id="sbSay"></p>`;
+`;
     startWash();
   } else if (id === 'style') {
-    panel.innerHTML = `<h3>Pick a hairstyle</h3><p>Tap a style to try it on.</p>`;
+    panel.innerHTML = `<h3>Pick a hairstyle</h3>`; salonSay('Tap a style to try it on.');
     next.textContent = 'Next: Color';
     renderSalonStyles();
   } else if (id === 'color') {
     const p = BY_ID[wearing.hair], list = p && groupKey(p) ? GROUPS[groupKey(p)] : (p ? [p] : []);
-    panel.innerHTML = `<h3>Dye your hair</h3><p>${list.length > 1 ? 'Tap a color.' : 'This style comes in one color.'}</p><div class="sb-colors" id="sbColors"></div>`;
+    panel.innerHTML = `<h3>Dye your hair</h3><div class="sb-colors" id="sbColors"></div>`; salonSay(list.length > 1 ? 'Tap a color.' : 'This style comes in one color.');
     const row = document.getElementById('sbColors');
     if (list.length > 1) list.forEach(q => {
       const w = document.createElement('button'); w.className = 'sw round' + (q.id === wearing.hair ? ' on' : ''); w.style.background = q.sw;
@@ -2343,6 +2364,7 @@ function salonGo(n) {
     next.textContent = 'Next: Pay';
   } else if (id === 'pay') {
     const cardPic = document.querySelector('#tbCard .tb-plain');
+    salonSay('Tap Pay to pay $' + HAIR_PRICE + '.');
     panel.innerHTML = `<h3>Pay the salon</h3><div class="sb-pic"><img id="sbPayImg" alt="You with your new hair"></div>
       <div class="sb-list">${['Wash', 'Style', 'Color'].map(w => `<span>${sIcon(S_CHECK)}${w}</span>`).join('')}</div>
       <div class="sb-price">$${HAIR_PRICE}</div><button class="sb-go" id="sbPay">${cardPic ? cardPic.outerHTML : ''}Pay</button>`;
@@ -2474,10 +2496,12 @@ function washStep() {   // the step pills, the words and which tool glows (the V
     t.classList.toggle('used', i < wsh.step || (poured && !wsh.pouring));
   });
 }
-function washSay(t) { const e = document.getElementById('sbSay'); if (e) e.textContent = t; }
+function washSay(t) { salonSay(t); }
+// the salon's directions: one line centered at the bottom of the screen, like the Vet Clinic's (Mac, Nov 26, 2026)
+function salonSay(t) { const e = document.getElementById('salonSay'); if (!e) return; e.textContent = t || ''; e.classList.toggle('hide', !t); }
 function nextWashStep() {
   if (!wsh || !wsh.ready || wsh.step >= W_STEPS.length - 1) return;
-  wsh.step++; wsh.ready = false;
+  wsh.step++; wsh.ready = false; wsh.rubT0 = 0;
   wsh.cells.forEach(c => c.done = false);
   document.querySelectorAll('#sbFx .sb-puff').forEach(e => e.remove());
   ['sbBlob', 'sbHand'].forEach(id => { const x = document.getElementById(id); if (x) x.setAttribute('opacity', 0); });
@@ -2488,6 +2512,7 @@ function washRub(x, y, reach) {
   const step = W_STEPS[wsh.step].id, fx = document.getElementById('sbFx');
   if (!fx || !wsh.cells.length) return;
   let hit = false;
+  if (!wsh.rubT0) wsh.rubT0 = Date.now();   // when this step's rubbing started
   wsh.cells.forEach((c, i) => {
     if (c.done || Math.hypot(c.x - x, c.y - y) > reach) return;
     c.done = true; hit = true;
@@ -2507,14 +2532,20 @@ function washRub(x, y, reach) {
     if (wsh.cells.filter(c => c.done).length >= 3) document.getElementById('sbHand').setAttribute('opacity', 0);
     document.getElementById('sbBlob').setAttribute('opacity', Math.max(0, 1 - part / W_RUB_DONE));
   }
-  if (!wsh.ready && part >= W_RUB_DONE) washReady(step);
+}
+// a wash step finishes when you let go, after at least 3 s of rubbing and 70% of the hair (never cut off mid-rub; Mac, Nov 26, 2026)
+function washCheck() {
+  const s = W_STEPS[wsh.step];
+  if (!s || wsh.ready || !wsh.rubT0 || !wsh.cells.length) return;
+  const part = wsh.cells.filter(c => c.done).length / wsh.cells.length;
+  if (part >= W_RUB_DONE && Date.now() - wsh.rubT0 >= 3000) washReady(s.id);
 }
 function washReady(step) {
   wsh.ready = true;
   if (step === 'rinse') stage.classList.add('wet');   // wet hair, like the dog's wet picture
-  if (step === 'towel') {   // the last step: keep drying for up to 3 seconds, or let go
+  if (step === 'towel') {   // the last step: you already let go, so the hair is all clean
     stage.classList.remove('wet');
-    wsh.end = setTimeout(() => { wsh.end = null; dropWash(); washDone(); }, 3000);
+    setTimeout(washDone, 200);
   }
   washStep();
 }
@@ -2541,7 +2572,7 @@ function placeGhost(d, x, y) {   // the tool follows your finger; the shower is 
 function dropWash() {
   if (!wsh || !wsh.drag) return;
   const d = wsh.drag; wsh.drag = null;
-  if (wsh.end && wsh.ready && W_STEPS[wsh.step] && W_STEPS[wsh.step].id === 'towel') { clearTimeout(wsh.end); wsh.end = null; setTimeout(washDone, 200); }
+  washCheck();
   const r = d.tool.getBoundingClientRect();   // back to its place in the tool area
   d.ghost.classList.add('home'); d.ghost.classList.remove('raining');
   placeGhost(d, r.left + r.width / 2 + (d.id === 'rinse' ? d.hx - d.w / 2 : 0), r.top + r.height / 2 + (d.id === 'rinse' ? d.hy - d.h / 2 : 0));
@@ -2579,7 +2610,7 @@ function wireWash() {
     const p = washPt(e.clientX, e.clientY); if (!p.inside) return;
     wsh.rubbing = true; e.preventDefault(); washRub(p.x, p.y, (wsh.reach || 50) * 1.2);
   });
-  document.addEventListener('pointerup', () => { if (wsh) wsh.rubbing = false; });
+  document.addEventListener('pointerup', () => { if (wsh && wsh.rubbing) { wsh.rubbing = false; washCheck(); } });
   document.addEventListener('pointermove', e => {
     if (wsh && wsh.poured && W_STEPS[wsh.step].id === 'soap' && wsh.rubbing) {   // only while you press and hold
       const p = washPt(e.clientX, e.clientY); if (p.inside) washRub(p.x, p.y, (wsh.reach || 50) * 1.2);
@@ -2630,7 +2661,8 @@ async function paySalon() {
   sPaid = true; sndWin(); confetti();
   sStep = S_STEPS.length; drawSalonTasks();
   tbSetAvatar(await dollPicture(), { outfit: Object.assign({}, wearing), under: underBottom });   // saved, and your toolbar picture too
-  document.getElementById('sbDoneImg').src = await hairPicture(wearing.hair);
+  document.getElementById('sbDoneImg').src = await dollPicture();   // you, all of you, with your new hair (like the career doll)
+  salonSay('');
   const d = document.getElementById('sbDone'); d.classList.add('open'); d.setAttribute('aria-hidden', 'false');
 }
 if (SALON) {
@@ -2638,6 +2670,7 @@ if (SALON) {
   wireWash();
   document.getElementById('salonNext').addEventListener('click', () => { tone([587, 784], 'triangle', 0.08); salonGo(sStep + 1); });
   document.getElementById('sbLooks').addEventListener('click', () => { location.href = document.querySelector('.backtown').href; });
+  document.getElementById('sbAgain').addEventListener('click', () => location.reload());   // start over for another style
 }
 if (SALON) { stage.insertBefore(document.getElementById('salonBackTpl').content.cloneNode(true), document.getElementById('doll')); salonGo(0); }
 hideLoading();

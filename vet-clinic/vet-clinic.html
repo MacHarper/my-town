@@ -1706,6 +1706,7 @@ const GROOM_STEPS = [   // cats: brush, then trim the nails (no tub, no water)
 ];
 const STEPS = () => kind === 'cat' ? GROOM_STEPS : BATH_STEPS;
 const RUB_DONE = .7;   // how much of the pet you have to rub
+const RUB_MIN_MS = 3000;   // and for at least 3 seconds; the step only finishes when you let go of the tool (Mac, Nov 26, 2026)
 let bt = null;
 
 const PAWS = {"dachshundSit": [323, 220.5, 220, 289], "ralphieBath": [325, 237.5, 243, 306], "ralphieDone": [324, 225.0, 225, 284], "bellaSit": [313, 189.5, 189, 243], "bellaBath": [289, 189.5, 189, 239], "bellaDone": [289, 189.5, 189, 218], "zuzuSit": [322, 190.0, 190, 273], "zuzuBath": [333, 210.5, 212, 284], "zuzuDone": [322, 194.0, 193, 271], "spudSit": [334, 198.0, 198, 280], "spudBath": [327, 232.5, 228, 302], "spudDone": [334, 202.0, 202, 282], "millySit": [301, 174.5, 173, 224], "millyBath": [304, 189.0, 187, 240], "millyDone": [301, 178.5, 177, 224], "suzySit": [196, 210.0, 209, 248], "suzyBath": [202, 224.0, 223, 256], "suzyDone": [196, 214.0, 213, 248], "willowSit": [318, 217.0, 216, 302], "willowBath": [323, 219.5, 219, 318], "willowDone": [324, 221.0, 221, 297], "lunaSit": [369, 227.5, 182, 252], "lunaGroom": [383, 238.5, 191, 262], "lunaPlay": [383, 238.5, 190, 262], "lunaDone": [370, 233.0, 187, 252], "peachesSit": [323, 255.5, 176, 240], "peachesGroom": [334, 267.0, 184, 248], "peachesPlay": [130, 379.0, 186, 288], "peachesPlayDown": [130, 379.0, 186, 288], "peachesDone": [323, 259.5, 180, 240], "felixSit": [380, 208.0, 267, 288], "felixGroom": [391, 214.5, 266, 301], "felixPlay": [372, 193.0, 231, 304], "felixDone": [380, 210.0, 266, 288], "tuckerSit": [365, 227.5, 185, 252], "tuckerGroom": [379, 238.5, 191, 262], "tuckerPlay": [378, 239.0, 189, 262], "tuckerDone": [365, 232.5, 188, 252], "finnSit": [369, 227.5, 183, 252], "finnGroom": [382, 242.0, 195, 260], "finnPlay": [382, 239.0, 190, 261], "finnDone": [369, 232.5, 187, 252], "roxySit": [321, 201.5, 197, 247], "roxyBath": [322, 231.0, 241, 263], "roxyDone": [365, 225.5, 221, 248], "misoSit": [329, 257.5, 170, 244], "misoGroom": [339, 269.5, 178, 252], "misoPlay": [340, 270.0, 179, 252], "misoDone": [329, 262.5, 175, 243], "griffinSit": [271, 162.5, 162, 276], "griffinBath": [281, 173.5, 172, 284], "griffinDone": [271, 167.5, 167, 277], "jaxSit": [372, 228.0, 183, 248], "jaxGroom": [384, 239.0, 192, 260], "jaxPlay": [282, 221.0, 234, 296], "jaxDone": [379, 241.5, 199, 254], "finleySit": [333, 255.5, 167, 239], "finleyGroom": [348, 268.0, 174, 243], "finleyPlay": [348, 268.0, 175, 244], "finleyDone": [338, 261.0, 170, 232]};   // filled in by build.py: each pose picture's paw width and paw middle, in picture pixels
@@ -1860,7 +1861,7 @@ function bathStep() {
 }
 function nextBathStep() {
   if (!bt.ready || bt.step >= STEPS().length - 1) return;
-  bt.step++; bt.ready = false;
+  bt.step++; bt.ready = false; bt.rubT0 = 0;
   bt.cells.forEach(c => c.done = false);
   document.querySelectorAll('#btFx .puff').forEach(p => p.remove());
   if (STEPS()[bt.step].id === 'nails') nailSpots();
@@ -1913,7 +1914,7 @@ btStage.addEventListener('pointermove', e => {
 function dropTool() {
   if (!bt || !bt.drag) return;
   const d = bt.drag; bt.drag = null;
-  if (bt.brushEnd && STEPS()[bt.step] && STEPS()[bt.step].id === 'brush' && bt.ready) { clearTimeout(bt.brushEnd); bt.brushEnd = null; setTimeout(bathDone, 200); }
+  rubCheck();
   if (d.head) {
     document.getElementById('btHead').classList.remove('raining');
     document.querySelector('#btHead .ring').style.display = '';
@@ -1928,6 +1929,7 @@ btStage.addEventListener('pointercancel', dropTool);
 function rubAt(x, y, reach) {
   const step = STEPS()[bt.step].id, fx = document.getElementById('btFx');
   let hit = false;
+  if (!bt.rubT0) bt.rubT0 = Date.now();   // when this step's rubbing started
   bt.cells.forEach((c, i) => {
     if (c.done || Math.hypot(c.x - x, c.y - y) > reach) return;
     c.done = true; hit = true;
@@ -1950,7 +1952,14 @@ function rubAt(x, y, reach) {
   if (!hit) return;
   const part = bt.cells.filter(c => c.done).length / bt.cells.length;
   if (step === 'soap') { const st = document.getElementById('btStink'); if (st) st.style.opacity = Math.max(0, 1 - part / RUB_DONE); }
-  if (!bt.ready && part >= (step === 'nails' ? 1 : RUB_DONE)) stepReady(step);
+  if (!bt.ready && step === 'nails' && part >= 1) stepReady(step);   // snipping: every paw, right away
+}
+// rubbing steps finish when you let go, after at least 3 s of rubbing and 70% of the pet (never cut off mid-rub)
+function rubCheck() {
+  const s = STEPS()[bt.step];
+  if (!s || bt.ready || s.id === 'nails' || !bt.rubT0) return;
+  const part = bt.cells.filter(c => c.done).length / bt.cells.length;
+  if (part >= RUB_DONE && Date.now() - bt.rubT0 >= RUB_MIN_MS) stepReady(s.id);
 }
 
 function stepReady(step) {
@@ -1960,7 +1969,7 @@ function stepReady(step) {
   if (step === 'towel') setDogPose('sit');
   if (step === 'nails') return setTimeout(groomDone, 1500);   // a moment to see both paws snipped
   if (step === 'brush' && kind === 'cat') { setDogPose('bath'); return bathStep(); }   // happy and fluffy; the clippers blink next
-  if (step === 'brush') { bt.brushEnd = setTimeout(() => { bt.brushEnd = null; dropTool(); bathDone(); }, 3000); return bathStep(); }
+  if (step === 'brush') { bathStep(); return setTimeout(bathDone, 200); }   // you already let go: all clean
   bathStep();
 }
 function setDogPose(pose) {

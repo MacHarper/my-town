@@ -11,7 +11,7 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 ## 2. Tools: drag them in to use them
 - Only the tool for the current step can be picked up. It wears a glow ring, and the other tools have none.
 - Glow ring: a rounded box or circle, fill `rgba(255,246,176,.18)`, stroke `#fff6b0`, 12 to 14 thick, 40-unit corners. It shows fully on the current tool, at 75% on hover, and goes away (0) while the tool is held.
-- Tools already used fade to 35% and can't be picked up.
+- Tools are never faded (Mac, Nov 26, 2026). Tools already used simply have no highlight and can't be picked up.
 - Press on the tool and drag it into the frame. It is carried over the pet (drawn on top) and it is the tool that does the work: wherever it passes, that part gets done. A mouse or finger alone never rubs.
 - Let go anywhere and the tool goes straight back to its place in the tool area. The shower goes back on its hook.
 - The shower sprays down and to the left of its head. Water lands 120 units below-left of the head (direction -0.6, 0.8) and reaches 70 units.
@@ -21,7 +21,7 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 ## 3. How much rubbing finishes a step
 - The thing being cared for is split into a **7 × 8 grid of cells** over its picture. A cell counts only where the picture is solid (alpha over 200). In the tub, only the top 75% counts, because the bottom is behind the tub.
 - A hand tool (soap, towel, brush) finishes the cells within **46 units** of the pointer. That's about one cell width, since the pet is about 300 units wide. The shower reaches **70 units**.
-- **A step is done at 70% of the cells** (`RUB_DONE = .7`). Snipping nails needs every glowing spot. Each step starts over with fresh cells: rinsing and drying need 70% again, not just the soapy part.
+- **A step is done at 70% of the cells** (`RUB_DONE = .7`) **and at least 3 seconds of rubbing** (Mac, Nov 26, 2026). It never stops you: you keep rubbing until you let go of the tool, and only then does the step count as done. Snipping nails needs every glowing spot. Each step starts over with fresh cells: rinsing and drying need 70% again, not just the soapy part.
 - What you see while rubbing:
   - Soap leaves a little cluster of uneven white bubbles on each cell, and the stinky lines fade as you go.
   - Rinsing fades each cell's bubbles out over 0.4 s.
@@ -31,7 +31,7 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 
 ## 4. Pacing between steps
 - **No step moves on by itself.** When a step is done, the words go quiet, the next step's pill blinks (`blink 1.1s`: opacity 1 to .4 and back), and the next tool's ring lights up. The player keeps rubbing as long as they like, then picks up the next tool (or taps the blinking pill) to move on.
-- **The last rubbing step** (brushing) ends **3 seconds** after it's done, or 0.2 s after you let go of the tool, whichever comes first.
+- **Interactions never force you to stop** (Mac, Nov 26, 2026). Every rubbing step, the last one too, lasts at least 3 seconds and keeps going while you hold the tool; it ends 0.2 s after you let go.
 - **All done in the pop-up:** every pill is checked and the words say "[Name] is all clean.". The pet shows its happy picture and one burst of 8 yellow stars (`#ffd34d`) flies out once over 0.8 s. **1.6 s later** the pop-up closes.
 - Moving the pet: 0.6 s onto the scale and 0.75 s into the tub. The bath pop-up opens 1.15 s after you send the pet in. A quick tap gets a reply in 0.25 to 0.6 s. Water and food tasks finish about 2.3 s after they start.
 - After the last task: 0.7 to 0.9 s, then the Thanks card.
