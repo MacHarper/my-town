@@ -1276,6 +1276,7 @@ function renderClothes() {
   fe.innerHTML = fs.map(f => `<button class="sh-filter${f === clFilter ? ' active' : ''}" data-f="${f}">${clCap(f)}</button>`).join('');
   const list = CLOTHES.filter(c => c[2] === clCat && (fs.length < 2 || c[3] === clFilter)), mine = closet();
   if (clCat === 'top') list.sort((a, b) => TOP_ORDER.indexOf(a[3]) - TOP_ORDER.indexOf(b[3]));
+  if (clCat === 'dress') list.sort((a, b) => a[4] - b[4]);   // outfits go from cheapest to most expensive (Mac, Nov 26, 2026)
   const g = document.getElementById('shGrid'), seen = new Set(), has = c => (c[5] || [c[0]]).every(p => mine.includes(p));
   g.innerHTML = list.filter(c => { const k = CL_GROUP[c[0]]; if (!k) return true; if (seen.has(k[0])) return false; seen.add(k[0]); return true; }).map(c => {
     const grp = CL_GROUP[c[0]] && clColors(c[0]), shown = grp ? (grp.find(x => !has(x)) || grp[0]) : c, [id, , , , price] = shown;

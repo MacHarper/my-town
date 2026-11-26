@@ -2353,7 +2353,7 @@ const TOWEL_SRC = 'data:image/webp;base64,UklGRjYpAABXRUJQVlA4WAoAAAAQAAAAZwEA4A
 // a tool reaches about one cell (the shower a little farther), and 70% of the cells finishes a step. Nothing moves on by itself:
 // the next step blinks and the next tool glows, and you pick it up when you are ready. Drying ends 3 seconds after it is done (or when you let go).
 const W_STEPS = [
-  { id: 'soap', name: 'Shampoo', tool: 'Shampoo', say: 'Tap the shampoo.' },
+  { id: 'soap', name: 'Shampoo', tool: 'Shampoo', say: 'Drag the shampoo to your hair.' },
   { id: 'rinse', name: 'Rinse', tool: 'Shower', say: 'Rinse off the bubbles.' },
   { id: 'towel', name: 'Dry', tool: 'Towel', say: 'Dry your hair with the towel.' },
 ];
@@ -2372,19 +2372,20 @@ const W_ART = {   // how each tool looks in the tool area
 };
 const W_RUB_DONE = .7;   // like the Vet Clinic: 70% of the cells finishes a step
 let wsh = null;   // { step, ready, cells, box, reach, drag }
-// Shampoo (Mac, Nov 26, 2026): tap the shampoo and it pours onto your hair, then a glowing hand shows how to rub it in with your finger
+// Shampoo (Mac, Nov 26, 2026): drag the shampoo to your hair; it snaps into place and pours, then a glowing hand shows how to rub it in.
+// Rubbing only happens while you press and hold (mouse or finger).
 const SB_HAND = '<path d="M-28 50 C-34 12 -36 -18 -24 -38 C-14 -55 12 -58 22 -42 C30 -30 30 -10 28 2 L44 -12 C53 -20 63 -9 55 1 L31 33 C24 46 13 54 0 54 Z"/>';
 function tween(ms, f) { return new Promise(res => { const t0 = performance.now(); (function go(now) { const t = Math.min(1, (now - t0) / ms); f(t); t < 1 ? requestAnimationFrame(go) : res(); })(t0); }); }
 const ease = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-async function pourShampoo(tool) {
+async function pourShampoo(tool, start) {   // start: where you let the bottle snap, in frame units
   wsh.pouring = true; washStep(); washSay('Glug, glug!');
   await measureHair(); if (!wsh) return;
   const sr = stage.getBoundingClientRect(), tr = tool.getBoundingClientRect();
-  const from = [(tr.left + tr.width / 2 - sr.left) / sr.width * 900, (tr.top + tr.height / 2 - sr.top) / sr.height * 1000];
+  const home = [(tr.left + tr.width / 2 - sr.left) / sr.width * 900, (tr.top + tr.height / 2 - sr.top) / sr.height * 1000], from = start || home;
   const b = wsh.box || { x: 300, y: 170, w: 300, h: 230 }, blob = [b.x + b.w / 2, b.y + b.h * .3], to = [blob[0] + 165, blob[1] - 120], cap = [to[0] - 66, to[1] + 55];
   const bt = document.getElementById('sbBottle'), st = document.getElementById('sbStream'), bl = document.getElementById('sbBlob');
   tool.classList.add('held'); bt.setAttribute('opacity', 1);
-  await tween(600, t => { const k = ease(t); bt.setAttribute('transform', `translate(${from[0] + (to[0] - from[0]) * k} ${from[1] + (to[1] - from[1]) * k}) rotate(${-130 * k})`); });
+  await tween(start ? 280 : 600, t => { const k = ease(t); bt.setAttribute('transform', `translate(${from[0] + (to[0] - from[0]) * k} ${from[1] + (to[1] - from[1]) * k}) rotate(${-130 * k})`); });   // snaps into place
   st.setAttribute('opacity', 1); tone([392, 330], 'sine', 0.18, 0.08);
   await tween(900, t => {
     const m = Math.min(1, t * 2.5), end = [cap[0] + (blob[0] - cap[0]) * m, cap[1] + (blob[1] - cap[1]) * m];
@@ -2392,12 +2393,12 @@ async function pourShampoo(tool) {
     bl.setAttribute('opacity', Math.min(1, t * 1.6)); bl.setAttribute('transform', `translate(${blob[0]} ${blob[1]}) scale(${.3 + .7 * t})`);
   });
   st.setAttribute('opacity', 0);
-  await tween(500, t => { const k = ease(t); bt.setAttribute('transform', `translate(${to[0] + (from[0] - to[0]) * k} ${to[1] + (from[1] - to[1]) * k}) rotate(${-130 * (1 - k)})`); });
+  await tween(500, t => { const k = ease(t); bt.setAttribute('transform', `translate(${to[0] + (home[0] - to[0]) * k} ${to[1] + (home[1] - to[1]) * k}) rotate(${-130 * (1 - k)})`); });   // back to the tool area
   bt.setAttribute('opacity', 0); tool.classList.remove('held');
   if (!wsh) return;
   wsh.pouring = false; wsh.poured = true;
   const hd = document.getElementById('sbHand'); hd.setAttribute('transform', `translate(${blob[0] + 15} ${blob[1] + 40}) scale(1.5)`); hd.setAttribute('opacity', 1);
-  washStep(); washSay('Rub it in! Move around and around on your hair.');
+  washStep(); washSay('Press and hold, then rub it in all over your hair.');
 }
 function washSvg() {
   return `<svg id="sbWash" viewBox="0 0 900 1000" preserveAspectRatio="none" aria-hidden="true"><g id="sbFx"></g>
@@ -2461,7 +2462,7 @@ function washStep() {   // the step pills, the words and which tool glows (the V
     const done = i < wsh.step, cur = i === wsh.step, next = wsh.ready && i === wsh.step + 1;
     return `<div class="wt-step${cur ? ' cur' : ''}${done ? ' done' : ''}${next ? ' blink' : ''}"${next ? ' role="button" tabindex="0"' : ''}>${sIcon(done ? S_CHECK : W_ICON[t.id])}<span>${t.name}</span></div>`;
   }).join('');
-  washSay(!s ? '' : wsh.ready ? '' : s.id === 'soap' && wsh.poured ? 'Rub it in! Move around and around on your hair.' : s.say);
+  washSay(!s ? '' : wsh.ready ? '' : s.id === 'soap' && wsh.poured ? 'Press and hold, then rub it in all over your hair.' : s.say);
   document.querySelectorAll('.wt-tool').forEach(t => {
     const i = W_STEPS.findIndex(x => x.id === t.dataset.tool);
     const poured = i === 0 && (wsh.poured || wsh.pouring);   // the shampoo is used up once it pours
@@ -2551,7 +2552,7 @@ function wireWash() {
     if (wsh.ready && i === wsh.step + 1) nextWashStep();   // picking up the next tool moves on
     if (i !== wsh.step) return;
     e.preventDefault();
-    if (t.dataset.tool === 'soap') { if (!wsh.poured && !wsh.pouring) pourShampoo(t); return; }
+    if (t.dataset.tool === 'soap' && (wsh.poured || wsh.pouring)) return;   // the shampoo is dragged like the other tools, then snaps and pours
     measureHair();
     const sr = stage.getBoundingClientRect(), px = sr.width / 900, hw = wsh.box ? wsh.box.w : hairW();
     const id = t.dataset.tool, g = document.createElement('div'); g.className = 'wt-ghost';
@@ -2577,13 +2578,20 @@ function wireWash() {
   });
   document.addEventListener('pointerup', () => { if (wsh) wsh.rubbing = false; });
   document.addEventListener('pointermove', e => {
-    if (wsh && wsh.poured && W_STEPS[wsh.step].id === 'soap' && (wsh.rubbing || e.pointerType === 'mouse')) {   // a mouse rubs just by moving over the hair
+    if (wsh && wsh.poured && W_STEPS[wsh.step].id === 'soap' && wsh.rubbing) {   // only while you press and hold
       const p = washPt(e.clientX, e.clientY); if (p.inside) washRub(p.x, p.y, (wsh.reach || 50) * 1.2);
       return;
     }
     if (!wsh || !wsh.drag) return;
     const d = wsh.drag; placeGhost(d, e.clientX, e.clientY);
     const p = washPt(e.clientX, e.clientY), reach = wsh.reach || 50;
+    if (d.id === 'soap') {   // over your hair: the bottle snaps into place and pours
+      const b = wsh.box || { x: 300, y: 170, w: 300, h: 230 }, pad = 40;
+      if (p.x > b.x - pad && p.x < b.x + b.w + pad && p.y > b.y - pad && p.y < b.y + b.h + pad) {
+        wsh.drag = null; d.ghost.remove(); pourShampoo(d.tool, [p.x, p.y]);
+      }
+      return;
+    }
     if (d.id === 'rinse') {   // the water lands below and to the left of the head (the vet's shower: 120 units away, reaching 70)
       const sr = stage.getBoundingClientRect(), u = 900 / sr.width, k = d.w / 240;   // px per shower unit
       const head = washPt(e.clientX - (48 * k), e.clientY + (66 * k)), f = reach / 46;
