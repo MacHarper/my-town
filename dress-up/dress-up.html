@@ -594,6 +594,77 @@
   .by-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
   /* the try-on pop-up fills most of the screen, with you in front of the salon chair (Mac, Nov 25, 2026) */
   html.salon .by-box { width: min(860px, 100%); padding: 16px 18px 20px; gap: 8px; }
+
+  /* ---------- Hair Salon task bar (Mac, Nov 25, 2026): the same task bar as the Vet Clinic (logo, name, a bar, the checklist).
+     A visit is Wash, Style, Color, then Pay ($5 for the whole visit); then a pop-up shows your new hair with Looks great! ---------- */
+  #salonBar { display: none; }
+  html.salon #salonBar { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 1000px; box-sizing: border-box; margin-top: 8px; padding: 8px 14px; background: #fff; border-radius: 24px; box-shadow: 0 10px 30px rgba(74, 59, 92, .15), 0 0 0 2px #f3edf8; font-family: Verdana, Geneva, sans-serif; }
+  html.salon header h2 { display: none; }
+  #salonBar .bldg { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; }
+  #salonBar .bldg-logo { width: 54px; height: 54px; box-sizing: border-box; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 7px; box-shadow: 0 4px 0 #d9cfe6, 0 8px 18px rgba(74, 59, 92, .15), 0 0 0 2px #f3edf8; }
+  #salonBar .bldg-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  #salonBar .bldg-name { margin: 0; font-size: 24px; font-weight: bold; color: #4a3b5c; white-space: nowrap; }
+  #salonBar .bar-div { flex: 0 0 auto; width: 4px; height: 44px; border-radius: 2px; background: #ece4f4; }
+  #salonBar .tasks { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  #salonBar .task { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 50px; padding: 0 16px 0 6px; border-radius: 16px; background: #f3edf8; font-size: 16px; font-weight: bold; color: #6b5a80; }
+  #salonBar .task svg { width: 36px; height: 36px; flex: 0 0 auto; background: #fff; border-radius: 50%; padding: 3px; box-sizing: border-box; }
+  #salonBar .task.cur { height: 58px; padding: 0 20px 0 7px; background: #ffc94d; color: #4a3b5c; font-size: 21px; box-shadow: 0 4px 0 #d9a531; }
+  #salonBar .task.cur svg { width: 44px; height: 44px; }
+  #salonBar .task.done { background: #fff; color: #9b90a8; box-shadow: 0 0 0 3px #f3edf8 inset; }
+  #salonBar .task.done svg { background: none; padding: 0; }
+  #salonBar .task.pop { animation: sbPop .45s cubic-bezier(.3, 1.5, .5, 1); }
+  @keyframes sbPop { 0% { transform: scale(.85); } 100% { transform: none; } }
+  #salonBar .trail { flex: 0 1 34px; min-width: 14px; height: 14px; background: radial-gradient(circle, #ddd0ec 3.5px, transparent 4px) 0 50% / 11px 11px repeat-x; }
+  #salonBar .trail.done { background-image: radial-gradient(circle, #ffc94d 3.5px, transparent 4px); }
+  @media (max-width: 900px) { #salonBar .bldg-name { display: none; } }
+  @media (max-width: 760px) { #salonBar .task:not(.cur) span { display: none; } #salonBar .task:not(.cur) { padding: 0 6px; } #salonBar .task.cur { font-size: 16px; } #salonBar { padding: 6px 8px; gap: 8px; } }
+  /* the tray shows what to do in each step; the hairstyle cards only in Style */
+  #salonPanel, #salonNext { display: none; }
+  html.salon #salonPanel { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; color: #4a3b5c; font-family: Verdana, Geneva, sans-serif; }
+  html.salon #salonPanel h3 { margin: 4px 0 0; font-size: clamp(20px, 2.6vw, 26px); }
+  html.salon #salonPanel p { margin: 0; font-size: 16px; color: #6b5a80; }
+  html.salon:not([data-sstep="style"]) .filters, html.salon:not([data-sstep="style"]) .items { display: none !important; }
+  html.salon #salonNext { display: flex; align-self: center; margin: 10px auto 2px; }
+  html.salon[data-sstep="wash"] #salonNext, html.salon[data-sstep="pay"] #salonNext { display: none; }
+  .sb-go { min-height: 58px; padding: 0 28px; border: none; border-radius: 18px; background: #5fae7a; box-shadow: 0 5px 0 #468a5e; color: #fff; font: bold 24px Verdana, Geneva, sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .sb-go:active { transform: translateY(4px); box-shadow: 0 1px 0 #468a5e; }
+  .sb-go svg { width: 48px; height: 32px; display: block; }
+  .sb-tools { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .sb-tool { width: 120px; height: 130px; border: none; border-radius: 22px; background: #f3edf8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font: bold 16px Verdana, Geneva, sans-serif; color: #6b5a80; cursor: pointer; }
+  .sb-tool svg { width: 72px; height: 72px; }
+  .sb-tool.on { background: #ffc94d; color: #4a3b5c; box-shadow: 0 5px 0 #d9a531; animation: sbBob 1.2s ease-in-out infinite; }
+  .sb-tool.used { opacity: .45; }
+  .sb-tool:disabled { cursor: default; }
+  @keyframes sbBob { 50% { transform: translateY(-5px); } }
+  .sb-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; max-width: 360px; }
+  .sb-colors .sw { width: 58px; height: 58px; }
+  .sb-pic { width: min(220px, 60%); aspect-ratio: 1; border-radius: 22px; background: #f3edf8; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+  .sb-pic img { width: 92%; display: block; }
+  .sb-list { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .sb-list span { display: flex; align-items: center; gap: 6px; padding: 6px 12px 6px 6px; border-radius: 14px; background: #f3edf8; font-weight: bold; color: #6b5a80; }
+  .sb-list svg { width: 26px; height: 26px; }
+  .sb-price { padding: 5px 16px; border-radius: 14px; background: #ffc94d; box-shadow: 0 3px 0 #d9a531; font-size: 26px; font-weight: bold; }
+  .sb-shake { animation: shake .42s; }
+  /* washing: the tool follows your finger; bubbles on your hair, then water drops rinse them away */
+  html.salon #stage.washing { touch-action: none; cursor: none; }
+  #sbTool { position: absolute; width: 22%; pointer-events: none; z-index: 30; display: none; transform: translate(-30%, -85%) rotate(-12deg); filter: drop-shadow(0 4px 6px rgba(74, 59, 92, .25)); }
+  #sbTool svg { width: 100%; display: block; }
+  #stage.washing #sbTool { display: block; }
+  .sb-bub { position: absolute; z-index: 20; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); background: radial-gradient(circle at 35% 30%, #fff 0 18%, rgba(255, 255, 255, .85) 30%, rgba(214, 232, 255, .75) 70%, rgba(190, 214, 245, .9) 100%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .9); animation: sbBubIn .25s cubic-bezier(.3, 1.6, .5, 1); }
+  .sb-bub.gone { animation: sbBubOut .3s forwards; }
+  @keyframes sbBubIn { from { transform: translate(-50%, -50%) scale(0); } }
+  @keyframes sbBubOut { to { transform: translate(-50%, -50%) scale(1.4); opacity: 0; } }
+  .sb-drop { position: absolute; z-index: 21; width: 2.2%; aspect-ratio: .7; pointer-events: none; background: #7cc4f2; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; opacity: .9; animation: sbDrop .7s ease-in forwards; }
+  @keyframes sbDrop { to { transform: translateY(260%) translateY(60px); opacity: 0; } }
+  html.salon .wrap[data-slot="hair"] { transition: filter .6s; }
+  html.salon #stage.wet .wrap[data-slot="hair"] { filter: brightness(.82) saturate(1.15); }
+  /* the end: just you with your new hair, and Looks great! */
+  #sbDone { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px 16px 96px; background: rgba(43, 35, 64, .3); opacity: 0; pointer-events: none; transition: opacity .25s; font-family: Verdana, Geneva, sans-serif; }
+  #sbDone.open { opacity: 1; pointer-events: auto; }
+  #sbDone .by-box { width: min(560px, 100%); }
+  #sbDone .by-pic { aspect-ratio: 3 / 2; }
+  #sbDone.open .by-box { transform: none; }
+  #sbDone .sb-go { min-height: 62px; padding: 0 36px; font-size: 26px; margin-top: 6px; }
   html.salon #buy { padding-bottom: 96px; }
   html.salon .by-box .sh-close { z-index: 3; }   /* clear of the money toolbar */
   html.salon .by-pic { position: relative; height: auto; aspect-ratio: 3 / 2; max-height: calc(100vh - 330px); min-height: 220px; padding: 0; overflow: hidden; background: #eeb969; }
@@ -624,6 +695,7 @@
       <button class="tool done" id="doneBtn" aria-label="All Done"><svg viewBox="0 0 34 34"><path d="M8 17.5l6 6L26 11" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>All Done</span></button>
     </div>
   </header>
+  <div id="salonBar" aria-label="Hair Salon"><div class="bldg"><span class="bldg-logo"><img src="data:image/png;base64,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" alt="Hair Salon logo"></span><h1 class="bldg-name">Hair Salon</h1></div><i class="bar-div"></i><div class="tasks" id="salonTasks" aria-label="Things to do"></div></div>
   <div class="play">
     <div class="stage-wrap">
       <div id="stage"><template id="salonBackTpl"><svg id="salonBack" viewBox="0 0 900 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><pattern id="slats" width="64" height="1000" patternUnits="userSpaceOnUse"><rect width="64" height="1000" fill="#eeb969"/><rect x="0" width="5" height="1000" fill="#d39a5c"/><rect x="5" width="4" height="1000" fill="#f6c983"/></pattern></defs><rect width="900" height="1000" fill="url(#slats)"/><circle cx="450" cy="372" r="352" fill="#d9a15f" opacity=".45"/><circle cx="450" cy="360" r="345" fill="#ebe7f7"/><circle cx="450" cy="360" r="312" fill="#c3cbe0"/><circle cx="450" cy="360" r="304" fill="#dcedfb"/><path d="M250 560 L560 120 L610 150 L300 590 Z" fill="#fff" opacity=".35"/><path d="M360 640 L640 240 L665 258 L385 658 Z" fill="#fff" opacity=".3"/><rect x="95" y="540" width="710" height="560" rx="120" fill="#b97fa0"/><rect x="110" y="530" width="680" height="560" rx="110" fill="#cf9db8"/><rect x="180" y="590" width="540" height="500" rx="80" fill="#d9adc5"/><rect x="270" y="455" width="360" height="130" rx="62" fill="#98466a"/><rect x="290" y="465" width="320" height="50" rx="25" fill="#ad5a80" opacity=".7"/></svg></template><div id="coach" role="status" aria-live="polite"><span class="cpic" id="coachPic"></span><span id="coachSay"></span></div><div class="floor"></div><div class="doll" id="doll"></div><div class="hint" id="hint">Drop clothes here!</div></div>
@@ -637,8 +709,8 @@
         <button class="tab" data-cat="hat"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 15c0-5.5 3.4-9 7.5-9s7.5 3.5 7.5 9zM2.5 16h19a1.5 1.5 0 0 1 0 3h-19a1.5 1.5 0 0 1 0-3z" fill="currentColor"/></svg><span>Hats</span></button>
         <button class="tab" data-cat="shoes"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 17v-6.2C2 9.3 3.2 8 4.8 8.3L9 9c.9 2 3 3 6 3.5l4 .9c1.9.5 3 2 3 3.6zM2 18h20v1.5c0 .8-.7 1.5-1.5 1.5h-17C2.7 21 2 20.3 2 19.5z" fill="currentColor"/></svg><span>Shoes</span></button>
       </div>
-      <div class="filters" id="filters"></div>
-      <div class="items" id="items"></div>
+      <div id="salonPanel"></div><div class="filters" id="filters"></div>
+      <div class="items" id="items"></div><button class="sb-go" id="salonNext"></button>
     </div>
   </div>
 </div>
@@ -654,6 +726,7 @@
     <button class="by-go" id="byGo"><span id="byCardIc"></span>Buy</button></div>
   </div>
 </div>
+<div id="sbDone" aria-hidden="true"><div class="by-box" role="dialog" aria-label="Your new hair"><div class="by-pic"><svg viewBox="0 0 1500 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><pattern id="slatsDone" width="64" height="1000" patternUnits="userSpaceOnUse"><rect width="64" height="1000" fill="#eeb969"/><rect width="5" height="1000" fill="#d39a5c"/><rect x="5" width="4" height="1000" fill="#f6c983"/></pattern></defs><rect width="1500" height="1000" fill="url(#slatsDone)"/><circle cx="750" cy="412" r="352" fill="#d9a15f" opacity=".45"/><circle cx="750" cy="400" r="345" fill="#ebe7f7"/><circle cx="750" cy="400" r="312" fill="#c3cbe0"/><circle cx="750" cy="400" r="304" fill="#dcedfb"/><path d="M550 600 L860 160 L910 190 L600 630 Z" fill="#fff" opacity=".35"/><path d="M660 680 L940 280 L965 298 L685 698 Z" fill="#fff" opacity=".3"/><rect x="420" y="700" width="660" height="460" rx="120" fill="#b97fa0"/><rect x="435" y="690" width="630" height="460" rx="110" fill="#cf9db8"/><rect x="500" y="750" width="500" height="400" rx="80" fill="#d9adc5"/><rect x="580" y="610" width="340" height="125" rx="60" fill="#98466a"/><rect x="600" y="620" width="300" height="48" rx="24" fill="#ad5a80" opacity=".7"/></svg><img id="sbDoneImg" alt="You with your new hair"></div><button class="sb-go" id="sbLooks">Looks great!</button></div></div>
 <img id="ghost" alt="">
 <div id="toast"></div>
 <canvas id="confetti"></canvas>
@@ -2158,7 +2231,147 @@ renderFilters();
 renderTray();
 updateProgress();
 if (!TUTORIAL) restoreOutfit();   // the tutorial starts with a plain doll
-if (SALON) { stage.insertBefore(document.getElementById('salonBackTpl').content.cloneNode(true), document.getElementById('doll')); setTimeout(() => toast('Tap a hairstyle to see it on you.'), 400); }
+
+/* ---------- Hair Salon visit (Mac, Nov 25, 2026): Wash, Style, Color, Pay ($5 for the whole visit), then Looks great! ----------
+   Trying styles and colors is free; nothing is saved until you pay. */
+const S_STEPS = [
+  { id: 'wash', name: 'Wash', icon: '<circle cx="-7" cy="4" r="9" fill="#bfe0fb"/><circle cx="7" cy="-3" r="7" fill="#d9ecfd"/><circle cx="5" cy="11" r="5" fill="#a9d4f7"/><circle cx="-9" cy="1" r="3" fill="#fff"/><circle cx="5" cy="-5" r="2.4" fill="#fff"/>' },
+  { id: 'style', name: 'Style', icon: '<g fill="none" stroke="#b37496" stroke-width="4" stroke-linecap="round"><path d="M-9 -14 L7 8 M9 -14 L-7 8"/><circle cx="-9" cy="12" r="5"/><circle cx="9" cy="12" r="5"/></g>' },
+  { id: 'color', name: 'Color', icon: '<path d="M0 -15 C6 -6 11 0 11 6 A11 11 0 0 1 -11 6 C-11 0 -6 -6 0 -15 Z" fill="#e0457b"/><circle cx="-4" cy="5" r="3" fill="#fff" opacity=".6"/>' },
+  { id: 'pay', name: 'Pay', icon: '<rect x="-15" y="-10" width="30" height="20" rx="4" fill="#5fae7a"/><rect x="-15" y="-5" width="30" height="5" fill="#3e8a5a"/><rect x="-10" y="4" width="9" height="3" rx="1.5" fill="#fff"/>' },
+];
+const S_CHECK = '<circle r="19" fill="#5fae7a"/><path d="M-9 0 L-2 7 L10 -7" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>';
+const sIcon = body => `<svg viewBox="-24 -24 48 48">${body}</svg>`;
+const SHAMPOO_SVG = '<svg viewBox="0 0 60 90"><rect x="22" y="2" width="16" height="10" rx="3" fill="#b37496"/><rect x="26" y="10" width="8" height="8" fill="#98466a"/><rect x="10" y="16" width="40" height="70" rx="14" fill="#f2a7c3"/><rect x="16" y="36" width="28" height="26" rx="8" fill="#fff" opacity=".85"/><circle cx="30" cy="49" r="7" fill="#9fd3f5"/><rect x="15" y="22" width="6" height="56" rx="3" fill="#fff" opacity=".35"/></svg>';
+const SPRAY_SVG = '<svg viewBox="0 0 90 70"><path d="M8 40 Q8 20 30 20 L52 20 L52 40 Z" fill="#9fd3f5"/><rect x="48" y="14" width="10" height="32" rx="4" fill="#6cc5b8"/><path d="M56 22 L80 10 L84 18 L58 34 Z" fill="#6cc5b8"/><rect x="2" y="34" width="34" height="12" rx="6" fill="#7fb9e6"/><circle cx="4" cy="62" r="3" fill="#7cc4f2"/><circle cx="12" cy="66" r="2.5" fill="#7cc4f2"/><circle cx="-2" cy="54" r="2" fill="#7cc4f2"/></svg>';
+let sStep = 0, sTool = null, sScrub = 0, sLastPt = null, sPaid = false;
+function drawSalonTasks(pop) {
+  document.getElementById('salonTasks').innerHTML = S_STEPS.map((t, i) => {
+    const done = i < sStep, cur = i === sStep;
+    return (i ? `<i class="trail${done || cur ? ' done' : ''}"></i>` : '') + `<div class="task${cur ? ' cur' : ''}${done ? ' done' : ''}${cur && pop ? ' pop' : ''}">${sIcon(done ? S_CHECK : t.icon)}<span>${t.name}</span></div>`;
+  }).join('');
+}
+function salonGo(n) {
+  sStep = n; const id = (S_STEPS[n] || {}).id || 'done';
+  document.documentElement.dataset.sstep = id;
+  drawSalonTasks(true);
+  const panel = document.getElementById('salonPanel'), next = document.getElementById('salonNext');
+  stage.classList.remove('washing');
+  if (id === 'wash') {
+    panel.innerHTML = `<h3>Wash your hair</h3><p id="sbSay">Pick up the shampoo, then rub it on your hair.</p>
+      <div class="sb-tools"><button class="sb-tool on" id="sbShampoo">${SHAMPOO_SVG}Shampoo</button><button class="sb-tool" id="sbSpray" disabled>${SPRAY_SVG}Rinse</button></div>`;
+    document.getElementById('sbShampoo').addEventListener('click', () => pickTool('shampoo'));
+    document.getElementById('sbSpray').addEventListener('click', () => pickTool('spray'));
+  } else if (id === 'style') {
+    panel.innerHTML = `<h3>Pick a hairstyle</h3><p>Tap a style to try it on.</p>`;
+    next.textContent = 'Next: Color';
+    renderSalonStyles();
+  } else if (id === 'color') {
+    const p = BY_ID[wearing.hair], list = p && groupKey(p) ? GROUPS[groupKey(p)] : (p ? [p] : []);
+    panel.innerHTML = `<h3>Dye your hair</h3><p>${list.length > 1 ? 'Tap a color.' : 'This style comes in one color.'}</p><div class="sb-colors" id="sbColors"></div>`;
+    const row = document.getElementById('sbColors');
+    if (list.length > 1) list.forEach(q => {
+      const w = document.createElement('button'); w.className = 'sw round' + (q.id === wearing.hair ? ' on' : ''); w.style.background = q.sw;
+      w.setAttribute('aria-label', q.clr || q.name); w.title = q.clr || '';
+      w.addEventListener('click', () => { wear(q.id, true); row.querySelectorAll('.sw').forEach(x => x.classList.toggle('on', x === w)); });
+      row.appendChild(w);
+    });
+    next.textContent = 'Next: Pay';
+  } else if (id === 'pay') {
+    const cardPic = document.querySelector('#tbCard .tb-plain');
+    panel.innerHTML = `<h3>Pay the salon</h3><div class="sb-pic"><img id="sbPayImg" alt="You with your new hair"></div>
+      <div class="sb-list">${['Wash', 'Style', 'Color'].map(w => `<span>${sIcon(S_CHECK)}${w}</span>`).join('')}</div>
+      <div class="sb-price">$${HAIR_PRICE}</div><button class="sb-go" id="sbPay">${cardPic ? cardPic.outerHTML : ''}Pay</button>`;
+    hairPicture(wearing.hair).then(u => { const im = document.getElementById('sbPayImg'); if (im) im.src = u; });
+    document.getElementById('sbPay').addEventListener('click', paySalon);
+  }
+}
+function pickTool(t) {
+  if ((t === 'shampoo' && sTool === 'rinsed') || (t === 'spray' && document.getElementById('sbSpray').disabled)) return;
+  sTool = t; stage.classList.add('washing'); tone([660, 880], 'triangle', 0.07);
+  let el = document.getElementById('sbTool');
+  if (!el) { el = document.createElement('div'); el.id = 'sbTool'; stage.appendChild(el); }
+  el.innerHTML = t === 'shampoo' ? SHAMPOO_SVG : SPRAY_SVG;
+  el.style.left = '50%'; el.style.top = '30%';
+  document.getElementById('sbSay').textContent = t === 'shampoo' ? 'Rub the shampoo on your hair!' : 'Spray the water on the bubbles!';
+}
+function onHair(x, y) { return x > 0.22 && x < 0.78 && y > 0.04 && y < 0.33; }   // the hair, on the close-up
+function stagePt(e) { const r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height, w: r.width }; }
+function washMove(e) {
+  if (!stage.classList.contains('washing')) return;
+  const p = stagePt(e), el = document.getElementById('sbTool');
+  if (el) { el.style.left = p.x * 100 + '%'; el.style.top = p.y * 100 + '%'; }
+  if (e.pointerType === 'mouse' && !e.buttons) return;   // a mouse scrubs while pressed; a finger always does
+  if (!onHair(p.x, p.y)) return;
+  if (sLastPt && Math.hypot(p.x - sLastPt.x, p.y - sLastPt.y) < 0.035) return;
+  sLastPt = p;
+  if (sTool === 'shampoo') {
+    const b = document.createElement('i'), sz = 6 + Math.random() * 7;
+    b.className = 'sb-bub'; b.style.width = b.style.height = sz + '%';
+    b.style.left = (p.x + (Math.random() - .5) * 0.06) * 100 + '%'; b.style.top = (p.y + (Math.random() - .5) * 0.05) * 100 + '%';
+    stage.appendChild(b); if (++sScrub % 3 === 0) tone([900 + Math.random() * 300], 'sine', 0.05, 0.06);
+    if (sScrub >= 24) {
+      sTool = 'rinsed'; stage.classList.remove('washing'); stage.classList.add('wet');
+      document.getElementById('sbShampoo').classList.replace('on', 'used');
+      const sp = document.getElementById('sbSpray'); sp.disabled = false; sp.classList.add('on');
+      document.getElementById('sbSay').textContent = 'So bubbly! Now pick up the water to rinse.';
+      sndPut();
+    }
+  } else if (sTool === 'spray') {
+    for (let k = 0; k < 3; k++) {
+      const d = document.createElement('i'); d.className = 'sb-drop';
+      d.style.left = (p.x + (Math.random() - .5) * 0.08) * 100 + '%'; d.style.top = (p.y + (Math.random() - .3) * 0.05) * 100 + '%';
+      d.style.animationDelay = k * 0.08 + 's'; stage.appendChild(d); setTimeout(() => d.remove(), 1000);
+    }
+    tone([500 + Math.random() * 200], 'sine', 0.04, 0.04);
+    stage.querySelectorAll('.sb-bub:not(.gone)').forEach(b => {
+      const bx = parseFloat(b.style.left) / 100, by = parseFloat(b.style.top) / 100;
+      if (Math.hypot(bx - p.x, (by - p.y) * 1.1) < 0.13) { b.classList.add('gone'); setTimeout(() => b.remove(), 320); }
+    });
+    if (!stage.querySelector('.sb-bub:not(.gone)')) {
+      sTool = null; stage.classList.remove('washing', 'wet');
+      document.getElementById('sbSpray').classList.replace('on', 'used');
+      document.getElementById('sbSay').textContent = 'Squeaky clean!';
+      sparkles(); sndWin();
+      setTimeout(() => salonGo(1), 1100);
+    }
+  }
+}
+function renderSalonStyles() {
+  itemsEl.innerHTML = '';
+  const seen = new Set(), nowKey = wearing.hair && groupKey(BY_ID[wearing.hair]) || wearing.hair;
+  PIECES.filter(p => p.cat === 'hair' && (currentFilter === 'all' || (TAGS[p.id] || []).includes(currentFilter))).forEach(p => {
+    const key = groupKey(p) || p.id; if (seen.has(key)) return; seen.add(key);
+    const q = groupKey(p) ? salonShown(key) : p;
+    const b = document.createElement('button'); b.className = 'sh-card' + (key === nowKey ? ' sb-now' : ''); b.dataset.id = q.id;
+    b.setAttribute('aria-label', q.group || q.name);
+    if (key === nowKey) b.style.boxShadow = '0 0 0 5px #ffc94d';
+    b.innerHTML = `<img src="${ART[q.id].thumb || ART[q.id].src}" alt="">`;
+    b.addEventListener('click', () => { wear(q.id); renderSalonStyles(); });
+    itemsEl.appendChild(b);
+  });
+}
+async function paySalon() {
+  if (sPaid) return;
+  const btn = document.getElementById('sbPay');
+  if (!tbSpend(HAIR_PRICE, 'Hair Salon visit', { p: 'the Hair Salon' })) {
+    btn.classList.remove('sb-shake'); void btn.offsetWidth; btn.classList.add('sb-shake'); sndMiss();
+    toast(`You need $${HAIR_PRICE - tbMoney()} more.`); return;
+  }
+  sPaid = true; sndWin(); confetti();
+  sStep = S_STEPS.length; drawSalonTasks();
+  tbSetAvatar(await dollPicture(), { outfit: Object.assign({}, wearing), under: underBottom });   // saved, and your toolbar picture too
+  document.getElementById('sbDoneImg').src = await hairPicture(wearing.hair);
+  const d = document.getElementById('sbDone'); d.classList.add('open'); d.setAttribute('aria-hidden', 'false');
+}
+if (SALON) {
+  renderTray = () => { if (document.documentElement.dataset.sstep === 'style') renderSalonStyles(); };
+  stage.addEventListener('pointerdown', e => { sLastPt = null; washMove(e); });
+  stage.addEventListener('pointermove', washMove);
+  document.getElementById('salonNext').addEventListener('click', () => { tone([587, 784], 'triangle', 0.08); salonGo(sStep + 1); });
+  document.getElementById('sbLooks').addEventListener('click', () => { location.href = document.querySelector('.backtown').href; });
+}
+if (SALON) { stage.insertBefore(document.getElementById('salonBackTpl').content.cloneNode(true), document.getElementById('doll')); salonGo(0); }
 hideLoading();
 </script>
 </body>
