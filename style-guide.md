@@ -64,7 +64,7 @@ Use only these. If a new thing needs a color, pick from this list instead of add
 ## Panels and bars
 - White or cream, 22 to 26 px corners, no border line, with a soft shadow `0 10px 30px rgba(120, 60, 120, .15)` and a faint lavender rim `0 0 0 2px #f3edf8`.
 - Pop-ups grow from the button that opened them (a scale bounce), and close by tapping anywhere else.
-- Task bars (Mac, Nov 25, 2026): always stretch all the way across the top, edge to edge, even with only a few steps. Never centered. Logo, name and divider sit at the left and the steps follow from the left; any space left over stays on the right. The Vet Clinic game after you pick a pet is the example. A Back button in a task bar sits at its right end.
+- Task bars (Mac, Nov 25, 2026): always stretch all the way across the top, edge to edge, even with only a few steps. Never centered. Logo, name and divider sit at the left and the steps follow from the left; any space left over stays on the right. The Vet Clinic game after you pick a pet is the example. Back to town sits above the task bar at the top left (on short screens, inside the bar's left end). A town room with a task bar uses the same frame, size and spot as its game screen, so nothing moves when you go in.
 
 ## Motion
 - Feedback is quick (0.2 to 0.6 s): a bounce in (`cubic-bezier(.3, 1.5, .5, 1)`), a squash when landing, a wiggle for "not yet", and sparkles in pink, purple, green, blue and yellow.
