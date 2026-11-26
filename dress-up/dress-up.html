@@ -261,6 +261,8 @@
   <p class="ld-words">Getting dressed up...</p>
 </div>
 <script>
+  // the salon's hairstyle chair opens with no loading screen (Mac, Nov 26, 2026)
+  if (/[?&]mode=salon/.test(location.search)) document.getElementById('loading').remove();
   function hideLoading() {
     const l = document.getElementById('loading');
     if (!l) return;

@@ -37,9 +37,10 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 - After the last task: 0.7 to 0.9 s, then the Thanks card.
 
 ## 5. Thanks card and money
-- When the job is done, one card shows the career person from the career card (in their outfit, on a lavender `#f3edf8` panel). It says **"Thanks for your help!"** in big green (`#5fae7a`) letters, with a short line about what you did.
+- **This is the standard for every payout in every game (Mac, Nov 26, 2026)**: the Vet Clinic thanks card. Copy it exactly, changing only the career, its color and the "help more" words.
+- When the job is done, one card shows the career person from the career card (in their outfit, on a lavender `#f3edf8` panel). Above the thanks, the **career name** sits in a soft pill in the career's color ("Veterinarian"). It says **"Thanks for your help!"** in big green (`#5fae7a`) letters, with a short line about what you did.
 - A spinning dollar bill shows "+$10". **1.4 s** after the card opens, **6 bills** fly from it into the money button in the toolbar, **0.11 s** apart, each taking **0.76 s**, with a rising tick sound as each one lands. Then the money is added.
-- Only once all the money is in do the buttons fade in (0.35 s): **"Care for another pet"** (green) and **"Back to town"** (pink `#e0457b`).
+- Only once all the money is in do the buttons fade in (0.35 s): **a help-more button** in the career's color ("Care for another pet") and **"Back to town"** (pink `#e0457b`).
 - Shops (the Hair Salon) take money only at their Pay step. Trying things is free.
 
 ## 6. Messages and words
@@ -54,5 +55,14 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 - Every sound goes through the toolbar's `tbBeep`, so the toolbar's sound setting works.
 
 ## 8. Glows in the room
-- Room glows follow each item's real outline (a traced glow picture), not a box. The current task's spot glows steadily. When it's time to pick a pet, a bobbing arrow points at the crates instead. While you hover one thing, only that thing lights up.
+- Room glows always follow each item's real outline (a traced glow picture, like the Vet Clinic sink), never a rectangle around the area (Mac, Nov 26, 2026).
+- In a town room, only the things you can use right now get a glow. Things that aren't built yet (the Vet Clinic room's food, sink and tub) never light up; only the crates do. The current task's spot glows steadily. When it's time to pick a pet, a bobbing arrow points at the crates instead. While you hover one thing, only that thing lights up.
 - Once a spot is done or in use, its glow goes away.
+
+## 9. Opening a building (Mac, Nov 26, 2026)
+Every building opens the same way, the Vet Clinic way:
+1. The task bar is always there: full width across the top, with the building's logo, its name and the divider.
+2. The room picture sits under it in the framed game-screen layout.
+3. A pop-up meets you: the career card (career doll, name and a few words), or a welcome card with the building's logo when there is no career doll yet (the Hair Salon).
+4. Closing it leaves a short line and a bobbing arrow pointing at the one thing to tap, which has an outline glow.
+- No loading or "getting dressed up" screen between a room and its activity.
