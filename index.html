@@ -1131,9 +1131,7 @@ function showCareer(id) {
   setTimeout(() => { el.classList.add('open'); el.setAttribute('aria-hidden', 'false'); document.getElementById('ccGo').focus(); }, 350);
 }
 document.getElementById('ccGo').addEventListener('click', () => {
-  if (roomId === 'vet') {   // Let's help: straight to the Vet Clinic game's pick-a-pet screen, with the same pets in the crates (Mac, Nov 25, 2026)
-    location.href = 'vet-clinic/vet-clinic.html' + (roomCrates ? '#crates=' + roomCrates : ''); return;
-  }
+  // Let's help just closes the card: you stay in the room, no new screen (Mac, Nov 26, 2026)
   const el = document.getElementById('career'), card = el.querySelector('.cc-card');
   // fly toward the first thing to do (the lit spots), then show them
   const spots = [...roomSvg.querySelectorAll('.spot.guide')], cr = card.getBoundingClientRect();
