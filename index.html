@@ -406,7 +406,24 @@
   }
   function renderMoney() {
     $('tbMoney').textContent = '$' + data.money; $('tbTotal').textContent = '$' + data.money;
-    $('tbLines').innerHTML = data.ledger.map(l => `<div class="tb-line"><span>${l.w}</span><b class="${l.a < 0 ? 'minus' : 'plus'}">${l.a < 0 ? '-' : '+'}$${Math.abs(l.a)}</b></div>`).join('');
+    // lines in a row from the same place are grouped (Mac, Nov 25, 2026): "Bought 3 items at the Department Store", "Helped 2 animals at the Vet Clinic"
+    const rows = [];
+    data.ledger.forEach(l => {
+      const g = moneyGroup(l), last = rows[rows.length - 1];
+      if (g && last && last.g && last.g.key === g.key) { last.n++; last.a += l.a; } else rows.push({ g, n: 1, a: l.a, w: l.w });
+    });
+    $('tbLines').innerHTML = rows.map(r => {
+      const w = r.n > 1 ? (r.g.k === 'buy' ? `Bought ${r.n} items at ${r.g.p}` : `Helped ${r.n} ${r.g.u} at ${r.g.p}`) : r.w;
+      return `<div class="tb-line"><span>${w}</span><b class="${r.a < 0 ? 'minus' : 'plus'}">${r.a < 0 ? '-' : '+'}$${Math.abs(r.a)}</b></div>`;
+    }).join('');
+  }
+  // which group a money line belongs to: games pass { p: 'the Vet Clinic', u: 'animals' } (or { p: 'the Department Store' }); older lines are read from their words
+  function moneyGroup(l) {
+    if (l.p) return { k: l.a < 0 ? 'buy' : 'help', p: l.p, u: l.u || 'times', key: (l.a < 0 ? 'buy|' : 'help|') + l.p };
+    let m;
+    if (l.a < 0 && /^Bought /.test(l.w)) return { k: 'buy', p: 'the Department Store', key: 'buy|the Department Store' };   // the only store before Nov 25, 2026
+    if (l.a > 0 && (m = /^Helped .+ at (the .+)$/.exec(l.w))) return { k: 'help', p: m[1], u: /Vet Clinic/.test(m[1]) ? 'animals' : 'times', key: 'help|' + m[1] };
+    return null;
   }
   function render() {
     const has = !!data.avatar;
@@ -452,13 +469,13 @@
 
   // ---- money for games: tbEarn(10, 'Helped Roxy at the Vet Clinic'); tbSpend(3, 'Bought a Toy Mouse') says false if there isn't enough ----
   window.tbMoney = () => data.money;
-  window.tbEarn = (amount, words) => {
-    data.money += amount; data.ledger.push({ w: words, a: amount }); tbSave(); renderMoney(); bump();
+  window.tbEarn = (amount, words, place) => {   // place (optional): { p: 'the Vet Clinic', u: 'animals' } groups lines in a row from the same place
+    data.money += amount; data.ledger.push(Object.assign({ w: words, a: amount }, place || {})); tbSave(); renderMoney(); bump();
     tbSparkle($('tbCard'), 16); beep([[784, 0, .1], [988, .08, .1], [1319, .16, .25]]);
   };
-  window.tbSpend = (amount, words) => {
+  window.tbSpend = (amount, words, place) => {   // place (optional): { p: 'the Department Store' }
     if (data.money < amount) return false;
-    data.money -= amount; data.ledger.push({ w: words, a: -amount }); tbSave(); renderMoney(); bump();
+    data.money -= amount; data.ledger.push(Object.assign({ w: words, a: -amount }, place || {})); tbSave(); renderMoney(); bump();
     return true;
   };
   // ---- backpack for games: 6 spaces; tbAddItem says false when it is full ----
@@ -1143,7 +1160,7 @@ function buyItem(card) {
   const no = msg => { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); beep([[330, 0, .15], [262, .12, .2]], 'sine'); tbToast(msg); };
   if (tbBagFull()) { no('Your backpack is full!'); tbOpenBag(); return; }
   if (tbMoney() < it.price) { no(`You need $${it.price - tbMoney()} more.`); return; }
-  tbSpend(it.price, `Bought a ${it.name.toLowerCase()}`);
+  tbSpend(it.price, `Bought a ${it.name.toLowerCase()}`, { p: 'the Department Store' });
   tbAddItem(it.id);
   beep([[659, 0, .1], [880, .08, .1], [1175, .16, .25]]);
   // the item flies from the shelf into the backpack
