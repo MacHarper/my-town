@@ -295,21 +295,28 @@
   #tb #tbPanel .tb-slot:has(img) { cursor: pointer; transition: transform .126s; }
   #tb #tbPanel .tb-slot:has(img):hover { transform: translateY(-3px) rotate(-4deg); }
   .toy-given { transform-box: fill-box; transform-origin: 50% 100%; animation: toyIn .5s cubic-bezier(.3, 1.6, .5, 1) both; }
-  .toy-given.wiggle { animation: toyWiggle .4s ease-in-out 4; }
   .toy-given.gone { transition: opacity .5s, transform .5s; opacity: 0; transform: scale(.3); }
   @keyframes toyIn { from { transform: translateY(-120px) scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
-  @keyframes toyWiggle { 25% { transform: rotate(-12deg) translateX(-6px); } 75% { transform: rotate(10deg) translateX(6px); } }
   .petg image.toy-hop { animation: toyHop .45s ease-in-out 3; transform-box: fill-box; transform-origin: 50% 100%; }
   @keyframes toyHop { 0%, 100% { transform: none; } 20% { transform: scale(1.05, .93); } 55% { transform: translateY(-34px) scale(.97, 1.04); } }
-  .toy-heart { transform-box: fill-box; transform-origin: center; animation: toyHeart 1.4s ease-out forwards; }
-  @keyframes toyHeart { 0% { opacity: 0; transform: translate(0, 0) scale(.4); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--hx), -170px) scale(1.1); } }
+  .toy-heart { transform-box: fill-box; transform-origin: center; animation: toyHeart 2.2s ease-out forwards; }
+  @keyframes toyHeart { 0% { opacity: 0; transform: translate(0, 20px) scale(.3); } 15% { opacity: 1; transform: translate(0, 0) scale(1.15); }
+    30% { transform: translate(calc(var(--hx) * .3), -50px) scale(.9); } 45% { transform: translate(calc(var(--hx) * .5), -90px) scale(1.12); }
+    60% { transform: translate(calc(var(--hx) * .7), -125px) scale(.92); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--hx), -190px) scale(1.05); } }
+  .petg image.toy-tap { animation: toyTap .5s ease-in-out 4; transform-box: fill-box; transform-origin: 70% 100%; }
+  @keyframes toyTap { 0%, 100% { transform: none; } 45% { transform: translateX(-5px) scale(1.01, .985); } }
+  .toy-slide { transition: transform .6s ease-in-out; }
+  .toy-given.wiggle { animation: toyWiggle .5s ease-in-out 4; }
+  @keyframes toyWiggle { 25% { transform: rotate(-6deg) translateX(-3px); } 75% { transform: rotate(5deg) translateX(3px); } }
+  .toy-given.still { animation: none; }
+  #toyRest.gone { transition: opacity .45s; opacity: 0; }
+  .petg.toy-away { transition: opacity .35s; opacity: 0; }
+  .toy-nap { animation: popSoft .4s ease-out; }
   #tb #tbPanel .tb-slot { touch-action: none; }
   .toy-ghost { position: fixed; z-index: 95; width: 84px; height: 84px; object-fit: contain; pointer-events: none; transform: translate(-50%, -50%) scale(1.1) rotate(-6deg);
     filter: drop-shadow(0 8px 10px rgba(74, 59, 92, .3)); transition: transform .126s; }
   .toy-ghost.back { transition: left .3s, top .3s, opacity .3s; opacity: 0; }
   .petg.toy-over image.pet, .petg.toy-over image { filter: drop-shadow(0 0 14px #fff6b0) drop-shadow(0 0 6px #ffc94d); }
-  .petg image.toy-pounce { animation: toyPounce .55s ease-in-out 3; transform-box: fill-box; transform-origin: 50% 100%; }
-  @keyframes toyPounce { 0%, 100% { transform: none; } 30% { transform: scale(1.04, .92) translateX(6px); } 65% { transform: translate(-22px, -26px) rotate(-4deg); } }
   /* crates: once a pet is out, tap a crate to pick a different one */
   .tgt.done.swap { cursor: pointer; }
   .tgt.done.swap:hover .ring, .tgt.done.swap:hover .tag, .tgt.done.swap:focus-visible .ring { opacity: .75 !important; }
@@ -322,7 +329,7 @@
   @keyframes payIn { from { transform: translate(-50%, -50%) scale(.3); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
   @keyframes paySpin { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.35); } }
   .pay-coin { position: fixed; z-index: 96; width: 44px; height: 44px; margin: -22px 0 0 -22px; pointer-events: none; transition: left .75s cubic-bezier(.5, 0, .7, 1), top .75s cubic-bezier(.3, -.6, .7, 1), transform .75s; }
-  @media (prefers-reduced-motion: reduce) { .toy-given, .petg image.toy-hop, .petg image.toy-pounce, .toy-heart, .pay-card, .pay-card svg { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .toy-given, .petg image.toy-hop, .petg image.toy-tap, .toy-heart, .pay-card, .pay-card svg { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -2473,6 +2480,23 @@ function toyCheck(id) {   // says what is wrong, or nothing when this toy can be
   if (busy || drag || wdrag || wd || document.querySelector('.overlay.open:not(#allDone)') || !g || g.dataset.toy) return `Give the toy when ${pet.name} is back on the rug.`;
   return '';
 }
+// How each cat plays with each toy (Mac's Pet Store pictures): crouched, a front paw on the toy, the toy on the floor at the paw.
+// The Cat Couches are for napping: the cat curls up asleep in the couch. The toy then stays on the rug by the pet until a new pet is picked.
+const TOY_W = { 'cat-ball-tower': .62, 'cat-couch-blue': 1.05, 'cat-couch-pink': 1.05 };   // how wide each toy is, as parts of the pet's height (others .3)
+const TOY_REST = { cx: 610, bottom: 995 };   // where the toy waits on the floor, left of the rug, clear of the food bowl
+const PAW_TIP = { finley: .1 };   // where the front paw is in the playing picture, as part of its width (most are right at the left edge)
+const isCouch = id => /^cat-couch/.test(id);
+function toySize(id) {
+  const im = new Image(); im.src = tbItemPic(id);
+  const w = rugH() * (TOY_W[id] || .3), h = w * ((im.naturalHeight / im.naturalWidth) || .8);
+  return { w, h };
+}
+function toySound(id) {
+  if (id === 'cat-bell-ball') return toyBeep([[1568, 0, .12], [2093, .1, .12], [1568, .2, .12], [2093, .3, .12], [1760, .42, .25]], 'sine');   // jingle
+  if (id === 'cat-zoom-ball') return toyBeep(Array.from({ length: 9 }, (_, i) => [300 + i * 110, i * .035, .06]), 'sine');   // zoop
+  if (isCouch(id)) return toyBeep([[523, 0, .3], [392, .3, .45]], 'sine');   // a soft, sleepy sigh
+  toyBeep([[784, 0, .12], [988, .12, .12], [1319, .24, .3]]);
+}
 function giveToy(id) {
   const no = toyCheck(id);
   if (no) { toyBeep(TOY_SAD, 'sine'); return toyToast(no); }
@@ -2480,37 +2504,51 @@ function giveToy(id) {
   if (!window.tbRemoveItem || !tbRemoveItem(id)) return;   // used up
   const ad = document.getElementById('allDone'), endCard = ad.classList.contains('open');
   closeBag(); if (endCard) closeOverlay(ad);
-  const g = document.querySelector('.petg'), img = g.querySelector('image');
+  const g = document.querySelector('.petg'), img = g.querySelector('image'), layer = document.getElementById('petLayer');
   g.dataset.toy = id;
+  const old = document.getElementById('toyRest');   // the toy it had before goes away; the new one takes its place
+  if (old) { old.classList.add('gone'); setTimeout(() => old.remove(), 500); old.removeAttribute('id'); }
   const keep = ['href', 'x', 'y', 'width', 'height'].map(a => [a, img.getAttribute(a)]);
-  const cat = kind === 'cat' && ART[pet.play2], pb = cat ? play2Box() : null;
-  const toyH = rugH() * (cat ? .3 : .42);
-  const tx = cat ? pb.x - toyH * .55 : RUG.cx + rugH() * .38, ty = RUG.bottom - toyH;   // on the rug, by the pet's front paws
-  const ns = 'http://www.w3.org/2000/svg', fx = document.createElementNS(ns, 'g'); fx.style.pointerEvents = 'none';
-  fx.innerHTML = `<image class="toy-given" href="${tbItemPic(id)}" x="${tx}" y="${ty}" width="${toyH}" height="${toyH}" preserveAspectRatio="xMidYMax meet"/>`;
-  g.appendChild(fx);
-  const toy = fx.querySelector('.toy-given');
+  const couch = isCouch(id), sz = toySize(id), cat = kind === 'cat' && ART[pet.play2] && !couch, pb = cat ? play2Box() : null;
+  // where it plays: cats with a toy, at the front paw; a couch, at the waiting spot; dogs, by their front paws
+  const at = cat ? { cx: pb.x + pb.w * (PAW_TIP[pet.id] || .02) + sz.w * .12, bottom: RUG.bottom + 4 }
+    : couch ? TOY_REST : { cx: RUG.cx + rugH() * .38, bottom: RUG.bottom };
+  const ns = 'http://www.w3.org/2000/svg', toy = document.createElementNS(ns, 'g');
+  toy.id = 'toyRest'; toy.style.pointerEvents = 'none';
+  toy.innerHTML = `<g class="toy-slide"><image class="toy-given" href="${tbItemPic(id)}" x="${at.cx - sz.w / 2}" y="${at.bottom - sz.h}" width="${sz.w}" height="${sz.h}"/></g>`;
+  layer.insertBefore(toy, g);   // on the floor, behind the pet (the paw goes over it)
+  const fx = document.createElementNS(ns, 'g'); fx.style.pointerEvents = 'none'; layer.appendChild(fx);
   toyBeep([[523, 0, .1], [659, .08, .1], [784, .16, .1], [1047, .26, .3]]);
-  setTimeout(() => {   // the pet plays: cats crouch and pounce at it (their playing picture), dogs hop
-    if (cat) {
+  let nap = null;
+  setTimeout(() => {
+    if (couch && ART[pet.id + 'Sleep']) {   // the cat curls up asleep in the couch, the couch's front edge over it
+      const w = sz.w * .66, h = w * 400 / 498, x = at.cx - w / 2, y = at.bottom - sz.h * .27 - h, top = at.bottom - sz.h * .3;
+      nap = document.createElementNS(ns, 'g'); nap.setAttribute('class', 'toy-nap');
+      nap.innerHTML = `<image href="${ART[pet.id + 'Sleep']}" x="${x}" y="${y}" width="${w}" height="${h}"/>
+        <clipPath id="couchFront"><rect x="${at.cx - sz.w / 2}" y="${top}" width="${sz.w}" height="${sz.h}"/></clipPath>
+        <image href="${tbItemPic(id)}" x="${at.cx - sz.w / 2}" y="${at.bottom - sz.h}" width="${sz.w}" height="${sz.h}" clip-path="url(#couchFront)"/>`;
+      toy.appendChild(nap); g.classList.add('toy-away');
+    } else if (cat) {   // crouched, a paw on the toy, little taps
       img.setAttribute('href', ART[pet.play2]); img.setAttribute('x', pb.x); img.setAttribute('y', pb.y); img.setAttribute('width', pb.w); img.setAttribute('height', pb.h);
-      img.classList.add('toy-pounce');
-    } else img.classList.add('toy-hop');
-    toy.classList.add('wiggle');
+      img.classList.add('toy-tap'); toy.querySelector('.toy-given').classList.add('wiggle');
+    } else { img.classList.add('toy-hop'); toy.querySelector('.toy-given').classList.add('wiggle'); }
+    const hx = couch ? at.cx : RUG.cx, hy = couch ? at.bottom - sz.h * .85 : RUG.bottom - rugH() * .9;
     let hearts = '';
-    for (let i = 0; i < 5; i++) hearts += heartSvg(RUG.cx + (i - 2) * 46, RUG.bottom - rugH() * .82, 26, i % 2 ? '#ff8fb1' : '#e0457b', (i - 2) * 30, i * 160);
+    for (let i = 0; i < 6; i++) hearts += heartSvg(hx + (i - 2.5) * 40, hy, 30 + (i % 3) * 5, i % 2 ? '#ff8fb1' : '#e0457b', (i - 2.5) * 26, i * 220);
     fx.insertAdjacentHTML('beforeend', hearts);
-    starBurst(tx + toyH / 2, ty + toyH / 2, fx.appendChild(document.createElementNS(ns, 'g')));
-    toyToast(`${pet.name} loves the ${it.name}!`);
-    toyBeep([[784, 0, .12], [988, .12, .12], [1319, .24, .3]]);
+    toyToast(couch ? `${pet.name} loves the ${it.name}! Time for a cat nap.` : `${pet.name} loves the ${it.name}!`);
+    toySound(id);
   }, 450);
-  setTimeout(() => toy.classList.add('gone'), 2100);
-  setTimeout(() => {   // back the way it was
+  setTimeout(() => {   // back the way it was, and the toy goes to wait on the floor
     const now = document.querySelector('.petg image');
-    if (now) { now.classList.remove('toy-pounce', 'toy-hop'); keep.forEach(([a, v]) => now.setAttribute(a, v)); }
-    fx.remove(); delete g.dataset.toy;
+    if (now) { now.classList.remove('toy-tap', 'toy-hop'); keep.forEach(([a, v]) => now.setAttribute(a, v)); }
+    g.classList.remove('toy-away'); if (nap) nap.remove();
+    const t = toy.querySelector('.toy-given'); if (t) { t.classList.remove('wiggle'); t.classList.add('still'); }
+    toy.querySelector('.toy-slide').style.transform = `translate(${TOY_REST.cx - at.cx}px, ${TOY_REST.bottom - at.bottom}px)`;
+    delete g.dataset.toy;
     if (endCard && pet) openOverlay(ad);
-  }, 2700);
+  }, couch ? 3400 : 2900);
+  setTimeout(() => fx.remove(), 3800);
 }
 const bagPanel = document.getElementById('tbPanel');
 const slotToy = slot => tbBag()[[...slot.parentNode.children].indexOf(slot)];
