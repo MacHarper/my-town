@@ -682,6 +682,40 @@
   @keyframes sbPuff { from { opacity: .9; } to { opacity: 0; transform: translateY(-14px); } }
   #sbStream, #sbBlob, #sbHose, #sbHead, #sbTowel, #sbFx { pointer-events: none; }
   #sbHead.on, #sbHead.raining, #sbTowel.on { pointer-events: auto; }
+  /* the wash follows the Vet Clinic bath (activity-rules.md, Mac, Nov 25, 2026): the tools wait in the tool area beside the frame and are dragged onto your hair */
+  #sbWash { pointer-events: none; }
+  html.salon[data-sstep="wash"] #salonPanel { align-items: stretch; }
+  html.salon[data-sstep="wash"] #salonPanel h3 { text-align: center; }
+  .wt-steps { display: flex; gap: 8px; justify-content: flex-start; align-items: center; flex-wrap: wrap; }
+  .wt-steps .wt-step { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 16px 0 6px; border-radius: 16px; background: #f3edf8; font: bold 16px Verdana, Geneva, sans-serif; color: #6b5a80; }
+  .wt-steps .wt-step svg { width: 30px; height: 30px; background: #fff; border-radius: 50%; padding: 3px; flex: 0 0 auto; }
+  .wt-steps .wt-step.cur { height: 58px; padding: 0 20px 0 7px; background: #ffc94d; color: #4a3b5c; font-size: 20px; box-shadow: 0 4px 0 #d9a531; }
+  .wt-steps .wt-step.cur svg { width: 40px; height: 40px; }
+  .wt-steps .wt-step.done { background: #fff; color: #9b90a8; box-shadow: 0 0 0 3px #f3edf8 inset; }
+  .wt-steps .wt-step.done svg { background: none; padding: 0; }
+  .wt-steps .wt-step.blink { cursor: pointer; animation: wtBlink 1.1s ease-in-out infinite; }
+  @keyframes wtBlink { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+  .wt-tools { flex: 1; min-height: 170px; display: flex; align-items: center; justify-content: space-around; gap: 10px; padding: 14px; border-radius: 22px; background: #fffaf5; }
+  .wt-tool { position: relative; width: 30%; max-width: 150px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .wt-ring { position: absolute; inset: 0; border-radius: 26px; background: rgba(255, 246, 176, .18); box-shadow: inset 0 0 0 7px #fff6b0; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  .wt-tool.on .wt-ring { opacity: 1; }
+  .wt-tool:hover .wt-ring { opacity: .75; }
+  .wt-tool.on:hover .wt-ring { opacity: 1; }
+  .wt-tool.held .wt-ring { opacity: 0 !important; }
+  .wt-tool.held .wt-art { visibility: hidden; }
+  .wt-tool.used { opacity: .35; cursor: default; }
+  .wt-tool:not(.on):not(.next) { cursor: default; }
+  .wt-art { width: 78%; height: 78%; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .wt-art svg, .wt-art img { max-width: 100%; max-height: 100%; display: block; }
+  .wt-say { margin: 0 !important; min-height: 2.6em; display: flex; align-items: center; justify-content: center; font-size: clamp(15px, 2vw, 20px) !important; font-weight: bold; color: #4a3b5c !important; text-align: center; }
+  .wt-ghost { position: fixed; z-index: 60; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(74, 59, 92, .25)); }
+  .wt-ghost svg, .wt-ghost img { width: 100%; height: 100%; display: block; overflow: visible; }
+  .wt-ghost.home { transition: left .25s ease-in, top .25s ease-in, opacity .25s; opacity: 0; }
+  .wt-ghost .sb-rain { opacity: 0; }
+  .wt-ghost.raining .sb-rain { animation: sbRainFall .45s linear infinite; }
+  #sbFx .wt-bub { transition: opacity .4s; }
+  .wt-burst polygon { transform-box: fill-box; transform-origin: center; animation: wtBurst .8s ease-out forwards; }
+  @keyframes wtBurst { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--bx), var(--by)) scale(1); } }
   html.salon[data-sstep="style"] #salonPanel { margin-bottom: 14px; }
   html.salon #buy { padding-bottom: 96px; }
   html.salon .by-box .sh-close { z-index: 3; }   /* clear of the money toolbar */
@@ -2285,7 +2319,9 @@ function salonGo(n) {
   const panel = document.getElementById('salonPanel'), next = document.getElementById('salonNext');
   stage.classList.remove('washing');
   if (id === 'wash') {
-    panel.innerHTML = `<h3>Wash your hair</h3><p id="sbSay">Tap the shampoo.</p><div class="sb-list" id="sbWashList">${['Shampoo', 'Rinse', 'Dry'].map((w, i) => `<span data-i="${i}">${sIcon(S_STEPS[0].icon)}${w}</span>`).join('')}</div>`;
+    panel.innerHTML = `<h3>Wash your hair</h3><div class="wt-steps" id="wtSteps"></div>
+      <div class="wt-tools" id="wtTools">${W_STEPS.map(t => `<div class="wt-tool" data-tool="${t.id}" role="button" tabindex="0" aria-label="${t.tool}"><span class="wt-ring"></span><div class="wt-art">${W_ART[t.id]()}</div></div>`).join('')}</div>
+      <p class="wt-say" id="sbSay"></p>`;
     startWash();
   } else if (id === 'style') {
     panel.innerHTML = `<h3>Pick a hairstyle</h3><p>Tap a style to try it on.</p>`;
@@ -2312,153 +2348,203 @@ function salonGo(n) {
   }
 }
 const TOWEL_SRC = 'data:image/webp;base64,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';
-const SB_HAND = '<path d="M-28 50 C-34 12 -36 -18 -24 -38 C-14 -55 12 -58 22 -42 C30 -30 30 -10 28 2 L44 -12 C53 -20 63 -9 55 1 L31 33 C24 46 13 54 0 54 Z"/>';
-let wsh = null;   // the wash: { phase: pour | rub | rinse | towel | done, cells, drag }
+// The wash works like the Vet Clinic bath (activity-rules.md; Mac, Nov 25, 2026). The shampoo, shower and towel wait in the tool area
+// beside the frame; drag the glowing one onto your hair to use it. Your hair is split into 7 x 8 cells (only where the hair picture is solid);
+// a tool reaches about one cell (the shower a little farther), and 70% of the cells finishes a step. Nothing moves on by itself:
+// the next step blinks and the next tool glows, and you pick it up when you are ready. Drying ends 3 seconds after it is done (or when you let go).
+const W_STEPS = [
+  { id: 'soap', name: 'Shampoo', tool: 'Shampoo', say: 'Rub the shampoo on your hair.' },
+  { id: 'rinse', name: 'Rinse', tool: 'Shower', say: 'Rinse off the bubbles.' },
+  { id: 'towel', name: 'Dry', tool: 'Towel', say: 'Dry your hair with the towel.' },
+];
+const W_ICON = {
+  soap: S_STEPS[0].icon,
+  rinse: '<path d="M0 -15 C6 -6 11 0 11 6 A11 11 0 0 1 -11 6 C-11 0 -6 -6 0 -15 Z" fill="#7cc4f2"/><circle cx="-4" cy="5" r="3" fill="#fff" opacity=".6"/>',
+  towel: '<rect x="-15" y="-12" width="30" height="24" rx="6" fill="#8fd1a4"/><rect x="-15" y="3" width="30" height="4" fill="#5fae7a"/>',
+};
+const W_HEAD = `<path d="M8 -12 L88 -122" stroke="#c9d3dc" stroke-width="26" stroke-linecap="round"/><path d="M14 -20 L80 -110" stroke="#e8eef3" stroke-width="7" stroke-linecap="round"/>
+  <ellipse cx="0" cy="0" rx="44" ry="24" fill="#b7c0ca" transform="rotate(37)"/><ellipse cx="-6" cy="8" rx="34" ry="11" fill="#e3e9ee" transform="rotate(37)"/>`;
+const W_RAIN = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => { const side = (i % 3 - 1) * 16; return `<rect class="sb-rain" x="${-6 + side * .8}" y="${12 + side * .6}" width="7" height="22" rx="3.5" fill="#8fd0f5" style="animation-delay:${i * .05}s"/>`; }).join('');
+const W_ART = {   // how each tool looks in the tool area
+  soap: () => SHAMPOO_SVG,
+  rinse: () => `<svg viewBox="-60 -140 170 180">${W_HEAD}</svg>`,
+  towel: () => `<img src="${TOWEL_SRC}" alt="">`,
+};
+const W_RUB_DONE = .7;   // like the Vet Clinic: 70% of the cells finishes a step
+let wsh = null;   // { step, ready, cells, box, reach, drag }
 function washSvg() {
-  return `<svg id="sbWash" viewBox="0 0 900 1000" preserveAspectRatio="none" aria-hidden="true">
-    <g id="sbFx"></g>
-    <path id="sbStream" d="" fill="none" stroke="#f9d3e3" stroke-width="16" stroke-linecap="round" opacity="0"/>
-    <g id="sbBlob" opacity="0"><ellipse cx="455" cy="300" rx="62" ry="30" fill="#f9d3e3"/><ellipse cx="430" cy="290" rx="30" ry="16" fill="#fde9f1"/><ellipse cx="420" cy="285" rx="10" ry="5" fill="#fff"/></g>
-    <g id="sbHand" class="sb-hand" opacity="0" transform="translate(470 340) scale(1.5)"><g class="sb-circle" fill="rgba(255,201,77,.3)" stroke="#ffc94d" stroke-width="6" stroke-linejoin="round">${SB_HAND}</g></g>
-    <g id="sbBottle" class="sb-t" transform="translate(790 820)"><circle class="ring" r="110" fill="rgba(255,246,176,.18)" stroke="#fff6b0" stroke-width="10"/><svg x="-60" y="-90" width="120" height="180" viewBox="0 0 60 90">${SHAMPOO_SVG.replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg></g>
-    <path id="sbHose" d="" fill="none" stroke="#a7b2bd" stroke-width="12" stroke-linecap="round" opacity="0"/>
-    <g id="sbHead" class="sb-t" opacity="0" transform="translate(760 700)">
-      <circle class="ring" cx="40" cy="-50" r="105" fill="rgba(255,246,176,.18)" stroke="#fff6b0" stroke-width="12"/>
-      <path d="M8 -12 L88 -122" stroke="#c9d3dc" stroke-width="26" stroke-linecap="round"/><path d="M14 -20 L80 -110" stroke="#e8eef3" stroke-width="7" stroke-linecap="round"/>
-      <ellipse cx="0" cy="0" rx="44" ry="24" fill="#b7c0ca" transform="rotate(37)"/><ellipse cx="-6" cy="8" rx="34" ry="11" fill="#e3e9ee" transform="rotate(37)"/>
-      <g>${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => { const side = (i % 3 - 1) * 16; return `<rect class="sb-rain" x="${-6 + side * .8}" y="${12 + side * .6}" width="7" height="22" rx="3.5" fill="#8fd0f5" style="animation-delay:${i * .05}s"/>`; }).join('')}</g>
-    </g>
-    <g id="sbTowel" class="sb-t" opacity="0"><circle class="ring" cx="140" cy="840" r="120" fill="rgba(255,246,176,.18)" stroke="#fff6b0" stroke-width="10"/><image href="${TOWEL_SRC}" x="20" y="765" width="240" height="150"/></g>
-  </svg>`;
+  return `<svg id="sbWash" viewBox="0 0 900 1000" preserveAspectRatio="none" aria-hidden="true"><g id="sbFx"></g></svg>`;
 }
-const HEAD_HOME = [770, 720];
-function setShower(x, y) {
-  wsh.head = [x, y];
-  document.getElementById('sbHead').setAttribute('transform', `translate(${x} ${y})`);
-  const ex = x + 92, ey = y - 128;
-  document.getElementById('sbHose').setAttribute('d', `M905 980 C 900 900, ${ex + 110} ${ey + 90}, ${ex} ${ey}`);
+function hairW() {   // how wide your hair is, in frame units (300 with no hair)
+  const sr = stage.getBoundingClientRect(), img = stage.querySelector('.wrap[data-slot="hair"] img'), r = img && img.getBoundingClientRect();
+  return r && r.width > 4 ? r.width * 900 / sr.width : 300;
 }
-function startWash() {
+function hairCells() {   // 7 x 8 cells over your hair, only where the hair picture is solid (like the pet's cells at the Vet Clinic)
+  return new Promise(res => {
+    const sr = stage.getBoundingClientRect(), u = 900 / sr.width, img = stage.querySelector('.wrap[data-slot="hair"] img');
+    const r = img && img.getBoundingClientRect(), cols = 7, rows = 8;
+    const fallback = () => {   // no hair on: the top of your head
+      const box = { x: 300, y: 170, w: 300, h: 230 }, cells = [];
+      for (let q = 0; q < rows; q++) for (let c = 0; c < cols; c++) {
+        const x = box.x + (c + .5) / cols * box.w, y = box.y + (q + .5) / rows * box.h;
+        if (((x - 450) / 150) ** 2 + ((y - 285) / 115) ** 2 <= 1) cells.push({ x, y, done: false });
+      }
+      res({ box, cells });
+    };
+    if (!r || r.width < 4) return fallback();
+    const box = { x: (r.left - sr.left) * u, y: (r.top - sr.top) * u, w: r.width * u, h: r.height * u };
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = 70; c.height = 80;
+      const g = c.getContext('2d'); g.drawImage(im, 0, 0, 70, 80);
+      const d = g.getImageData(0, 0, 70, 80).data, cells = [];
+      for (let q = 0; q < rows; q++) for (let k = 0; k < cols; k++) {
+        const px = Math.floor((k + .5) / cols * 70), py = Math.floor((q + .5) / rows * 80);
+        if (d[(py * 70 + px) * 4 + 3] > 200) cells.push({ x: box.x + (k + .5) / cols * box.w, y: box.y + (q + .5) / rows * box.h, done: false });
+      }
+      cells.length >= 8 ? res({ box, cells }) : fallback();
+    };
+    im.onerror = fallback;
+    im.src = img.src;
+  });
+}
+async function startWash() {
   stage.querySelectorAll('#sbWash').forEach(e => e.remove());
+  stage.classList.remove('wet');
   stage.insertAdjacentHTML('beforeend', washSvg());
-  const cells = [];
-  for (let y = 245; y <= 415; y += 36) for (let x = 230; x <= 670; x += 44)
-    if (((x - 450) / 230) ** 2 + ((y - 330) / 95) ** 2 <= 1) cells.push({ x, y, done: false });
-  wsh = { phase: 'pour', cells, drag: null, n: 0 };
-  document.getElementById('sbBottle').classList.add('on');
+  wsh = { step: 0, ready: false, cells: [], drag: null };
+  washStep();
+}
+async function measureHair() {   // once, when you first pick up a tool (the doll is drawn by then)
+  if (!wsh || wsh.measured) return;
+  wsh.measured = true;
+  const h = await hairCells();
+  if (!wsh) return;
+  wsh.cells = h.cells; wsh.box = h.box;
+  wsh.reach = h.box.w / 7 * 46 / 43;   // the vet's 46 units with a pet about 300 wide (cells 43 apart): about one cell
+}
+function washStep() {   // the step pills, the words and which tool glows (the Vet Clinic's bathStep)
+  const s = W_STEPS[wsh.step], el = document.getElementById('wtSteps');
+  if (el) el.innerHTML = W_STEPS.map((t, i) => {
+    const done = i < wsh.step, cur = i === wsh.step, next = wsh.ready && i === wsh.step + 1;
+    return `<div class="wt-step${cur ? ' cur' : ''}${done ? ' done' : ''}${next ? ' blink' : ''}"${next ? ' role="button" tabindex="0"' : ''}>${sIcon(done ? S_CHECK : W_ICON[t.id])}<span>${t.name}</span></div>`;
+  }).join('');
+  washSay(!s ? '' : wsh.ready ? '' : s.say);
+  document.querySelectorAll('.wt-tool').forEach(t => {
+    const i = W_STEPS.findIndex(x => x.id === t.dataset.tool);
+    t.classList.toggle('on', !!s && ((i === wsh.step && !wsh.ready) || (wsh.ready && i === wsh.step + 1)));
+    t.classList.toggle('next', wsh.ready && i === wsh.step + 1);
+    t.classList.toggle('used', i < wsh.step);
+  });
 }
 function washSay(t) { const e = document.getElementById('sbSay'); if (e) e.textContent = t; }
-function washTick(i) { const e = document.querySelector(`#sbWashList span[data-i="${i}"]`); if (e) e.innerHTML = sIcon(S_CHECK) + e.textContent; }
-function tween(ms, f) { return new Promise(res => { const t0 = performance.now(); (function go(now) { const t = Math.min(1, (now - t0) / ms); f(t); t < 1 ? requestAnimationFrame(go) : res(); })(t0); }); }
-const ease = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-async function pourShampoo() {
-  wsh.phase = 'pouring';
-  const bt = document.getElementById('sbBottle'), st = document.getElementById('sbStream'), blob = document.getElementById('sbBlob');
-  bt.classList.remove('on'); washSay('Glug, glug!');
-  const from = [790, 820], to = [620, 180];
-  await tween(600, t => { const k = ease(t); bt.setAttribute('transform', `translate(${from[0] + (to[0] - from[0]) * k} ${from[1] + (to[1] - from[1]) * k}) rotate(${-130 * k})`); });
-  st.setAttribute('opacity', 1); tone([392, 330], 'sine', 0.18, 0.08);
-  await tween(900, t => {
-    const end = [568 - 113 * Math.min(1, t * 2.5), 223 + 77 * Math.min(1, t * 2.5)];
-    st.setAttribute('d', `M568 223 Q ${(568 + end[0]) / 2 - 10} ${(223 + end[1]) / 2 - 20} ${end[0]} ${end[1]}`);
-    blob.setAttribute('opacity', Math.min(1, t * 1.6)); blob.setAttribute('transform', `translate(455 300) scale(${.3 + .7 * t}) translate(-455 -300)`);
-  });
-  st.setAttribute('opacity', 0);
-  await tween(500, t => { const k = ease(t); bt.setAttribute('transform', `translate(${to[0] + (from[0] - to[0]) * k} ${to[1] + (from[1] - to[1]) * k}) rotate(${-130 * (1 - k)})`); });
-  bt.setAttribute('opacity', .35);
-  wsh.phase = 'rub';
-  document.getElementById('sbHand').setAttribute('opacity', 1);
-  washSay('Rub it in! Move around and around on your hair.');
+function nextWashStep() {
+  if (!wsh || !wsh.ready || wsh.step >= W_STEPS.length - 1) return;
+  wsh.step++; wsh.ready = false;
+  wsh.cells.forEach(c => c.done = false);
+  document.querySelectorAll('#sbFx .sb-puff').forEach(e => e.remove());
+  if (W_STEPS[wsh.step].id === 'towel') document.querySelectorAll('#sbFx .wt-bub').forEach(e => e.remove());   // like the vet: the towel starts on rinsed hair
+  washStep();
 }
 function washRub(x, y, reach) {
-  const step = wsh.phase, fx = document.getElementById('sbFx');
+  const step = W_STEPS[wsh.step].id, fx = document.getElementById('sbFx');
+  if (!fx || !wsh.cells.length) return;
   let hit = false;
   wsh.cells.forEach((c, i) => {
-    const doneKey = step === 'rub' ? 'soap' : step === 'rinse' ? 'rinsed' : 'dry';
-    if (c[doneKey] || Math.hypot(c.x - x, c.y - y) > reach) return;
-    if (step !== 'rub' && !c.soap) return;
-    c[doneKey] = true; hit = true;
-    if (step === 'rub') {
-      const jx = (i * 37) % 23 - 11, jy = (i * 53) % 19 - 9, r = 17 + (i * 7) % 10;
-      fx.insertAdjacentHTML('beforeend', `<g class="sb-sud" data-cell="${i}"><circle cx="${c.x - 8 + jx}" cy="${c.y + jy}" r="${r}" fill="#fff" opacity=".93"/><circle cx="${c.x + 12 + jx}" cy="${c.y - 12 + jy}" r="${r * .6}" fill="#fff" opacity=".93"/><circle cx="${c.x - 12 + jx}" cy="${c.y - 6 + jy}" r="${r * .3}" fill="#d9ecfd"/></g>`);
-      if (++wsh.n % 3 === 0) tone([900 + Math.random() * 300], 'sine', 0.05, 0.06);
+    if (c.done || Math.hypot(c.x - x, c.y - y) > reach) return;
+    c.done = true; hit = true;
+    if (step === 'soap') {   // a little uneven, like real bubbles (the vet's soap)
+      const jx = (i * 37) % 23 - 11, jy = (i * 53) % 19 - 9, r = 15 + (i * 7) % 9;
+      fx.insertAdjacentHTML('beforeend', `<g class="wt-bub" data-cell="${i}"><circle cx="${c.x - 8 + jx}" cy="${c.y + jy}" r="${r}" fill="#fff" opacity=".92"/><circle cx="${c.x + 12 + jx}" cy="${c.y - 12 + jy}" r="${r * .6}" fill="#fff" opacity=".92"/><circle cx="${c.x - 12 + jx}" cy="${c.y - 6 + jy}" r="${r * .35}" fill="#d9ecfd"/></g>`);
     } else if (step === 'rinse') {
-      fx.querySelectorAll(`.sb-sud[data-cell="${i}"]`).forEach(b => { b.style.transition = 'opacity .4s'; b.style.opacity = 0; setTimeout(() => b.remove(), 420); });
+      fx.querySelectorAll(`.wt-bub[data-cell="${i}"]`).forEach(b => { b.style.opacity = 0; setTimeout(() => b.remove(), 400); });
     } else {
-      fx.insertAdjacentHTML('beforeend', `<circle class="sb-puff" cx="${c.x}" cy="${c.y}" r="18" fill="#f9d3e3"/>`);
-      setTimeout(() => fx.querySelector('.sb-puff') && fx.querySelector('.sb-puff').remove(), 600);
+      fx.insertAdjacentHTML('beforeend', `<circle class="sb-puff" cx="${c.x}" cy="${c.y}" r="16" fill="#bae5ca"/>`);
+      const pf = fx.lastElementChild; setTimeout(() => pf.remove(), 520);
     }
   });
   if (!hit) return;
-  const soaped = wsh.cells.filter(c => c.soap).length;
-  if (step === 'rub') {
-    if (soaped >= 3) document.getElementById('sbHand').setAttribute('opacity', 0);
-    document.getElementById('sbBlob').setAttribute('opacity', Math.max(0, 1 - soaped / (wsh.cells.length * .7)));
-    if (soaped >= wsh.cells.length * .7) washNext('rinse');
-  } else if (step === 'rinse') {
-    if (wsh.cells.filter(c => c.rinsed).length >= soaped * .75) washNext('towel');
-  } else if (step === 'towel') {
-    if (wsh.cells.filter(c => c.dry).length >= soaped * .7) washNext('done');
-  }
+  const part = wsh.cells.filter(c => c.done).length / wsh.cells.length;
+  if (!wsh.ready && part >= W_RUB_DONE) washReady(step);
 }
-function washNext(phase) {
-  dropWash();
-  document.getElementById('sbHand').setAttribute('opacity', 0);
-  wsh.phase = phase;
-  if (phase === 'rinse') {
-    washTick(0); sndPut();
-    document.getElementById('sbBlob').setAttribute('opacity', 0);
-    ['sbHead', 'sbHose'].forEach(id => document.getElementById(id).setAttribute('opacity', 1));
-    setShower(...HEAD_HOME); document.getElementById('sbHead').classList.add('on');
-    washSay('So bubbly! Pick up the shower and rinse your hair.');
-  } else if (phase === 'towel') {
-    washTick(1); sndPut(); stage.classList.add('wet');
-    document.querySelectorAll('#sbFx .sb-sud').forEach(b => { b.style.transition = 'opacity .4s'; b.style.opacity = 0; setTimeout(() => b.remove(), 420); });
-    ['sbHead', 'sbHose'].forEach(id => document.getElementById(id).setAttribute('opacity', 0));
-    const tw = document.getElementById('sbTowel'); tw.setAttribute('opacity', 1); tw.classList.add('on');
-    washSay('All rinsed! Dry your hair with the towel.');
-  } else if (phase === 'done') {
-    washTick(2); stage.classList.remove('wet');
-    document.getElementById('sbTowel').setAttribute('opacity', 0);
-    washSay('Squeaky clean!'); sparkles(); sndWin();
-    setTimeout(() => { stage.querySelectorAll('#sbWash').forEach(e => e.remove()); salonGo(1); }, 1200);
+function washReady(step) {
+  wsh.ready = true;
+  if (step === 'rinse') stage.classList.add('wet');   // wet hair, like the dog's wet picture
+  if (step === 'towel') {   // the last step: keep drying for up to 3 seconds, or let go
+    stage.classList.remove('wet');
+    wsh.end = setTimeout(() => { wsh.end = null; dropWash(); washDone(); }, 3000);
   }
+  washStep();
 }
-function washPt(e) { const r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 900, y: (e.clientY - r.top) / r.height * 1000 }; }
+function washDone() {
+  if (!wsh || wsh.finished) return;
+  wsh.finished = true; wsh.step = W_STEPS.length; wsh.ready = false; washStep();
+  washSay('Your hair is all clean.');
+  document.querySelectorAll('#sbFx .wt-bub').forEach(e => e.remove());
+  const b = wsh.box || { x: 300, y: 170, w: 300, h: 230 }, cx = b.x + b.w / 2, cy = b.y + b.h * .4;
+  let stars = '';
+  for (let i = 0; i < 8; i++) {   // one small burst of stars, once
+    const a = i / 8 * Math.PI * 2, pts = [];
+    for (let k = 0; k < 10; k++) { const an = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? 9 : 22; pts.push(`${cx + Math.cos(an) * rr},${cy + Math.sin(an) * rr}`); }
+    stars += `<polygon points="${pts.join(' ')}" fill="#ffd34d" style="--bx:${Math.cos(a) * 190}px;--by:${Math.sin(a) * 150}px"/>`;
+  }
+  document.getElementById('sbFx').insertAdjacentHTML('beforeend', `<g class="wt-burst">${stars}</g>`);
+  setTimeout(() => { stage.querySelectorAll('#sbWash').forEach(e => e.remove()); wsh = null; salonGo(1); }, 1600);
+}
+function washPt(x, y) { const r = stage.getBoundingClientRect(); return { x: (x - r.left) / r.width * 900, y: (y - r.top) / r.height * 1000, inside: x > r.left && x < r.right && y > r.top && y < r.bottom }; }
+function placeGhost(d, x, y) {   // the tool follows your finger; the shower is held by its handle
+  if (d.id === 'rinse') { d.ghost.style.left = (x - d.hx) + 'px'; d.ghost.style.top = (y - d.hy) + 'px'; }
+  else { d.ghost.style.left = (x - d.w / 2) + 'px'; d.ghost.style.top = (y - d.h / 2) + 'px'; }
+}
 function dropWash() {
   if (!wsh || !wsh.drag) return;
   const d = wsh.drag; wsh.drag = null;
-  if (d === 'head') { document.getElementById('sbHead').classList.remove('raining'); document.getElementById('sbHead').classList.add('on'); setShower(...HEAD_HOME); }
-  if (d === 'towel') { const tw = document.getElementById('sbTowel'); tw.removeAttribute('transform'); tw.classList.add('on'); }
+  if (wsh.end && wsh.ready && W_STEPS[wsh.step] && W_STEPS[wsh.step].id === 'towel') { clearTimeout(wsh.end); wsh.end = null; setTimeout(washDone, 200); }
+  const r = d.tool.getBoundingClientRect();   // back to its place in the tool area
+  d.ghost.classList.add('home'); d.ghost.classList.remove('raining');
+  placeGhost(d, r.left + r.width / 2 + (d.id === 'rinse' ? d.hx - d.w / 2 : 0), r.top + r.height / 2 + (d.id === 'rinse' ? d.hy - d.h / 2 : 0));
+  setTimeout(() => { d.ghost.remove(); d.tool.classList.remove('held'); }, 250);
 }
 function wireWash() {
-  stage.addEventListener('pointerdown', e => {
-    if (!wsh) return;
-    const p = washPt(e), t = e.target.closest && e.target.closest('.sb-t');
-    if (wsh.phase === 'pour' && t && t.id === 'sbBottle') return pourShampoo();
-    if (wsh.phase === 'rinse' && t && t.id === 'sbHead') { wsh.drag = 'head'; wsh.off = [p.x - wsh.head[0], p.y - wsh.head[1]]; t.classList.remove('on'); t.classList.add('raining'); }
-    else if (wsh.phase === 'towel' && t && t.id === 'sbTowel') { wsh.drag = 'towel'; wsh.off = [p.x - 140, p.y - 840]; t.classList.remove('on'); }
-    else if (wsh.phase === 'rub') washRub(p.x, p.y, 55);
-    else return;
-    try { stage.setPointerCapture(e.pointerId); } catch (er) {}
+  document.addEventListener('pointerdown', e => {
+    const t = e.target.closest && e.target.closest('.wt-tool');
+    if (!wsh || !t || wsh.drag || wsh.finished) return;
+    const i = W_STEPS.findIndex(x => x.id === t.dataset.tool);
+    if (wsh.ready && i === wsh.step + 1) nextWashStep();   // picking up the next tool moves on
+    if (i !== wsh.step) return;
     e.preventDefault();
-  });
-  stage.addEventListener('pointermove', e => {
-    if (!wsh) return;
-    const p = washPt(e);
-    if (wsh.phase === 'rub') return washRub(p.x, p.y, 55);   // a mouse rubs just by moving over the hair
-    if (wsh.drag === 'head') {
-      setShower(p.x - wsh.off[0], p.y - wsh.off[1]);
-      if (Math.random() < .2) tone([500 + Math.random() * 200], 'sine', 0.04, 0.03);
-      return washRub(wsh.head[0] - .6 * 120, wsh.head[1] + .8 * 120, 80);
+    measureHair();
+    const sr = stage.getBoundingClientRect(), px = sr.width / 900, hw = wsh.box ? wsh.box.w : hairW();
+    const id = t.dataset.tool, g = document.createElement('div'); g.className = 'wt-ghost';
+    let w, h, hx = 0, hy = 0;
+    if (id === 'rinse') {   // the hand shower at the vet's size, its spray falling down and to the left
+      const k = hw / 300; w = 240 * k * px; h = 330 * k * px;
+      g.innerHTML = `<svg viewBox="-130 -140 240 330">${W_HEAD}<g>${W_RAIN}</g></svg>`;
+      hx = (48 + 130) / 240 * w; hy = (-66 + 140) / 330 * h;   // you hold the middle of the handle
+      g.classList.add('raining');
+    } else {
+      w = hw * (id === 'soap' ? .42 : .57) * px; h = w * (id === 'soap' ? 1.5 : .62);
+      g.innerHTML = W_ART[id]();
     }
-    if (wsh.drag === 'towel') {
-      document.getElementById('sbTowel').setAttribute('transform', `translate(${p.x - wsh.off[0] - 140} ${p.y - wsh.off[1] - 840})`);
-      return washRub(p.x - wsh.off[0], p.y - wsh.off[1] - 40, 70);
-    }
+    g.style.width = w + 'px'; g.style.height = h + 'px';
+    document.body.appendChild(g); t.classList.add('held');
+    wsh.drag = { id, tool: t, ghost: g, w, h, hx, hy };
+    placeGhost(wsh.drag, e.clientX, e.clientY);
   });
-  stage.addEventListener('pointerup', dropWash);
-  stage.addEventListener('pointercancel', dropWash);
+  document.addEventListener('pointermove', e => {
+    if (!wsh || !wsh.drag) return;
+    const d = wsh.drag; placeGhost(d, e.clientX, e.clientY);
+    const p = washPt(e.clientX, e.clientY), reach = wsh.reach || 50;
+    if (d.id === 'rinse') {   // the water lands below and to the left of the head (the vet's shower: 120 units away, reaching 70)
+      const sr = stage.getBoundingClientRect(), u = 900 / sr.width, k = d.w / 240;   // px per shower unit
+      const head = washPt(e.clientX - (48 * k), e.clientY + (66 * k)), f = reach / 46;
+      return washRub(head.x - .6 * 120 * f, head.y + .8 * 120 * f, 70 * f);
+    }
+    if (p.inside) washRub(p.x, p.y, reach);
+  });
+  document.addEventListener('pointerup', dropWash);
+  document.addEventListener('pointercancel', dropWash);
+  document.addEventListener('click', e => { if (wsh && e.target.closest && e.target.closest('.wt-step.blink')) nextWashStep(); });   // tapping the blinking step moves on too
 }
 function renderSalonStyles() {
   itemsEl.innerHTML = '';
