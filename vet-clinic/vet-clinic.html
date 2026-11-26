@@ -531,6 +531,7 @@
     { id: 'cat-ball-tower', name: 'Ball Tower', kind: 'catToy', price: 8 },
     { id: 'cat-couch-blue', name: 'Blue Cat Couch', kind: 'catToy', price: 8 },
     { id: 'cat-couch-pink', name: 'Pink Cat Couch', kind: 'catToy', price: 8 },
+    { id: 'game-four-in-a-row', name: '4 in a Row', kind: 'game', price: 20, play: 'four-in-a-row/four-in-a-row.html' },   // play: the game it opens
   ];
   window.tbItems = ITEMS;
   window.tbItemPic = id => ROOT + 'items/' + id + '.webp';
@@ -676,6 +677,52 @@
   $('tbMe').onclick = () => { beep([[659, 0, .12], [988, .08, .2]]); if (window.tbOnMe && tbOnMe()) return;
     // the doll opens Dress Up from anywhere; All Done brings you back to this screen (the Boutique's wardrobe does not)
     location.href = ROOT + 'dress-up/dress-up.html?back=' + encodeURIComponent(location.href); };
+
+  // ---- games in the backpack (Mac, Nov 26, 2026): tap one and it asks Play now; the store asks Play now or Save in backpack right after you buy it ----
+  const playCss = document.createElement('style');
+  playCss.textContent = `
+    #tbPlay { position: fixed; inset: 0; z-index: 130; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(43, 35, 64, .3); opacity: 0; pointer-events: none; transition: opacity .2s; font-family: Verdana, Geneva, sans-serif; }
+    #tbPlay.open { opacity: 1; pointer-events: auto; }
+    #tbPlay .tp-box { position: relative; width: min(420px, 100%); background: #fff; border-radius: 28px; box-shadow: 0 0 0 2px #f3edf8, 0 14px 38px rgba(74, 59, 92, .3); padding: 22px 22px 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; color: #4a3b5c; transform: scale(.6); transition: transform .3s cubic-bezier(.3, 1.4, .5, 1); box-sizing: border-box; }
+    #tbPlay.open .tp-box { transform: none; }
+    #tbPlay .tp-pic { width: 100%; height: min(36vh, 260px); border-radius: 22px; background: #f3edf8; display: flex; align-items: center; justify-content: center; padding: 18px; box-sizing: border-box; }
+    #tbPlay .tp-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    #tbPlay h3 { margin: 4px 0 0; font-size: clamp(20px, 3.4vw, 28px); line-height: 1.2; }
+    #tbPlay .tp-btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    #tbPlay .tp-btns button { min-height: 54px; padding: 0 26px; border: none; border-radius: 16px; color: #fff; font: bold 20px Verdana, Geneva, sans-serif; cursor: pointer; transition: transform .1s, box-shadow .1s; }
+    #tbPlay .tp-go { background: #5fae7a; box-shadow: 0 5px 0 #468a5e; }
+    #tbPlay .tp-save { background: #4a9be0; box-shadow: 0 5px 0 #3479b8; }
+    #tbPlay .tp-btns button[hidden] { display: none; }
+    #tbPlay .tp-btns button:active { transform: translateY(4px); box-shadow: none; }
+    #tbPlay .tp-x { position: absolute; right: 14px; top: 14px; width: 52px; height: 52px; border: none; border-radius: 16px; background: #5f5a6b; box-shadow: 0 5px 0 #46424f; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    #tbPlay .tp-x[hidden] { display: none; }
+    #tbPlay .tp-x svg { width: 22px; height: 22px; }`;
+  document.head.appendChild(playCss);
+  const play = document.createElement('div'); play.id = 'tbPlay'; play.setAttribute('aria-hidden', 'true');
+  play.innerHTML = `<div class="tp-box" role="dialog" aria-labelledby="tpName"><button class="tp-x" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg></button>
+    <div class="tp-pic"><img alt=""></div><h3 id="tpName"></h3>
+    <div class="tp-btns"><button class="tp-go">Play now</button><button class="tp-save">Save in backpack</button></div></div>`;
+  document.body.appendChild(play);
+  const closePlay = () => { play.classList.remove('open'); play.setAttribute('aria-hidden', 'true'); };
+  window.tbAskPlay = (id, bought) => {   // bought: just bought at the store, so it also offers Save in backpack
+    const it = item(id); if (!it.play) return false;
+    closePanels();
+    play.querySelector('img').src = tbItemPic(id);
+    play.querySelector('#tpName').textContent = bought ? `You got ${it.name}!` : it.name;
+    play.querySelector('.tp-save').hidden = !bought; play.querySelector('.tp-x').hidden = !!bought;
+    play.querySelector('.tp-go').onclick = () => { beep([[523, 0, .1], [659, .08, .1], [784, .16, .2]]); location.href = ROOT + it.play; };
+    play.classList.add('open'); play.setAttribute('aria-hidden', 'false');
+    beep([[587, 0, .08], [784, .07, .12]]);
+    return true;
+  };
+  play.querySelector('.tp-save').onclick = () => { closePlay(); wiggle($('tbBag')); tbSparkle($('tbBag'), 14); beep([[659, 0, .1], [523, .08, .15]]); };
+  play.querySelector('.tp-x').onclick = () => { closePlay(); beep([[660, 0, .1], [440, .07, .15]]); };
+  play.addEventListener('click', e => { if (e.target === play && play.querySelector('.tp-save').hidden) closePlay(); });
+  $('tbPanel').addEventListener('click', e => {
+    const slot = e.target.closest('.tb-slot'); if (!slot) return;
+    const id = data.backpack[[...slot.parentNode.children].indexOf(slot)];
+    if (id && item(id).play) tbAskPlay(id);
+  });
   render();
 })();
 </script>
@@ -2648,7 +2695,7 @@ function giveToy(id) {
   setTimeout(() => fx.remove(), couch ? 6600 : 5400);
 }
 const bagPanel = document.getElementById('tbPanel');
-const slotToy = slot => tbBag()[[...slot.parentNode.children].indexOf(slot)];
+const slotToy = slot => { const id = tbBag()[[...slot.parentNode.children].indexOf(slot)]; return id && ((window.tbItems || []).find(x => x.id === id) || {}).play ? null : id; };   // games are not toys: the toolbar asks Play now
 function emptyBag() { toyBeep(TOY_SAD, 'sine'); toyToast('Your backpack is empty. Toys are at the Department Store.'); }
 let toyDrag = null, toyDragged = false;
 const overPet = (x, y) => { const g = document.querySelector('.petg'); if (!g) return false; const r = g.getBoundingClientRect(); return x > r.left && x < r.right && y > r.top && y < r.bottom; };
