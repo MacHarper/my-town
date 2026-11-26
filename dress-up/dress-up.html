@@ -221,6 +221,7 @@
   .lockcov svg { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; }
   .sw.locked { position: relative; background: #f2f1f4; border-color: #f2f1f4; }
   /* during the tutorial the toolbar shows only Save and your person: the other tools can't be used yet */
+  html.tutorial #tb { pointer-events: none; }   /* nothing in the toolbar can be tapped during the tutorial */
   html.tutorial #tb #tbTown, html.tutorial #tb #tbHome, html.tutorial #tb .tb-sep, html.tutorial #tb #tbCard, html.tutorial #tb #tbBag { display: none; }
   .sw.locked .lockcov svg { top: 1px; right: 1px; width: 16px; height: 16px; }
   .closet-empty { grid-column: 1 / -1; padding: 22px 12px; text-align: center; color: #6b5a80; font-size: 16px; }
@@ -336,9 +337,13 @@
   #tb .tb-big.blue { --c: #4a9be0; --e: #3479b8; }
   #tb .tb-big:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--e); }
   #tb .tb-big svg { width: 26px; height: 26px; }
-  #tbToast { position: fixed; z-index: 97; left: 50%; top: 14px; transform: translate(-50%, -30px); background: #fff; box-shadow: 0 6px 16px rgba(74, 59, 92, .18); border-radius: 14px;
-    padding: 10px 18px; font: bold clamp(14px, 2.6vw, 18px) Verdana, Geneva, sans-serif; color: #4a3b5c; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; white-space: nowrap; }
-  #tbToast.show { opacity: 1; transform: translate(-50%, 0); }
+  /* every pop-up message in every game looks the same (Mac, Nov 25, 2026: the Vet Clinic's "Your backpack is empty" box):
+     a white box at the top, dark words, soft shadow. Long messages wrap instead of running off the screen. */
+  html body #toast, html body #tbToast { position: fixed; z-index: 120; left: 50%; top: 14px; right: auto; bottom: auto; transform: translate(-50%, -30px);
+    width: max-content; max-width: min(90vw, 640px); box-sizing: border-box; background: #fff; color: #2b2340; border: none; border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(74, 59, 92, .18); padding: 10px 18px; font: bold clamp(14px, 2.6vw, 18px) / 1.35 Verdana, Geneva, sans-serif;
+    text-align: center; white-space: normal; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; }
+  html body #toast.show, html body #tbToast.show { opacity: 1; transform: translate(-50%, 0); }
   @media (max-width: 600px) {
     #tb { right: 6px; bottom: 6px; gap: 6px; padding: 7px 7px 10px 8px; border-radius: 22px; }
     #tb .tb-btn { width: 46px; height: 46px; padding: 5px; border-radius: 14px; }
@@ -461,7 +466,9 @@
     }
   };
   let toastT;
-  window.tbToast = msg => { const t = $('tbToast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400); };
+  // players are learning to read: a message stays up at least 4.5 seconds, longer for longer messages
+  window.tbReadMs = msg => Math.max(4500, 1800 + String(msg).length * 90);
+  window.tbToast = msg => { const t = $('tbToast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), tbReadMs(msg)); };
   window.tbSetAvatar = (url, extra) => {
     data.avatar = url; Object.assign(data, extra || {}); tbSave(); render();
     const b = $('tbMe'); b.classList.remove('stamp'); void b.offsetWidth; b.classList.add('stamp');
@@ -1741,7 +1748,7 @@ let toastTimer;
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1300);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), tbReadMs(msg));
 }
 
 /* ---------- drag and drop (mouse + touch) ---------- */

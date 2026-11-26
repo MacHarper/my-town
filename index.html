@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>/* coming back to the town or a room: never flash the Welcome card */ if (location.hash === '#town' || /^#[a-z]+$/.test(location.hash)) document.documentElement.classList.add('skipstart');</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Town</title>
@@ -195,15 +194,22 @@
     box-shadow: 0 0 0 2px #f3edf8, 0 12px 34px rgba(74, 59, 92, .22); text-align: center; color: #4a3b5c;
     transform: scale(.7); transition: transform .4s cubic-bezier(.3, 1.5, .5, 1); }
   #tut.open .tu-card { transform: scale(1); }
-  .tu-skip { position: absolute; z-index: 2; right: 10px; top: 10px; width: 48px; height: 48px; border: none; border-radius: 16px; background: #5f5a6b;
-    box-shadow: 0 4px 0 #46424f; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .tu-skip:active { transform: translateY(4px); box-shadow: none; }
-  .tu-pic { height: 230px; margin: 8px 0 14px; border-radius: 22px; background: #f3edf8; display: flex; align-items: center; justify-content: center; gap: 14px; position: relative; overflow: hidden; }
+  .tu-map { width: 100%; height: 100%; background: center / contain no-repeat; position: relative; }
+  .tu-map svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #tuPtr { position: fixed; z-index: 118; width: 96px; height: 106px; pointer-events: none; opacity: 0; transition: opacity .3s; }
+  #tuPtr.on { opacity: 1; animation: tuBob 1s ease-in-out infinite; }
+  #tuPtr svg { width: 100%; height: 100%; overflow: visible; }
+  @keyframes tuBob { 50% { transform: translateY(12px); } }
+  /* during the tutorial the toolbar sits above the dimmed town but can't be tapped; the buttons a card talks about light up */
+  html.touring #tb { z-index: 115; pointer-events: none; }
+  html.touring #tb .tu-lit { box-shadow: 0 0 0 5px #fff6b0, 0 0 0 10px rgba(255, 201, 77, .6) !important; animation: tuLit 1.2s ease-in-out infinite; }
+  @keyframes tuLit { 50% { transform: translateY(-4px); } }
+  .tu-pic { height: 250px; margin: 8px 0 14px; border-radius: 22px; background: #f3edf8; display: flex; align-items: center; justify-content: center; gap: 14px; position: relative; overflow: hidden; }
   .tu-pic img.b { height: 150px; width: auto; filter: drop-shadow(0 6px 0 rgba(74, 59, 92, .08)); }
   .tu-pic img.b.small { height: 110px; opacity: .8; }
   .tu-tap { position: absolute; width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 201, 77, .55); box-shadow: 0 0 0 6px #fff6b0; animation: tuTap 1.4s ease-in-out infinite; pointer-events: none; }
   @keyframes tuTap { 0%, 100% { transform: scale(.7); opacity: .9; } 50% { transform: scale(1.15); opacity: .5; } }
-  .tu-arrow { width: 54px; height: 54px; flex: none; }
+  .tu-arrow { width: 64px; height: 64px; flex: none; }
   .tu-chip { min-width: 92px; height: 74px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; font-weight: bold; font-size: 22px; padding: 0 12px; box-shadow: 0 4px 0 var(--e); }
   .tu-chip img, .tu-chip svg { width: 44px; height: 44px; object-fit: contain; }
   .tu-chip .bd { width: 52px; height: 52px; border-radius: 12px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 4px; box-sizing: border-box; }
@@ -231,7 +237,7 @@
   .tu-go { background: #5fae7a; --e: #468a5e; }
   @media (max-width: 600px) { .tu-pic { height: 170px; } .tu-pic img.b { height: 105px; } .tu-pic img.b.small { height: 80px; } .tu-say { font-size: 19px; }
     .tu-things { gap: 8px; } .tu-thing .tu-chip { min-width: 50px; height: 50px; } .tu-chip img, .tu-chip svg { width: 34px; height: 34px; } .tu-chip .bd { width: 40px; height: 40px; } }
-  @media (prefers-reduced-motion: reduce) { .tu-tap, .tu-point { animation: none; } .tu-card { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .tu-tap, #tuPtr.on, html.touring #tb .tu-lit { animation: none; } .tu-card { transition: none; } }
 </style>
 </head>
 <body>
@@ -304,9 +310,13 @@
   #tb .tb-big.blue { --c: #4a9be0; --e: #3479b8; }
   #tb .tb-big:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--e); }
   #tb .tb-big svg { width: 26px; height: 26px; }
-  #tbToast { position: fixed; z-index: 97; left: 50%; top: 14px; transform: translate(-50%, -30px); background: #fff; box-shadow: 0 6px 16px rgba(74, 59, 92, .18); border-radius: 14px;
-    padding: 10px 18px; font: bold clamp(14px, 2.6vw, 18px) Verdana, Geneva, sans-serif; color: #4a3b5c; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; white-space: nowrap; }
-  #tbToast.show { opacity: 1; transform: translate(-50%, 0); }
+  /* every pop-up message in every game looks the same (Mac, Nov 25, 2026: the Vet Clinic's "Your backpack is empty" box):
+     a white box at the top, dark words, soft shadow. Long messages wrap instead of running off the screen. */
+  html body #toast, html body #tbToast { position: fixed; z-index: 120; left: 50%; top: 14px; right: auto; bottom: auto; transform: translate(-50%, -30px);
+    width: max-content; max-width: min(90vw, 640px); box-sizing: border-box; background: #fff; color: #2b2340; border: none; border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(74, 59, 92, .18); padding: 10px 18px; font: bold clamp(14px, 2.6vw, 18px) / 1.35 Verdana, Geneva, sans-serif;
+    text-align: center; white-space: normal; opacity: 0; pointer-events: none; transition: opacity .26s, transform .26s; }
+  html body #toast.show, html body #tbToast.show { opacity: 1; transform: translate(-50%, 0); }
   @media (max-width: 600px) {
     #tb { right: 6px; bottom: 6px; gap: 6px; padding: 7px 7px 10px 8px; border-radius: 22px; }
     #tb .tb-btn { width: 46px; height: 46px; padding: 5px; border-radius: 14px; }
@@ -429,7 +439,9 @@
     }
   };
   let toastT;
-  window.tbToast = msg => { const t = $('tbToast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400); };
+  // players are learning to read: a message stays up at least 4.5 seconds, longer for longer messages
+  window.tbReadMs = msg => Math.max(4500, 1800 + String(msg).length * 90);
+  window.tbToast = msg => { const t = $('tbToast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), tbReadMs(msg)); };
   window.tbSetAvatar = (url, extra) => {
     data.avatar = url; Object.assign(data, extra || {}); tbSave(); render();
     const b = $('tbMe'); b.classList.remove('stamp'); void b.offsetWidth; b.classList.add('stamp');
@@ -545,17 +557,9 @@
     <div id="roomFade"></div>
   </div>
 
-  <div id="start">
-    <div class="card">
-      <h2>Welcome to My Town!</h2>
-      <p>Tap a building on the map to go inside and play.<br>The <b>Boutique</b> is open now. More places are coming soon!</p>
-      <button class="big" id="go">Start</button>
-    </div>
-  </div>
 
   <div id="tut" aria-hidden="true" role="dialog" aria-label="How to play">
     <div class="tu-card">
-      <button class="tu-skip" id="tuSkip" aria-label="Skip"><svg viewBox="0 0 26 26" width="24" height="24"><path d="M7 7 L19 19 M19 7 L7 19" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/></svg></button>
       <div class="tu-pic" id="tuPic"></div>
       <p class="tu-say" id="tuSay"></p>
       <div class="tu-row"><div class="tu-dots" id="tuDots"></div><button class="tu-btn tu-next" id="tuNext"></button></div>
@@ -913,7 +917,7 @@ const toast = document.getElementById('toast');
 let toastTimer, leaving = false;
 function showToast(msg) {
   toast.textContent = msg; toast.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 1890);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), tbReadMs(msg));
 }
 
 function enter(g) {
@@ -1038,7 +1042,6 @@ function showRoom(id, fromMap) {
   roomSvg.classList.remove('zoom');
   const rf = document.getElementById('roomFade');
   rf.style.transition = 'none'; rf.classList.add('on'); void rf.offsetWidth; rf.style.transition = ''; rf.classList.remove('on');
-  start.classList.add('hide');
   // get the game ready in the background so it opens quickly
   r.spots.forEach(sp => {
     if (sp.link && !document.querySelector(`link[href="${sp.link}"]`)) {
@@ -1160,13 +1163,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeShop();
 // Your doll: open Dress Up (coming back returns here)
 window.tbOnMe = () => { history.replaceState(null, '', roomId ? '#' + roomId : '#town'); return false; };
 
-// ---------- Start screen ----------
-const start = document.getElementById('start');
-if (location.hash === '#town' || ROOMS[location.hash.slice(1)]) start.classList.add('hide');
-document.getElementById('go').addEventListener('click', () => {
-  beep([[440, 0, .12], [660, .08, .2]]);
-  start.classList.add('hide');
-});
 
 // ---------- Opening tutorial (Nov 25, 2026) ----------
 // The first time the town opens: a few picture cards show how to play, then Dress Up opens as "Choose an outfit"
@@ -1175,20 +1171,22 @@ document.getElementById('go').addEventListener('click', () => {
   const d = window.tbData || {}, el = document.getElementById('tut');
   if (d.tutorial === 'done') return;
   const $ = id => document.getElementById(id), pic = id => BLDG_IMG[id].src;
-  const ARROW = '<svg class="tu-arrow" viewBox="0 0 40 40"><path d="M8 20 H30 M22 12 L30 20 L22 28" fill="none" stroke="#b9a7d6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  const POINT = '<svg class="tu-point" viewBox="0 0 40 40"><path d="M8 8 L30 30 M30 16 V30 H16" fill="none" stroke="#4a9be0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const blockArrow = (c, e, hi) => `<path d="M-15 -80 H15 V-42 H36 L0 0 L-36 -42 H-15 Z" transform="translate(0 7)" fill="${e}" stroke="${e}" stroke-width="12" stroke-linejoin="round"/><path d="M-15 -80 H15 V-42 H36 L0 0 L-36 -42 H-15 Z" fill="${c}" stroke="${c}" stroke-width="12" stroke-linejoin="round"/><path d="M-6 -74 V-48" stroke="${hi}" stroke-width="7" stroke-linecap="round"/>`;
+  // arrows have depth like the town's pick arrow: a darker copy just under the main color, and one small light streak
+  const RIGHT = 'M-40 -14 H4 V-34 L40 0 L4 34 V14 H-40 Z';   // the same block arrow, pointing right
+  const ARROW = `<svg class="tu-arrow" viewBox="-50 -50 100 100"><path d="${RIGHT}" transform="translate(0 7)" fill="#9a86bd" stroke="#9a86bd" stroke-width="10" stroke-linejoin="round"/><path d="${RIGHT}" fill="#b9a7d6" stroke="#b9a7d6" stroke-width="10" stroke-linejoin="round"/><path d="M-32 -5 H-8" stroke="#d9cdee" stroke-width="6" stroke-linecap="round"/></svg>`;
   const NEXT = '<svg viewBox="0 0 26 26"><path d="M9 5 L17 13 L9 21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const inner = sel => { const n = document.querySelector(sel); return n ? n.outerHTML.replace(/ id="[^"]*"/g, '').replace(/ hidden(="")?/g, '') : ''; };
   const chip = (c, e, body) => `<div class="tu-chip" style="background:${c};--e:${e}">${body}</div>`;
   const thing = (c, e, body, word) => `<div class="tu-thing">${chip(c, e, body)}<span>${word}</span></div>`;
   const doll = d.avatar ? `<img src="${d.avatar}" alt="">` : inner('#tbEmpty');
   const CARDS = [
-    { say: 'Tap a place to go in.', pic: () => `<img class="b small" src="${pic('vet')}" alt=""><img class="b" id="tuMid" src="${pic('boutique')}" alt=""><img class="b small" src="${pic('department')}" alt=""><span class="tu-tap" id="tuTapMid"></span>` },
+    { say: 'Tap a place to go in.', pic: () => `<div class="tu-map" inert style="background-image:url(${MAP_IMG})">${document.getElementById('map').outerHTML.replace(' id="map"', '').replace(' class="zoom"', '')}</div>` },
     { say: 'Help with jobs to earn money.', pic: () => `<img class="b" src="${pic('vet')}" alt="">${ARROW}${chip('#5fae7a', '#468a5e', inner('#tbCard .tb-plain') + '+$10')}` },
     { say: 'Buy toys and clothes.', pic: () => `<img class="b" src="${pic('department')}" alt="">${ARROW}${chip('#ffc94d', '#d9a531', '<span class="bd">' + inner('#tbBag .tb-ic') + '</span>')}` },
-    { say: 'Your things are down here.', pic: () => `${POINT}<div class="tu-things">${thing('#5fae7a', '#468a5e', inner('#tbCard .tb-plain'), 'Money')}${thing('#ffc94d', '#d9a531', '<span class="bd">' + inner('#tbBag .tb-ic') + '</span>', 'Backpack')}${thing('#fff', '#f5bcd0', doll, 'Closet')}</div>` },
-    { say: 'Tap Save to keep your game.', pic: () => `${POINT}<div class="tu-things tu-big">${thing('#5f5a6b', '#46424f', inner('#tbSaveBtn .tb-plain'), 'Save')}${ARROW}${chip('#fffaf5', '#e6dcef', '<svg viewBox="0 0 40 40"><path d="M10 4 H25 L32 11 V36 H10 Z" fill="#ddd0ec"/><path d="M25 4 V11 H32" fill="#b9a7d6"/><path d="M15 21 L19 25 L27 16" fill="none" stroke="#5fae7a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>')}</div>` },
-    { say: 'Time to get dressed.', go: true, pic: () => `${chip('#e0457b', '#b8336a', '<svg viewBox="0 0 24 24"><path d="M4 14C4 7 7.6 3 12 3s8 4 8 10c0 3-.8 6-2 8l-1-7c-3-1-6.5-3-8-6-1 3-3 5-3 6v7c-1.2-2-2-4-2-7z" fill="#fff"/></svg>')}${ARROW}${chip('#4a9be0', '#3479b8', '<svg viewBox="0 0 24 24"><path d="M8 3 4 5 1 9.5 4.5 12 6 10.5V21h12V10.5l1.5 1.5L23 9.5 20 5l-4-2c-1 2-2.4 3-4 3s-3-1-4-3z" fill="#fff"/></svg>')}${ARROW}${chip('#fff', '#f5bcd0', doll)}` },
+    { say: 'Your things are down here.', tb: ['tbCard', 'tbBag', 'tbMe'], pic: () => `<div class="tu-things">${thing('#5fae7a', '#468a5e', inner('#tbCard .tb-plain'), 'Money')}${thing('#ffc94d', '#d9a531', '<span class="bd">' + inner('#tbBag .tb-ic') + '</span>', 'Backpack')}${thing('#fff', '#f5bcd0', doll, 'Closet')}</div>` },
+    { say: 'Tap Save to keep your game.', tb: ['tbSaveBtn'], pic: () => `<div class="tu-things tu-big">${thing('#5f5a6b', '#46424f', inner('#tbSaveBtn .tb-plain'), 'Save')}${ARROW}${chip('#fffaf5', '#e6dcef', '<svg viewBox="0 0 40 40"><path d="M10 4 H25 L32 11 V36 H10 Z" fill="#ddd0ec"/><path d="M25 4 V11 H32" fill="#b9a7d6"/><path d="M15 21 L19 25 L27 16" fill="none" stroke="#5fae7a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>')}</div>` },
+    { say: 'Time to get dressed!', go: true, pic: () => `${chip('#e0457b', '#b8336a', '<svg viewBox="0 0 24 24"><path d="M4 14C4 7 7.6 3 12 3s8 4 8 10c0 3-.8 6-2 8l-1-7c-3-1-6.5-3-8-6-1 3-3 5-3 6v7c-1.2-2-2-4-2-7z" fill="#fff"/></svg>')}${ARROW}${chip('#4a9be0', '#3479b8', '<svg viewBox="0 0 24 24"><path d="M8 3 4 5 1 9.5 4.5 12 6 10.5V21h12V10.5l1.5 1.5L23 9.5 20 5l-4-2c-1 2-2.4 3-4 3s-3-1-4-3z" fill="#fff"/></svg>')}${ARROW}${chip('#fff', '#f5bcd0', doll)}` },
   ];
   const DONE = { say: 'You are ready to play!', end: true, pic: () => d.avatar ? `<img class="b" style="height:92%" src="${d.avatar}" alt="">` : chip('#fff', '#f5bcd0', doll) };
   let k = 0, list = d.tutorial === 'dressed' ? [DONE] : CARDS;
@@ -1196,14 +1194,28 @@ document.getElementById('go').addEventListener('click', () => {
     const c = list[k];
     $('tuPic').innerHTML = c.pic(); $('tuSay').textContent = c.say;
     $('tuDots').innerHTML = list.length > 1 ? list.map((_, i) => `<button class="${i === k ? 'on' : ''}" data-k="${i}" aria-label="Card ${i + 1}"><i></i></button>`).join('') : '';
-    const mid = $('tuMid'), tap = $('tuTapMid');   // the ring sits on the building's door
-    if (mid && tap) { const place = () => { tap.style.left = (mid.offsetLeft + mid.offsetWidth * .64 - 28) + 'px'; tap.style.top = (mid.offsetTop + mid.offsetHeight * .72 - 28) + 'px'; };   /* offsets ignore the card's pop-in scale */ mid.complete ? place() : mid.onload = place; setTimeout(place, 450); }
+    pointAt(c.tb);
     const b = $('tuNext');
     b.className = 'tu-btn ' + (c.go || c.end ? 'tu-go' : 'tu-next');
     b.innerHTML = c.go ? "Let's go" + NEXT : c.end ? 'Play' : NEXT;
     b.setAttribute('aria-label', c.go ? "Let's go" : c.end ? 'Play' : 'Next');
   }
-  function finish() { d.tutorial = 'done'; tbSave(); el.classList.remove('open'); el.setAttribute('aria-hidden', 'true'); }
+  // cards about the toolbar: those buttons light up above the dimmed town, and a big arrow outside the card points down at them.
+  // The toolbar can't be tapped during the tutorial.
+  const ptr = document.createElement('div'); ptr.id = 'tuPtr'; ptr.setAttribute('aria-hidden', 'true');
+  ptr.innerHTML = `<svg viewBox="-50 -95 100 110">${blockArrow('#4a9be0', '#3479b8', '#8cc3f0')}</svg>`;
+  document.body.appendChild(ptr);
+  function pointAt(ids) {
+    document.querySelectorAll('.tu-lit').forEach(b => b.classList.remove('tu-lit'));
+    if (!ids) { ptr.classList.remove('on'); return; }
+    const rs = ids.map(id => { const b = document.getElementById(id); b.classList.add('tu-lit'); return b.getBoundingClientRect(); });
+    const left = Math.min(...rs.map(r => r.left)), right = Math.max(...rs.map(r => r.right)), top = Math.min(...rs.map(r => r.top));
+    ptr.style.left = ((left + right) / 2 - ptr.offsetWidth / 2) + 'px'; ptr.style.top = (top - ptr.offsetHeight - 10) + 'px';
+    ptr.classList.add('on');
+  }
+  addEventListener('resize', () => { if (el.classList.contains('open')) pointAt(list[k].tb); });
+  document.documentElement.classList.add('touring');
+  function finish() { d.tutorial = 'done'; tbSave(); el.classList.remove('open'); el.setAttribute('aria-hidden', 'true'); pointAt(null); document.documentElement.classList.remove('touring'); }
   $('tuNext').onclick = () => {
     const c = list[k];
     if (c.go) {   // Dress Up as "Choose an outfit"; All Done comes back to the town
@@ -1215,8 +1227,6 @@ document.getElementById('go').addEventListener('click', () => {
     beep([[440, 0, .1], [660, .07, .15]]); k++; show();
   };
   $('tuDots').onclick = e => { const b = e.target.closest('button'); if (!b) return; beep([[440, 0, .1], [660, .07, .15]]); k = +b.dataset.k; show(); };   // tap a dot to go back or ahead
-  $('tuSkip').onclick = () => { beep([[660, 0, .1], [440, .07, .15]]); finish(); };
-  start.classList.add('hide');   // the tutorial takes the Welcome card's place
   show(); setTimeout(() => { el.classList.add('open'); el.setAttribute('aria-hidden', 'false'); }, 350);
 })();
 </script>
