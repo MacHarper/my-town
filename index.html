@@ -1566,8 +1566,9 @@ function openShop(sp) {
   el.classList.add('open'); el.setAttribute('aria-hidden', 'false');
   beep([[523, 0, .1], [659, .08, .1], [784, .16, .2]]);
 }
-let shopBack = null;   // the room whose card opened the shop: closing the shop shows that card again
-function leaveShop() { closeShop(); const id = shopBack; shopBack = null; if (id && roomId === id) showCareer(id); }
+let shopBack = null;   // the room whose card opened the shop
+// closing the shop leaves you in the room with its arrow showing what to do next (the cafe: Enter the kitchen), no card again (Mac, Nov 26, 2026)
+function leaveShop() { closeShop(); shopBack = null; }
 function closeShop() { closeBuy(); const el = document.getElementById('shop'); el.classList.remove('open'); el.setAttribute('aria-hidden', 'true'); }
 function buyItem(card) {
   const it = tbItems.find(i => i.id === card.dataset.id);
@@ -1585,8 +1586,7 @@ function buyItem(card) {
   const s = Math.min(.5, 48 / a.width);
   fly.style.transform = `translate(${b.left + b.width / 2 - (a.left + a.width / 2)}px, ${b.top + b.height / 2 - (a.top + a.height / 2)}px) scale(${s})`; fly.style.opacity = '0';
   setTimeout(() => { fly.remove(); tbSparkle(tbBagButton(), 16); }, 760);
-  if (it.play) setTimeout(() => { closeShop(); tbAskPlay(it.id, true); }, 900);
-  if (it.kind === 'food') setTimeout(() => { shopBack = null; closeShop(); history.replaceState(null, '', '#town'); showMap(); }, 1000);   // bought at the cafe: back to town (Mac, Nov 26, 2026)   // a game: Play now or Save in backpack (Mac, Nov 26, 2026)
+  if (it.play) setTimeout(() => { closeShop(); tbAskPlay(it.id, true); }, 900);   // a game: Play now or Save in backpack (Mac, Nov 26, 2026)
 }
 // tap an item: a pop-up shows it big, with its name, price and a Buy button (Mac, Nov 25, 2026)
 function openBuy(card) {
