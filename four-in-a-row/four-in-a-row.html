@@ -799,7 +799,7 @@ function pickColumn() {
   const cols = [...Array(N).keys()].filter(c => lowest(grid, c) >= 0);
   const tryMove = (c, who) => { const g = grid.map(r => r.slice()); g[lowest(g, c)][c] = who; return g; };
   for (const c of cols) if (fourAt(tryMove(c, 'cpu'), 'cpu')) return c;                       // win now
-  for (const c of cols) if (fourAt(tryMove(c, 'you'), 'you') && Math.random() < .85) return c;  // block you (most of the time)
+  for (const c of cols) if (fourAt(tryMove(c, 'you'), 'you') && Math.random() < .75) return c;  // block you (most of the time; 10% easier, Mac Nov 26)
   const safe = cols.filter(c => {                                                                // don't set you up to win right above
     const g = tryMove(c, 'cpu'), r = lowest(g, c);
     if (r < 0) return true; g[r][c] = 'you'; return !fourAt(g, 'you');
@@ -810,7 +810,7 @@ function pickColumn() {
     for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {                                  // pieces of its own next to this hole
       for (const sgn of [1, -1]) { const y = r + dr * sgn, x = c + dc * sgn; if (y >= 0 && y < N && x >= 0 && x < N && g[y][x] === 'cpu') s += 1.2; }
     }
-    return s + Math.random() * 2.2; };
+    return s + Math.random() * 2.8; };
   return pool.reduce((a, b) => score(b) > score(a) ? b : a);
 }
 function computerTurn() {
