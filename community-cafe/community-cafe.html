@@ -1614,8 +1614,9 @@ const FOODS = {
 // Food you put in goes down inside the box (behind its front); once everything on the list is in, the box shuts by itself.
 const FOOD_H = { apple: 32, soup: 44, pasta: 88, bread: 48, cereal: 120, milk: 100, pb: 48, rice: 72, bananas: 56, crackers: 88 };   // about 4 units to a centimeter
 const FOOD_LABEL = { apple: 'Apple', soup: 'Soup', pasta: 'Pasta', bread: 'Bread', cereal: 'Cereal', milk: 'Milk', pb: 'Peanut butter', rice: 'Rice', bananas: 'Bananas', crackers: 'Crackers' };
-// where the food stands in the packing pop-up: three on a wall shelf, three on the counter, bigger than before next to the box (Mac, Nov 26)
-const SHELF = { x0: 130, x1: 900, top: 446 }, FOOD_SPOTS = [[260, 446], [515, 446], [770, 446], [260, 820], [515, 820], [770, 820]];
+// the packing pop-up is a stocked pantry (Mac, Nov 26): three foods on a deep wall shelf, three on the counter, a few of each side by side.
+// You take one at a time; the rest stay. Labels sit on the shelf's lip and on the counter's edge.
+const SHELF = { x0: 70, x1: 1000, top: 420 }, ROWS = [SHELF.top + 4, 822], FOOD_X = [60, 1020];
 const POPK = 2.3, fh = k => FOOD_H[k] * POPK;   // the pop-up is a close-up, so everything is bigger
 const smallLabel = (cx, y, text) => { const w = text.length * 11.5 + 30; return `<g class="label" pointer-events="none"><rect x="${cx - w / 2}" y="${y}" width="${w}" height="38" rx="19" fill="#fff" stroke="#4a3b5c" stroke-width="4"/><text x="${cx}" y="${y + 27}" text-anchor="middle" font-size="21" font-weight="bold" fill="#4a3b5c">${text}</text></g>`; };
 // the box: its open, half shut and closed pictures are lined up by their front bottom corner and the width of the box's body
@@ -1625,17 +1626,17 @@ const BOXPIC = { 'box-open': [.515, .998, .764], 'box-half': [.509, .995, .737],
 function boxPic(key, extra) { const [fx, fy, bw] = BOXPIC[key], [W, H] = SIZE[key], w = BOXF.w / bw, h = w * H / W; return `<image href="${ART[key]}" x="${BOXF.x - fx * w}" y="${BOXF.y - fy * h}" width="${w}" height="${h}" ${extra || ''}/>`; }
 const OKf = () => BOXF.w / 430, ob = (x, y) => [BOXF.x + (x - 290) * OKf(), BOXF.y + (y - 452) * OKf()];   // a point of the open box picture (563 x 453)
 const CKf = () => BOXF.w / 440, cb = (x, y) => [BOXF.x + (x - 224) * CKf(), BOXF.y + (y - 389) * CKf()];   // a point of the closed box picture (445 x 392)
-const rimY = x => x < 290 ? 163 + (x - 85) * 65 / 205 : 228 - (x - 290) * 73 / 205;   // the open box's front rim
+const rimY = x => x < 285 ? 155 + (x - 75) * 63 / 210 : 218 - (x - 285) * 73 / 200;   // the open box's front rim: the edge of its dark inside (Mac, Nov 26)
 const TRUCK = { x: 1494, y: 410, w: 192, h: 240 }, IN_TRUCK = { x: 1588, y: 652, k: .375 };   // the open back of the truck; where the box sits in it, and how small
 let NEED, have, inBox = [];
 function pack() {
   drawRoom();
-  // the list: 3 or 4 foods, with how many of each
+  // the list: 3 or 4 foods, with how many of each; the tall boxes come first on the list so they go in the back of the box (Mac, Nov 26)
   const all = Object.keys(FOODS).sort(() => Math.random() - .5), n = rnd([3, 4]);
-  NEED = {}; all.slice(0, n).forEach(k => NEED[k] = rnd([1, 2, 3])); have = {};
-  const out = all.slice(0, 6).sort(() => Math.random() - .5);   // the table holds the foods you need, plus a couple you don't
+  NEED = {}; all.slice(0, n).sort((a, b) => FOOD_H[b] - FOOD_H[a]).forEach(k => NEED[k] = rnd([1, 2, 3])); have = {}; inBox = [];
+  const out = all.slice(0, 6);   // the foods you need, plus a couple you don't
   // packing happens in a close-up pop-up of the table (Mac, Nov 26): the wall, the table top and its wood front, like Mix
-  const P = MIX;
+  const P = MIX, S = SHELF;
   add(`<g id="packPop"><rect x="0" y="0" width="2000" height="1116" fill="rgba(43,35,64,.3)"/>
     <clipPath id="packClip"><rect x="${P.x}" y="${P.y}" width="${P.w}" height="${P.h}" rx="46"/></clipPath>
     <rect x="${P.x - 8}" y="${P.y - 8}" width="${P.w + 16}" height="${P.h + 16}" rx="54" fill="#fff"/>
@@ -1643,25 +1644,61 @@ function pack() {
       <rect x="${P.x}" y="${P.y}" width="${P.w}" height="60" fill="#efd8bf"/>
       <rect x="${P.x}" y="${P.counter}" width="${P.w}" height="${P.base - P.counter}" fill="#fbf3e7"/><rect x="${P.x}" y="${P.counter - 14}" width="${P.w}" height="26" rx="10" fill="#fffaf2"/>
       <rect x="${P.x}" y="${P.base}" width="${P.w}" height="${P.y + P.h - P.base}" fill="#7e5234"/><rect x="${P.x}" y="${P.base}" width="${P.w}" height="18" fill="#6b4128"/>
-      <rect x="${SHELF.x0 + 6}" y="${SHELF.top + 24}" width="${SHELF.x1 - SHELF.x0 - 12}" height="22" rx="10" fill="rgba(74,59,92,.16)" filter="url(#soft)"/>
-      ${[SHELF.x0 + 70, SHELF.x1 - 70].map(x => `<path d="M${x - 12} ${SHELF.top + 20} h24 v26 q0 18 -24 32 z" fill="#a8744a"/>`).join('')}
-      <rect x="${SHELF.x0}" y="${SHELF.top - 12}" width="${SHELF.x1 - SHELF.x0}" height="16" rx="6" fill="#e2bb8e"/><rect x="${SHELF.x0}" y="${SHELF.top + 2}" width="${SHELF.x1 - SHELF.x0}" height="22" rx="6" fill="#b98557"/>
-      ${foodShareSign(1000, 60)}</g>
+      <rect x="${S.x0 + 10}" y="${S.top + 40}" width="${S.x1 - S.x0 - 20}" height="34" rx="14" fill="rgba(74,59,92,.18)" filter="url(#soft)"/>
+      ${[S.x0 + 90, S.x1 - 90].map(x => `<path d="M${x - 14} ${S.top + 40} h28 v34 q0 26 -28 44 z" fill="#a8744a"/>`).join('')}
+      <path d="M${S.x0 + 14} ${S.top - 30} H${S.x1 - 14} L${S.x1} ${S.top + 14} H${S.x0} Z" fill="#e2bb8e"/>
+      <rect x="${S.x0}" y="${S.top + 10}" width="${S.x1 - S.x0}" height="32" rx="8" fill="#b98557"/><rect x="${S.x0}" y="${S.top + 10}" width="${S.x1 - S.x0}" height="5" rx="2" fill="#cf9d6c"/>
+      <g id="foodSign"></g></g>
     <g id="packDefs"></g><g id="packThings"></g></g>`, document.getElementById('front'));
   THINGS = 'packThings'; BOXF = POP_BOX;
-  drawBox('packDefs');
-  out.forEach((k, i) => { const [x, bottom] = FOOD_SPOTS[i], g = thing('food-' + k, pic('f-' + k, x, bottom, fh(k)), 'pick on');
-    g.dataset.food = k; g.dataset.x = x; g.dataset.bottom = bottom; g.insertAdjacentHTML('afterend', smallLabel(x, bottom + (bottom === SHELF.top ? 34 : 12), FOOD_LABEL[k])); });
+  drawBox('packDefs'); foodShareSign();
+  // three foods on the shelf, three on the counter: each row shares out its width, a big one with a small one
+  const wOf = k => { const [W, H] = SIZE['f-' + k]; return fh(k) * W / H; }, copies = k => wOf(k) < 110 ? 4 : 3;
+  const bySize = out.slice().sort((a, b) => wOf(b) - wOf(a)), rows = [[], []];
+  bySize.forEach((k, i) => rows[[0, 1, 1, 0, 0, 1][i]].push(k));
+  rows.forEach(r => r.sort(() => Math.random() - .5));
+  const labels = []; let z = 0;
+  rows.forEach((r, ri) => {
+    const bottom = ROWS[ri], room0 = FOOD_X[1] - FOOD_X[0] - 40, gap = 36;
+    let f = .5; const span = k => wOf(k) * (1 + f * (copies(k) - 1));
+    while (f > .3 && r.reduce((a, k) => a + span(k), 0) + gap * (r.length - 1) > room0) f -= .02;
+    let x = FOOD_X[0] + 20 + (room0 - r.reduce((a, k) => a + span(k), 0) - gap * (r.length - 1)) / 2;
+    r.forEach(k => {
+      const w = wOf(k), c = copies(k), x0 = x + w / 2, xs = [...Array(c).keys()].map(j => x0 + j * w * f);
+      const order = c === 4 ? [0, 3, 1, 2] : [0, 2, 1];   // the middle one stands in front
+      order.forEach(j => { const g = thing('food-' + k, pic('f-' + k, xs[j], bottom, fh(k)), 'pick');
+        g.dataset.food = k; g.dataset.x = xs[j]; g.dataset.bottom = bottom; g.dataset.z = z++; });
+      labels.push(smallLabel((xs[0] + xs[c - 1]) / 2, ri === 0 ? S.top + 7 : bottom + 14, FOOD_LABEL[k]));
+      x += span(k) + gap;
+    });
+  });
+  document.getElementById('packThings').insertAdjacentHTML('beforeend', labels.join(''));
   const card = document.getElementById('list'); card.hidden = false; drawList();
+  lightNextFood(true);
   step = 0; ready = false; drawTasks(true);
 }
-// the sign on the packing room wall says what the job is for (Mac, Nov 26): the cafe gives this food to families who need it
-function foodShareSign(x, y) {
-  return `<g pointer-events="none"><rect x="${x - 4}" y="${y + 6}" width="428" height="150" rx="30" fill="rgba(74,59,92,.14)" filter="url(#soft)"/>
-    <rect x="${x}" y="${y}" width="420" height="144" rx="28" fill="#fffaf5" stroke="#d38161" stroke-width="6"/>
-    <path transform="translate(${x + 72} ${y + 74}) scale(2.3)" d="M0 14 C-22 0 -18 -16 -8 -16 C-4 -16 -1 -13 0 -10 C1 -13 4 -16 8 -16 C18 -16 22 0 0 14 Z" fill="#e2574c"/>
-    <text x="${x + 262}" y="${y + 66}" text-anchor="middle" font-size="46" font-weight="bold" fill="#ad5f42">Food Share</text>
-    <text x="${x + 262}" y="${y + 112}" text-anchor="middle" font-size="27" font-weight="bold" fill="#4a3b5c">Free food for families</text></g>`;
+// at the start, one of the first food on the list glows; after that only the one under your finger does (Mac, Nov 26)
+function lightNextFood(first) {
+  room.querySelectorAll('.thing[data-food]').forEach(g => g.classList.remove('on'));
+  if (!first) return;
+  const k = Object.keys(NEED)[0], c = [...room.querySelectorAll(`.thing[data-food="${k}"]`)].pop(); if (c) c.classList.add('on');
+}
+// the sign on the packing room wall says what the job is for (Mac, Nov 26): the cafe gives this food to families who need it.
+// Two centered lines (a heart and "Food Share", then "Free food for families"), with the card sized to fit the words.
+function foodShareSign() {
+  const el = document.getElementById('foodSign');
+  el.innerHTML = `<rect class="sh" rx="30" fill="rgba(74,59,92,.14)" filter="url(#soft)"/><rect class="bd" rx="28" fill="#fffaf5" stroke="#d38161" stroke-width="6"/>
+    <path class="ht" d="M0 14 C-22 0 -18 -16 -8 -16 C-4 -16 -1 -13 0 -10 C1 -13 4 -16 8 -16 C18 -16 22 0 0 14 Z" fill="#e2574c"/>
+    <text class="t1" font-size="44" font-weight="bold" fill="#ad5f42">Food Share</text>
+    <text class="t2" text-anchor="middle" font-size="26" font-weight="bold" fill="#4a3b5c">Free food for families</text>`;
+  const q = c => el.querySelector('.' + c), w1 = q('t1').getComputedTextLength(), w2 = q('t2').getComputedTextLength();
+  const heart = 46, line1 = heart + 14 + w1, W = Math.max(line1, w2) + 80, H = 150;
+  const cx = Math.min(1240, 1480 - W / 2), y = 56, x = cx - W / 2;
+  [['bd', 0, 0], ['sh', -3, 7]].forEach(([c, dx, dy]) => { const r = q(c); r.setAttribute('x', x + dx); r.setAttribute('y', y + dy); r.setAttribute('width', W); r.setAttribute('height', H); });
+  const l1 = cx - line1 / 2;
+  q('ht').setAttribute('transform', `translate(${l1 + heart / 2} ${y + 50}) scale(1.6)`);
+  q('t1').setAttribute('x', l1 + heart + 14); q('t1').setAttribute('y', y + 66);
+  q('t2').setAttribute('x', cx); q('t2').setAttribute('y', y + 116);
 }
 function drawList() {
   const card = document.getElementById('list');
@@ -1669,7 +1706,7 @@ function drawList() {
 }
 function drawBox(where) {
   const pts = a => a.map(([x, y]) => ob(x, y).join(',')).join(' ');
-  const rim = pts([[-400, -600], [1000, -600], [1000, 155], [495, 155], [290, 228], [85, 163], [-400, 163]]);   // everything above the box's front rim
+  const rim = pts([[-400, -600], [1000, -600], [1000, 145], [485, 145], [285, 218], [75, 155], [-400, 155]]);   // everything above the box's front rim
   document.getElementById(where || 'behind').insertAdjacentHTML('beforeend', `<clipPath id="aboveRim"><polygon points="${rim}"/></clipPath>
     <mask id="tapeMask" maskUnits="userSpaceOnUse" x="0" y="0" width="2000" height="1116"><g id="tapeDabs"></g></mask>
     <polygon id="boxShadow" points="${pts([[55, 390], [290, 466], [520, 382], [285, 310]])}" fill="rgba(74,59,92,.3)" filter="url(#soft)"/>`);   // the box's shadow, right under its bottom on the floor
@@ -1677,30 +1714,35 @@ function drawBox(where) {
     <g class="bx-half" style="opacity:0">${boxPic('box-half')}</g>
     <g class="bx-closed" style="opacity:0">${boxPic('box-closed-plain')}${boxPic('box-closed', 'mask="url(#tapeMask)"')}</g>`);
 }
-function boxSlot(i, k) {   // where the i-th food stands inside the box: a back row, then a front row (drawn later, so in front); about half of it is hidden behind the front
-  // it stays inside the box's opening (between its left and right corners), never out over a flap (Mac, Nov 26)
-  const row = i < 3 ? 0 : i < 5 ? 1 : i < 8 ? 2 : 3, xs = [[200, 285, 370], [240, 330], [215, 285, 355], [250, 320]][row], x0 = xs[(i - [0, 3, 5, 8][row]) % xs.length];
-  const [W, H] = SIZE['f-' + k], hw = fh(k) * W / H / 2 / OKf(), x = hw > 190 ? 285 : Math.max(95 + hw, Math.min(475 - hw, x0));
-  const depth = .5 * fh(k) / OKf(), [vx, vy] = ob(x, rimY(x) - [34, 10, 22, 4][row] + depth);
-  return [vx, vy];
+// where each food stands inside the box (Mac, Nov 26): it fills from the back corner forward, so the back never looks empty.
+// [x, how far back] in the box picture; the tall boxes (first on the list) take the back spots. About 60% of each is hidden below the front edge.
+const BOX_SPOTS = [[285, 70], [222, 52], [348, 52], [190, 34], [380, 34], [255, 26], [318, 26], [215, 10], [355, 10], [285, 4], [245, 0], [325, 0]];
+function boxSlot(k) {
+  // the next free spot, back to front; small things keep less of themselves showing at the back so they never float
+  const i = inBox.length - 1, [x0, up0] = BOX_SPOTS[i % BOX_SPOTS.length];
+  const [W, H] = SIZE['f-' + k], hw = fh(k) * W / H / 2 / OKf(), x = hw > 175 ? 285 : Math.max(105 + hw, Math.min(465 - hw, x0));
+  const depth = .6 * fh(k) / OKf(), up = Math.min(up0, depth * .7);
+  return ob(x, rimY(x) + depth - up);
 }
 HANDLERS['food-*'] = Object.assign(HANDLERS['food-*'] || {}, MODE === 'pack' ? {
   pick() { return step === 0 && !ready; },
   grab(d) {   // the counter keeps its food; you carry one
-    const k = d.g.dataset.food;
-    d.carry = add(`<g style="pointer-events:none">${pic('f-' + k, +d.g.dataset.x, +d.g.dataset.bottom, fh(k))}</g>`, document.getElementById('fx'));
-    d.g.style.transform = ''; d.g.classList.remove('held'); d.food = k; d.home = +d.g.dataset.x; d.homeB = +d.g.dataset.bottom; d.g = d.carry;
+    const k = d.g.dataset.food, copy = d.g;
+    d.carry = add(`<g style="pointer-events:none">${pic('f-' + k, +copy.dataset.x, +copy.dataset.bottom, fh(k))}</g>`, document.getElementById('fx'));
+    copy.style.transform = ''; copy.classList.remove('held', 'on'); copy.style.visibility = 'hidden';   // you took this one; the others stay on the shelf
+    d.copy = copy; d.food = k; d.home = +copy.dataset.x; d.homeB = +copy.dataset.bottom; d.g = d.carry;
   },
   drop(d) {
     const k = d.food, c = d.carry, b = T('box').getBBox();
-    const back = () => { c.style.transition = 'transform .35s ease-out, opacity .3s .1s'; c.style.transform = ''; c.style.opacity = 0; setTimeout(() => c.remove(), 450); };
+    const back = () => { c.style.transition = 'transform .35s ease-out'; c.style.transform = ''; setTimeout(() => { c.remove(); const cp = d.copy, after = [...cp.parentNode.children].find(x => x.dataset.z && +x.dataset.z > +cp.dataset.z);
+      cp.parentNode.insertBefore(cp, after || cp.parentNode.querySelector('.label')); cp.style.visibility = ''; }, 360); };   // it goes back to its place
     if (!near(d, b, 30)) { back(); return true; }
     const n = NEED[k] || 0, got = have[k] || 0;
     if (!n) { back(); beep(SAD, 'sine'); showToast(`We don't need ${FOODS[k][1]} today.`); return true; }
     if (got >= n) { back(); beep(SAD, 'sine'); showToast(`We only need ${n} ${n === 1 ? FOODS[k][0] : FOODS[k][1]}.`); return true; }
-    have[k] = got + 1; const i = inBox.length; inBox.push(k); drawList();
+    have[k] = got + 1; inBox.push(k); drawList(); lightNextFood(false); d.copy.remove();
     // it goes over the box, then down inside it (behind the front of the box)
-    const [sx, sb] = boxSlot(i, k), h = fh(k), lift = h + 50;
+    const [sx, sb] = boxSlot(k), h = fh(k), lift = h + 50;
     c.style.transition = 'transform .25s ease-out'; c.style.transform = `translate(${sx - d.home}px, ${sb - lift - d.homeB}px)`;
     const all = Object.entries(NEED).every(([q, m]) => (have[q] || 0) >= m);
     if (all) room.querySelectorAll('.thing[data-food]').forEach(g => g.classList.remove('pick', 'on'));
