@@ -1893,8 +1893,8 @@ function payMe(amount, words, say, again) {
 }
 document.getElementById('adAgain').addEventListener('click', () => location.reload());
 document.getElementById('adTown').addEventListener('click', () => { location.href = '../index.html#town'; });
-// once you picked a job, the top left button goes back to the cafe room you came from (Mac, Nov 26): the kitchen for Make food, the Food Share room for Box food
-{ const bb = document.querySelector('header .backtown'); bb.href = '../index.html#cafe';   // back to the cafe's first screen with its welcome pop-up (Mac, Nov 26) bb.setAttribute('aria-label', 'Back to cafe');
+// once you picked a job, the top left button goes back to the cafe
+{ const bb = document.querySelector('header .backtown'); bb.href = '../index.html#cafe'; bb.setAttribute('aria-label', 'Back to cafe');   // back to the cafe's first screen with its welcome pop-up (Mac, Nov 26)
   bb.querySelector('.back-words').textContent = 'Back to cafe'; bb.querySelector('.back-ic').src = ART.logo; }
 
 // ---------- frame: as big as the screen allows (the room keeps its shape) ----------
