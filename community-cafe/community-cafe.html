@@ -1614,11 +1614,12 @@ const FOODS = {
 // Food you put in goes down inside the box (behind its front); once everything on the list is in, the box shuts by itself.
 const FOOD_H = { apple: 32, soup: 44, pasta: 88, bread: 48, cereal: 120, milk: 100, pb: 48, rice: 72, bananas: 56, crackers: 88 };   // about 4 units to a centimeter
 const FOOD_LABEL = { apple: 'Apple', soup: 'Soup', pasta: 'Pasta', bread: 'Bread', cereal: 'Cereal', milk: 'Milk', pb: 'Peanut butter', rice: 'Rice', bananas: 'Bananas', crackers: 'Crackers' };
-const COUNTER = { x0: 230, step: 128, bottom: 820 };   // where the food stands on the counter in the packing pop-up (Mac, Nov 26)
-const POPK = 1.6, fh = k => FOOD_H[k] * POPK;   // the pop-up is a close-up, so everything is bigger
+// where the food stands in the packing pop-up: three on a wall shelf, three on the counter, bigger than before next to the box (Mac, Nov 26)
+const SHELF = { x0: 130, x1: 900, top: 446 }, FOOD_SPOTS = [[260, 446], [515, 446], [770, 446], [260, 820], [515, 820], [770, 820]];
+const POPK = 2.3, fh = k => FOOD_H[k] * POPK;   // the pop-up is a close-up, so everything is bigger
 const smallLabel = (cx, y, text) => { const w = text.length * 11.5 + 30; return `<g class="label" pointer-events="none"><rect x="${cx - w / 2}" y="${y}" width="${w}" height="38" rx="19" fill="#fff" stroke="#4a3b5c" stroke-width="4"/><text x="${cx}" y="${y + 27}" text-anchor="middle" font-size="21" font-weight="bold" fill="#4a3b5c">${text}</text></g>`; };
 // the box: its open, half shut and closed pictures are lined up by their front bottom corner and the width of the box's body
-const POP_BOX = { x: 1290, y: 862, w: 520 }, ROOM_BOX = { x: 1530, y: 1000, w: 320 };   // the box on the pop-up's counter, then on the room's floor
+const POP_BOX = { x: 1330, y: 862, w: 440 }, ROOM_BOX = { x: 1530, y: 1000, w: 320 };   // the box on the pop-up's counter, then on the room's floor
 let BOXF = POP_BOX;   // the front bottom corner, and the body's width
 const BOXPIC = { 'box-open': [.515, .998, .764], 'box-half': [.509, .995, .737], 'box-closed': [.503, .992, .989], 'box-closed-plain': [.503, .992, .989] };   // [corner x, corner y, body width] as parts of the picture
 function boxPic(key, extra) { const [fx, fy, bw] = BOXPIC[key], [W, H] = SIZE[key], w = BOXF.w / bw, h = w * H / W; return `<image href="${ART[key]}" x="${BOXF.x - fx * w}" y="${BOXF.y - fy * h}" width="${w}" height="${h}" ${extra || ''}/>`; }
@@ -1641,15 +1642,26 @@ function pack() {
     <g clip-path="url(#packClip)"><rect x="${P.x}" y="${P.y}" width="${P.w}" height="${P.h}" fill="#e6c7a6"/>
       <rect x="${P.x}" y="${P.y}" width="${P.w}" height="60" fill="#efd8bf"/>
       <rect x="${P.x}" y="${P.counter}" width="${P.w}" height="${P.base - P.counter}" fill="#fbf3e7"/><rect x="${P.x}" y="${P.counter - 14}" width="${P.w}" height="26" rx="10" fill="#fffaf2"/>
-      <rect x="${P.x}" y="${P.base}" width="${P.w}" height="${P.y + P.h - P.base}" fill="#7e5234"/><rect x="${P.x}" y="${P.base}" width="${P.w}" height="18" fill="#6b4128"/></g>
+      <rect x="${P.x}" y="${P.base}" width="${P.w}" height="${P.y + P.h - P.base}" fill="#7e5234"/><rect x="${P.x}" y="${P.base}" width="${P.w}" height="18" fill="#6b4128"/>
+      <rect x="${SHELF.x0 + 6}" y="${SHELF.top + 24}" width="${SHELF.x1 - SHELF.x0 - 12}" height="22" rx="10" fill="rgba(74,59,92,.16)" filter="url(#soft)"/>
+      ${[SHELF.x0 + 70, SHELF.x1 - 70].map(x => `<path d="M${x - 12} ${SHELF.top + 20} h24 v26 q0 18 -24 32 z" fill="#a8744a"/>`).join('')}
+      <rect x="${SHELF.x0}" y="${SHELF.top - 12}" width="${SHELF.x1 - SHELF.x0}" height="16" rx="6" fill="#e2bb8e"/><rect x="${SHELF.x0}" y="${SHELF.top + 2}" width="${SHELF.x1 - SHELF.x0}" height="22" rx="6" fill="#b98557"/>
+      ${foodShareSign(1000, 60)}</g>
     <g id="packDefs"></g><g id="packThings"></g></g>`, document.getElementById('front'));
   THINGS = 'packThings'; BOXF = POP_BOX;
   drawBox('packDefs');
-  out.forEach((k, i) => { const x = COUNTER.x0 + i * COUNTER.step, g = thing('food-' + k, pic('f-' + k, x, COUNTER.bottom, fh(k)), 'pick on');
-    g.dataset.food = k; g.dataset.x = x; g.insertAdjacentHTML('afterend', smallLabel(x, COUNTER.bottom + 10 + (i % 2) * 44, FOOD_LABEL[k])); });
+  out.forEach((k, i) => { const [x, bottom] = FOOD_SPOTS[i], g = thing('food-' + k, pic('f-' + k, x, bottom, fh(k)), 'pick on');
+    g.dataset.food = k; g.dataset.x = x; g.dataset.bottom = bottom; g.insertAdjacentHTML('afterend', smallLabel(x, bottom + (bottom === SHELF.top ? 34 : 12), FOOD_LABEL[k])); });
   const card = document.getElementById('list'); card.hidden = false; drawList();
   step = 0; ready = false; drawTasks(true);
-  guide('Pack the box. Check the list!');
+}
+// the sign on the packing room wall says what the job is for (Mac, Nov 26): the cafe gives this food to families who need it
+function foodShareSign(x, y) {
+  return `<g pointer-events="none"><rect x="${x - 4}" y="${y + 6}" width="428" height="150" rx="30" fill="rgba(74,59,92,.14)" filter="url(#soft)"/>
+    <rect x="${x}" y="${y}" width="420" height="144" rx="28" fill="#fffaf5" stroke="#d38161" stroke-width="6"/>
+    <path transform="translate(${x + 72} ${y + 74}) scale(2.3)" d="M0 14 C-22 0 -18 -16 -8 -16 C-4 -16 -1 -13 0 -10 C1 -13 4 -16 8 -16 C18 -16 22 0 0 14 Z" fill="#e2574c"/>
+    <text x="${x + 262}" y="${y + 66}" text-anchor="middle" font-size="46" font-weight="bold" fill="#ad5f42">Food Share</text>
+    <text x="${x + 262}" y="${y + 112}" text-anchor="middle" font-size="27" font-weight="bold" fill="#4a3b5c">Free food for families</text></g>`;
 }
 function drawList() {
   const card = document.getElementById('list');
@@ -1665,17 +1677,19 @@ function drawBox(where) {
     <g class="bx-half" style="opacity:0">${boxPic('box-half')}</g>
     <g class="bx-closed" style="opacity:0">${boxPic('box-closed-plain')}${boxPic('box-closed', 'mask="url(#tapeMask)"')}</g>`);
 }
-function boxSlot(i, k) {   // where the i-th food stands inside the box: a back row, then a front row (drawn later, so in front); its bottom is hidden behind the front
-  const row = i < 5 ? 0 : i < 9 ? 1 : 2, xs = row === 1 ? [150, 240, 340, 430] : [125, 207, 290, 373, 455], x = xs[(i - [0, 5, 9][row]) % xs.length];
-  const depth = Math.min(.4 * fh(k) / OKf(), 45), [vx, vy] = ob(x, rimY(x) - [22, 8, 0][row] + depth);
+function boxSlot(i, k) {   // where the i-th food stands inside the box: a back row, then a front row (drawn later, so in front); about half of it is hidden behind the front
+  // it stays inside the box's opening (between its left and right corners), never out over a flap (Mac, Nov 26)
+  const row = i < 3 ? 0 : i < 5 ? 1 : i < 8 ? 2 : 3, xs = [[200, 285, 370], [240, 330], [215, 285, 355], [250, 320]][row], x0 = xs[(i - [0, 3, 5, 8][row]) % xs.length];
+  const [W, H] = SIZE['f-' + k], hw = fh(k) * W / H / 2 / OKf(), x = hw > 190 ? 285 : Math.max(95 + hw, Math.min(475 - hw, x0));
+  const depth = .5 * fh(k) / OKf(), [vx, vy] = ob(x, rimY(x) - [34, 10, 22, 4][row] + depth);
   return [vx, vy];
 }
 HANDLERS['food-*'] = Object.assign(HANDLERS['food-*'] || {}, MODE === 'pack' ? {
   pick() { return step === 0 && !ready; },
   grab(d) {   // the counter keeps its food; you carry one
     const k = d.g.dataset.food;
-    d.carry = add(`<g style="pointer-events:none">${pic('f-' + k, +d.g.dataset.x, COUNTER.bottom, fh(k))}</g>`, document.getElementById('fx'));
-    d.g.style.transform = ''; d.g.classList.remove('held'); d.food = k; d.home = +d.g.dataset.x; d.g = d.carry;
+    d.carry = add(`<g style="pointer-events:none">${pic('f-' + k, +d.g.dataset.x, +d.g.dataset.bottom, fh(k))}</g>`, document.getElementById('fx'));
+    d.g.style.transform = ''; d.g.classList.remove('held'); d.food = k; d.home = +d.g.dataset.x; d.homeB = +d.g.dataset.bottom; d.g = d.carry;
   },
   drop(d) {
     const k = d.food, c = d.carry, b = T('box').getBBox();
@@ -1687,7 +1701,7 @@ HANDLERS['food-*'] = Object.assign(HANDLERS['food-*'] || {}, MODE === 'pack' ? {
     have[k] = got + 1; const i = inBox.length; inBox.push(k); drawList();
     // it goes over the box, then down inside it (behind the front of the box)
     const [sx, sb] = boxSlot(i, k), h = fh(k), lift = h + 50;
-    c.style.transition = 'transform .25s ease-out'; c.style.transform = `translate(${sx - d.home}px, ${sb - lift - COUNTER.bottom}px)`;
+    c.style.transition = 'transform .25s ease-out'; c.style.transform = `translate(${sx - d.home}px, ${sb - lift - d.homeB}px)`;
     const all = Object.entries(NEED).every(([q, m]) => (have[q] || 0) >= m);
     if (all) room.querySelectorAll('.thing[data-food]').forEach(g => g.classList.remove('pick', 'on'));
     setTimeout(() => {

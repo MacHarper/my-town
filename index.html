@@ -1296,11 +1296,11 @@ const CAREERS = {
          text: 'Hair stylists wash, cut and style hair. Pick a new hairstyle for $5.',
          img: SALON_LOGO },
   // the cafe's front room: a welcome card with two big picture buttons (for emerging readers: a picture and one or two words each)
-  cafe: { title: 'Community Cafe', kicker: 'WELCOME TO THE', color: '#d38161', shadow: '#ad5f42', logo: true, img: CAFE_LOGO, text: '',
+  cafe: { title: 'Community Cafe', kicker: 'WELCOME TO THE', color: '#d38161', shadow: '#ad5f42', logo: true, img: CAFE_LOGO, text: 'We cook food and share it with families who need it.',
          choices: [{ label: 'Help the chef', pic: CHEF_DOLL, go: 'guide' }, { label: 'Eat at the cafe', pic: CAFE_PICS.eat, soon: 'Eating at the cafe is coming soon!' }] },
   // the kitchen: the chef (the doll in Dress Up's Chef Outfit) asks for help two ways
   cafeKitchen: { title: 'Chef', kicker: 'MEET A', color: '#d38161', shadow: '#ad5f42',
-         text: 'Chefs cook food. How do you want to help?',
+         text: 'Chefs cook food. Our cafe gives food to families who need it. How do you want to help?',
          img: CHEF_DOLL,
          choices: [{ label: 'Make food', pic: CAFE_PICS.bake, link: 'community-cafe/community-cafe.html#bake' }, { label: 'Box food', pic: CAFE_PICS.pack, link: 'community-cafe/community-cafe.html#pack' }] },
   vet: { title: 'Veterinarian', kicker: 'MEET A', color: '#5fae7a', go: "Let's help!",
@@ -1349,7 +1349,9 @@ document.getElementById('ccGo').addEventListener('click', () => {
   card.style.setProperty('--tx', tx + 'px'); card.style.setProperty('--ty', ty + 'px');
   el.classList.add('leave');
   setTimeout(() => { roomSvg.classList.remove('carding'); }, 550);
-  setTimeout(() => { el.classList.remove('open', 'leave'); el.setAttribute('aria-hidden', 'true'); }, 900);
+  // once it has flown away, put it back out of sight with no animation, so the card never flashes back on screen (Mac, Nov 26)
+  setTimeout(() => { el.style.transition = card.style.transition = 'none'; el.classList.remove('open', 'leave'); el.setAttribute('aria-hidden', 'true');
+    void el.offsetWidth; el.style.transition = card.style.transition = ''; }, 900);
 });
 
 // a room with a task bar sits in a frame sized like the game's: as wide as fits, the room keeps its shape

@@ -59,6 +59,7 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 - Shops (the Hair Salon) take money only at their Pay step. Trying things is free.
 
 ## 6. Messages and words
+- **Only directions a new player needs** (Mac, Nov 26, 2026). Write a direction only when someone who has never played wouldn't know what to do ("Tape the box closed."). Skip anything the screen already makes clear (glowing food and a list next to a box) and never tell the player to do what the game does for them (the list checks itself).
 - Short words, emerging readers. Use the pet's or player's name ("Rub the soap on Bella.").
 - Toast messages stay up at least 4.5 s (`tbReadMs`: 1.8 s plus 0.09 s per letter). Never a quick flash.
 - "Not yet": two soft falling notes (330 then 262 Hz, sine) plus a toast that says what to do first.
