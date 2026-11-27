@@ -1320,6 +1320,11 @@ function showCareer(id) {
   el.classList.remove('leave');
   setTimeout(() => { el.classList.add('open'); el.setAttribute('aria-hidden', 'false'); document.getElementById('ccGo').focus(); }, 350);
 }
+// the welcome card covers the screen, but Back to town still works under it (Mac, Nov 26, 2026)
+document.getElementById('career').addEventListener('click', e => {
+  const b = document.getElementById('backMap'), r = b.getBoundingClientRect();
+  if (!e.target.closest('.cc-card') && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) b.click();
+});
 document.getElementById('ccChoices').addEventListener('click', e => {
   const b = e.target.closest('.cc-choice'); if (!b || !roomId) return;
   const o = CAREERS[roomId].choices[+b.dataset.i];
