@@ -20,7 +20,8 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 
 ### Tools work the same everywhere (Mac, Nov 26, 2026; the Vet Clinic's cat and dog food are the model)
 - **Labeled:** every tool wears a name tag above its place: a pill in the tool's own color with its name in white ("1 cup", "½ cup", "Tbsp", "tsp", "Whisk", "Oven mitt"). The recipe or list shows each amount in the same color as its tool. Things that are hard to tell apart (flour, sugar, milk) wear a label: white pill, dark edge, dark bold word, like the Vet Clinic's "Food".
-- **Only what's needed:** only the tools this job uses are out; a tool for a later step comes out when that step starts.
+- **Only what's needed:** only the tools this job uses are out; a tool for a later step comes out when that step starts. The same goes for anything else on screen: no card or reminder stays up once it isn't needed (the oven number shows only in the dial pop-up) (Mac, Nov 26).
+- **Name tags side by side:** a row of tools has its name tags at one height, side by side, never overlapping or staggered. Spread the tools (and widen their area) so each tag sits centered above its own tool (Mac, Nov 26).
 - **It stays in your hand:** a tool never snaps back while you hold it, after filling or after pouring. Only letting go sends it back to its place.
 - **Filling:** a cup or spoon fills as soon as it touches what it's filling (a jar's lid opens and closes), while you keep holding it. The scoop sits inside the cup's opening.
 - **Pouring:** when a full tool (cup, spoon, bowl) is held above what it pours into (never down on it or below its rim), it turns and pours by itself: it turns nearly upside down so its opening faces down over the target, dry food falls straight down as lots of small grains and milk or batter as one smooth stream, then it turns back upright, still in your hand. It never pours sideways or backwards, and never crosses over to the far side of what it pours into (a bowl pouring into a pan stays on its own side and tips toward it). What it pours into fills up as you go (a bowl's level rises). Batter pours as a thick stream and the pan fills where it lands: cup by cup, spot by spot, or one pool spreading across the pan, before it shows the full pan (Mac, Nov 26). The full method is in the game-design skill, Pouring.
@@ -28,7 +29,7 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 - **Everything turns naturally:** pouring batter into a pan, food into a bowl, anything poured tips and pours; nothing just disappears into something else.
 - **Pouring into a pan** happens in the counter close-up pop-up, like Mix; food set down in a room sits on the surface (its bottom on the counter or shelf top, never over the front edge).
 - **The oven** opens when you bring the pan or the oven mitt to it and closes after. The pan slides onto the rack (seen from the side). When it's baked, the oven mitt comes out (not before): bring it to the oven, it takes hold of the pan, and you carry the pan out; let go and it snaps onto the counter (Mac, Nov 26).
-- **Numbers to pick** (an oven temperature): tap the oven dial and it opens big in a pop-up with an up and a down arrow; tap the arrows until the number matches the recipe, then it closes by itself (Mac, Nov 26).
+- **Numbers to pick** (an oven temperature): once the pan is in, the oven dial opens big in a pop-up by itself with an up and a down arrow; tap the arrows until the number matches the recipe, then it closes by itself (Mac, Nov 26).
 
 ## 3. How much rubbing finishes a step
 - The thing being cared for is split into a **7 × 8 grid of cells** over its picture. A cell counts only where the picture is solid (alpha over 200). In the tub, only the top 75% counts, because the bottom is behind the tub.
@@ -51,6 +52,7 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 
 ## 5. Thanks card and money
 - **This is the standard for every payout in every game (Mac, Nov 26, 2026)**: the Vet Clinic thanks card. Copy it exactly, changing only the career, its color and the "help more" words.
+- The card's bottom sits just above the tallest pet's head (`#allDone`: `align-items: safe flex-end; padding-bottom: 28.4%`), the same in every game (Mac, Nov 26).
 - When the job is done, one card shows the career person from the career card (in their outfit, on a lavender `#f3edf8` panel). Above the thanks, the **career name** sits in a soft pill in the career's color ("Veterinarian"). It says **"Thanks for your help!"** in big green (`#5fae7a`) letters, with a short line about what you did.
 - A spinning dollar bill shows "+$10". **1.4 s** after the card opens, **6 bills** fly from it into the money button in the toolbar, **0.11 s** apart, each taking **0.76 s**, with a rising tick sound as each one lands. Then the money is added.
 - Only once all the money is in do the buttons fade in (0.35 s): **a help-more button** in the career's color ("Care for another pet") and **"Back to town"** (pink `#e0457b`).
@@ -92,5 +94,6 @@ Every one of these came from Mac. Run `python3 tools/rules_check.py <game file>`
 - **Plain words for what you do:** "Tape the box closed", "Put frosting on the cake". Never "rub" unless you really rub (washing, drying).
 - **Filling:** a bowl's food reaches close to its edge; the scoop sits exactly in the cup's opening.
 - **Heat and light stay inside their shape** (the oven's glow stays in the window glass).
+- **Pieces on a plate** (cupcakes, muffins) stand side by side on the plate's flat top, in rows from the back, never stacked like a tower. A whole cake shows as the whole cake as soon as it is lifted out of its pan (Mac, Nov 26).
 - **Baked food** comes out the shape of its pan (a round pan makes a round cake, not a muffin top); the plate is a little bigger than the food, and both fit the counter. Finished food stays on the counter (it is not moved onto shelves).
 - **Toppings show up:** frosting is a color you can see on the food, piped like real icing, squirting from the bag's tip. A bowl of toppings tips over as you use it and empties as they go on.
