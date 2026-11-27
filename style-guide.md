@@ -42,6 +42,7 @@ Use only these. If a new thing needs a color, pick from this list instead of add
 
 ## Formatting standard (Mac, Nov 26, 2026)
 One look for these pieces in every game. The Vet Clinic and the Hair Salon are the examples; copy them exactly.
+- **Words in pop-up cards:** the small top line (WELCOME TO THE, MEET A) or name pill, the title and the buttons are bold. Sentences that explain are not bold: dark `#2b2340`, 16-21 px, line height 1.45 (the Hair Salon welcome card, the Veterinarian card). Leave 16 px between the title, the words and the button (a little more above the button). Direction lines (the guide at the bottom, the bath's step line, toasts) stay bold.
 - **Drag objects (tools):** shown at full color, never faded, sitting on the cream tool area `#fffaf6`. The tool you can use now has a soft rounded-rectangle highlight around it (the Vet bath's soap, the salon's brush).
 - **Labels on things in a room:** white pill, dark purple `#4a3b5c` outline about 4 px, bold dark purple words (the Vet Clinic's "Water" label).
 - **Standing directions** (what to do now): one white-cream box `#fffaf5`, bold dark purple words, rounded corners, **centered at the bottom** of the screen (the Vet Clinic's "Drag the water bowl to the sink.").
