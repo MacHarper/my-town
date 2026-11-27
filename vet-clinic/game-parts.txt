@@ -225,7 +225,7 @@
   .burst polygon { transform-box: fill-box; transform-origin: center; animation: burst .8s ease-out forwards; }
   @keyframes burst { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--bx), var(--by)) scale(1); } }
   .done-panel { width: min(90%, 520px); align-items: center; gap: 12px; padding: 22px; }
-  #allDone { align-items: flex-start; padding-top: 2%; background: rgba(43, 35, 64, .08); }   /* high up, so the happy pet shows below */
+  #allDone { align-items: safe flex-end; padding-top: 2%; padding-bottom: 28.4%; background: rgba(43, 35, 64, .08); }   /* its bottom sits just above the tallest pet's head (Bella, 558 of 1116), so the happy pet shows below (Mac, Nov 26) */
 
   /* ---------- one button style everywhere (like Dress Up's trash can and All Done):
      rounded corners, a solid color, and a darker shadow along the bottom that presses in when tapped ---------- */
@@ -1980,3 +1980,34 @@ drawRoom();
 setTask(0, true);
 // coming from the town's crates: open that picker right away
 { const k = location.hash.match(/^#(dog|cat)\b/); if (k) { openPicker(k[1]); history.replaceState(null, '', location.pathname); } }   // only once
+
+// ---------- toys from the backpack (Mac, Nov 26, 2026): while you care for a cat (or a dog), its toys drag straight out of the
+// backpack onto the pet, with no pop-up. The toy lands on the rug beside the pet (left, then right), the pet hops, stars pop. ----------
+const TOY_KIND = { cat: 'catToy', dog: 'dogToy' };
+const TOY_H = id => /tower/.test(id) ? .42 : /couch/.test(id) ? .6 : .17;   // as part of the pet's height on the rug: real sizes next to the pet
+let toySide = 0;
+window.tbCanUse = id => {
+  const it = (window.tbItems || []).find(x => x.id === id);
+  if (!pet || !it || it.kind !== TOY_KIND[kind] || !document.querySelector('.petg')) return false;
+  return `Drag the ${it.name} to ${pet.name}.`;
+};
+window.tbUseItem = (id, x, y) => {
+  const el = document.elementFromPoint(x, y), g = el && el.closest('.petg');
+  if (!g || busy) return false;
+  const it = tbItems.find(t => t.id === id), pic = new Image();
+  pic.onload = () => {
+    const h = rugH() * TOY_H(id), w = h * pic.width / pic.height, side = toySide++ % 2 ? 1 : -1;
+    const pb = g.querySelector('image').getBBox(), cx = side < 0 ? Math.min(pb.x - w * .3, RUG.cx - 150) : Math.max(pb.x + pb.width + w * .3, RUG.cx + 150), bottom = RUG.bottom + 26;
+    const old = document.getElementById('toy' + side); if (old) old.remove();
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'image'); t.id = 'toy' + side;
+    t.setAttribute('href', pic.src); t.setAttribute('x', cx - w / 2); t.setAttribute('y', bottom - h); t.setAttribute('width', w); t.setAttribute('height', h);
+    g.after(t);
+    t.animate([{ transform: 'translateY(-60px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.3, 1.5, .5, 1)' });
+    g.querySelector('image.pet, image').animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-26px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(-14px)' }, { transform: 'translateY(0)' }], { duration: 700, easing: 'ease-in-out' });
+    const fx = document.createElementNS('http://www.w3.org/2000/svg', 'g'); room.appendChild(fx);
+    starBurst(pb.x + pb.width / 2, pb.y + pb.height * .3, fx); setTimeout(() => fx.remove(), 1200);
+    if (window.tbToast) tbToast(`${pet.name} loves the ${it.name}!`);
+  };
+  pic.src = tbItemPic(id);
+  return true;
+};
