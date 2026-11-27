@@ -87,7 +87,7 @@
   .thing.shake > .art { animation: shake .47s; transform-box: fill-box; transform-origin: center; }
   @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
   .gone { opacity: 0 !important; pointer-events: none; transition: opacity .35s; }
-  .temp.shake { animation: shake .47s; transform-box: fill-box; transform-origin: center; }
+  .arrow.shake { animation: shake .47s; transform-box: fill-box; transform-origin: center; }
   .fade { transition: opacity .4s; }
   /* the guide: one short line that says what to do next, at the bottom center like every room (activity-rules.md 1) */
   .guide { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 3; background: #fffaf5; border-radius: 18px; box-shadow: 0 6px 16px rgba(74, 59, 92, .18);
@@ -893,13 +893,14 @@ const MIX_BOWL = { cx: 1000, bottom: 862, h: 250 };
 // where each ingredient stands on the counter, at its real size: jars and the milk at the back, butter, eggs and the special one in front [cx, bottom, height]
 const MIX_SPOTS = { flour: [1335, 752, 178], sugar: [1535, 752, 178], milk: [1735, 752, 172], butter: [1345, 872, 96], eggs: [1548, 872, 150], cocoa: [1745, 872, 122], cinnamon: [1745, 872, 122], blueberries: [1745, 872, 108] };   // close to real sizes next to each other (Mac, Nov 26)
 const TOOL_H = { 'cup-1': 140, 'cup-half': 115, tablespoon: 160, teaspoon: 138, whisk: 165, 'oven-mitt': 112 };
-const ROOM_BOWL = { cx: 905, bottom: 702, h: 150 };
 let BOWL = MIX_BOWL;
-const PAN = { cx: 1225, bottom: 708, w: 215 };   // a little smaller, so the pieces and a whole cake or pan of rolls fit the plate
-const PLATE = { cx: 905, cy: 684, rx: 158, ry: 44 };
+// the pan: in the close-up the bowl pours into it; in the kitchen it stands on the counter top (its bottom on the counter, not over the front edge)
+const MIX_PAN = { cx: 1500, bottom: 862, w: 400 }, ROOM_PAN = { cx: 1215, bottom: 694, w: 200 };
+let PAN = ROOM_PAN;
+const PLATE = { cx: 905, cy: 606, rx: 158, ry: 44 };   // the plate's front edge sits on the counter top (Mac, Nov 26)
 const OVEN = { x: 1620, y: 560, w: 360, h: 370 }, WINDOW = { x: 1634, y: 660, w: 100, h: 160 }, DIAL = { cx: 1686, cy: 590 };
-const TEMPS = [300, 325, 350, 375, 400];
-const CASE = [[900, 334], [1112, 334], [900, 432], [1112, 432], [1006, 526]];   // display case shelves: where finished food sits
+const TEMP_LO = 250, TEMP_HI = 450, TEMP_STEP = 25;   // the oven dial pop-up: arrows go up and down by 25
+const CASE = [[900, 337], [1112, 337], [900, 434], [1112, 434], [1006, 525]];   // display case shelves: [x, the shelf's top] where finished food sits
 // where the scoop sits inside each tool: [center x, center y (parts of the picture), half-width (part of its width), half-height (part of its height), tilt]
 const TOOL_SPOT = { 'cup-1': [.42, .14, .33, .07, 0], 'cup-half': [.4, .17, .31, .1, 0], tablespoon: [.68, .24, .13, .15, 38], teaspoon: [.75, .2, .12, .13, 38] };
 // pouring, like the dog food cup: where the food comes out (parts of the picture) and how far the tool tips
@@ -1023,10 +1024,16 @@ function setScoop(toolId, color) {
     <ellipse cx="${x}" cy="${y - RY * .45}" rx="${RX * .7}" ry="${RY * .8}" fill="${color}"/><ellipse cx="${x - RX * .25}" cy="${y - RY * .7}" rx="${RX * .25}" ry="${RY * .25}" fill="#fff" opacity=".5"/></g>` : '');
 }
 // turning a tool in your hand (activity-rules.md 2): the picture turns around its own middle, wherever you are carrying it
-function tilt(g, deg, ox, oy, ms) {
+function tilt(g, deg, ox, oy, ms, s) {   // s: slide it a little too (so the spout ends up just above what it pours into)
   g.querySelectorAll(':scope > .ring, :scope > .art').forEach(x => { x.style.transformBox = 'view-box'; x.style.transformOrigin = `${ox}px ${oy}px`;
-    x.style.transition = `transform ${ms ?? 350}ms ease-in-out`; x.style.transform = deg ? `rotate(${deg}deg)` : ''; });
+    x.style.transition = `transform ${ms ?? 350}ms ease-in-out`; x.style.transform = deg || s ? `translate(${s ? s[0] : 0}px, ${s ? s[1] : 0}px) rotate(${deg}deg)` : ''; });
 }
+// pouring from above (Mac, Nov 26): the tool turns and slides so its spout is just over the target, never down on it. Returns the slide.
+function overTarget(d, p, c, deg, target) { const now = held(d, p, c, deg); return [target[0] - now[0], target[1] - now[1]]; }
+// where a held tool's middle is now
+const heldMid = (d, c) => [c[0] + d.x - d.x0, c[1] + d.y - d.y0];
+// is the held tool above this box (over it, its bottom above the top of it: above, not on it)?
+function aboveBox(d, c, h, box, top) { const [x, y] = heldMid(d, c), w = box.w ?? box.width, bh = box.h ?? box.height; return x > box.x - 40 && x < box.x + w + 40 && y + h / 2 > top - 340 && y + h / 2 < top + 30; }
 // where a point of the tool's picture is now: moved with your hand and turned with the tool
 function held(d, p, c, deg) { const r = deg * Math.PI / 180, v = [p[0] - c[0], p[1] - c[1]];
   return [c[0] + (d.x - d.x0) + v[0] * Math.cos(r) - v[1] * Math.sin(r), c[1] + (d.y - d.y0) + v[0] * Math.sin(r) + v[1] * Math.cos(r)]; }
@@ -1043,8 +1050,9 @@ function stream(from, to, color, n) {   // food falling from a spout
 async function pourIn(d, k) {
   d.pouring = true; const it = LIST[cur], color = ING[it.ing].color;
   const [cx, bottom, h] = TOOLPOS[k], b = picBox(k, cx, bottom, h), c = [b.x + b.w / 2, b.y + b.h / 2], [px, py, rot] = POUR[k];
-  tilt(d.g, rot, c[0], c[1]); await wait(360);
-  const L = levelAt(); stream(held(d, [b.x + b.w * px, b.y + b.h * py], c, rot), [L.cx, L.cy], color);
+  const m = BOWL.mouth, spout = [m.cx, m.cy - m.ry - 50], s = overTarget(d, [b.x + b.w * px, b.y + b.h * py], c, rot, spout);
+  tilt(d.g, rot, c[0], c[1], 360, s); await wait(360);
+  const L = levelAt(); stream(spout, [L.cx, L.cy], color);
   setTimeout(() => setScoop(k, null), 250); beep([[587, 0, .1], [784, .08, .14]]);
   await wait(600);
   filled = null; it.got++; bowlBlob(color, 2, it.ing === 'sugar'); cardRows();
@@ -1063,7 +1071,10 @@ async function pourIn(d, k) {
       d.filling = true; if (LIDDED.includes(it.ing)) lid(it.ing, true);
       setTimeout(() => { filled = it.ing; setScoop(k, ING[it.ing].color); beep(TICK); lights(['bowl']); guide('Pour it in the bowl.'); d.filling = false; }, 260);
       setTimeout(() => lid(it.ing, false), 750);
-    } else if (filled === it.ing && near(d, T('bowl').getBBox(), 0)) pourIn(d, k);   // over the bowl: it pours by itself, and stays in your hand
+    } else if (filled === it.ing) {   // above the bowl: it pours by itself from above, and stays in your hand
+      const [cx, bottom, h] = TOOLPOS[k], b = picBox(k, cx, bottom, h);
+      if (aboveBox(d, [b.x + b.w / 2, b.y + b.h / 2], b.h, picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h), BOWL.mouth.cy)) pourIn(d, k);
+    }
   },
   drop(d) { if (d.pouring) { tilt(d.g, 0, 0, 0, 0); d.pouring = false; } return false; },   // only letting go sends it back to its place
 });
@@ -1120,10 +1131,18 @@ const WHISK_TIP = [.8, .14];   // the end of the wires in the whisk picture
 HANDLERS.whisk = {
   pick() { return step === 0 && rub && !rub.fired; },
   grab(d) { const [cx, bottom, h] = TOOLPOS.whisk, b = picBox('whisk', cx, bottom, h); d.c = [b.x + b.w / 2, b.y + b.h / 2]; d.tip = [b.x + b.w * WHISK_TIP[0], b.y + b.h * WHISK_TIP[1]]; tilt(d.g, 180, d.c[0], d.c[1], 250); },
+  // like the cat food spoon: once it is in the bowl the wires stay down in the batter wherever you go (even below the middle),
+  // so you stir round and round; it leans toward the side it is on. Only going well away from the bowl takes it out.
   move(d) {
-    const [x, y] = held(d, d.tip, d.c, 180), L = levelAt(), inBowl = ((x - L.cx) / (L.rx * 1.3)) ** 2 + ((y - L.cy) / (L.ry * 2.2)) ** 2 <= 1;
-    document.getElementById('bowlFront').setAttribute('opacity', inBowl ? 1 : 0);
-    if (inBowl) rub.at(x, y);
+    const L = levelAt(), bb = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h), [rx, ry] = held(d, d.tip, d.c, 180), front = document.getElementById('bowlFront');
+    const inBowl = rx > bb.x - 60 && rx < bb.x + bb.w + 60 && ry > L.cy - L.ry * 3 && ry < bb.y + bb.h + 90;
+    if (!inBowl) { front.setAttribute('opacity', 0); tilt(d.g, 180, d.c[0], d.c[1], 0); return; }
+    let dx = rx - L.cx, dy = ry - L.cy; const r = Math.hypot(dx / (L.rx * .78), dy / (L.ry * .75)); if (r > 1) { dx /= r; dy /= r; }
+    const x = L.cx + dx, y = L.cy + dy, deg = 180 + dx / 5, a = deg * Math.PI / 180, v = [d.tip[0] - d.c[0], d.tip[1] - d.c[1]];
+    d.g.style.transform = `translate(${x - d.c[0] - (v[0] * Math.cos(a) - v[1] * Math.sin(a))}px, ${y - d.c[1] - (v[0] * Math.sin(a) + v[1] * Math.cos(a))}px)`;
+    tilt(d.g, deg, d.c[0], d.c[1], 0);
+    document.querySelector('#frontClip rect').setAttribute('y', y - 18);   // the batter covers the wires below where they dip in
+    front.setAttribute('opacity', 1); rub.at(x, y);
   },
   drop(d) { document.getElementById('bowlFront').setAttribute('opacity', 0); tilt(d.g, 0, d.c[0], d.c[1], 200); rub.release(); return false; },
 };
@@ -1132,35 +1151,46 @@ async function mixDone() {
   const b = BOWL.mouth; starBurst(b.cx, b.cy - 40); beep(GOOD);
   document.getElementById('bowlFront')?.remove();
   await wait(900);
-  // back to the kitchen: the bowl of batter is on the counter, the pan comes out, and the recipe card keeps the oven number
-  const mix = document.getElementById('mix'); mix.style.transition = 'opacity .35s'; mix.style.opacity = 0; await wait(380); mix.remove();
-  THINGS = 'things'; BOWL = ROOM_BOWL;
-  const bb = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h);
-  BOWL.mouth = { cx: BOWL.cx, cy: bb.y + bb.h * .2, rx: bb.w * .42, ry: bb.h * .13 };
-  thing('bowl', pic('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h) + `<ellipse class="batterTop" cx="${BOWL.mouth.cx}" cy="${BOWL.mouth.cy}" rx="${BOWL.mouth.rx * .92}" ry="${BOWL.mouth.ry * .9}" fill="${R.batter}"/>`, 'pick on');
-  const card = document.getElementById('recipe'); card.hidden = false; card.innerHTML = `<h3>${cap(R.name)}</h3><div class="oven">Oven: ${R.temp}°</div>`;
-  tray(250); toolAt('oven-mitt', 150, 1088, TOOL_H['oven-mitt'], '', 'Oven mitt', '#d38161');
-  const pan = thing('pan', pic(R.pan + '-empty', PAN.cx, PAN.bottom, PAN.w * SIZE[R.pan + '-empty'][1] / SIZE[R.pan + '-empty'][0]));
-  pan.style.opacity = 0; pan.classList.add('fade'); requestAnimationFrame(() => pan.style.opacity = 1);
+  // pouring into the pan happens in the same close-up (Mac, Nov 26): the ingredients go away, the pan comes out on the counter, the bowl lights up
+  room.querySelectorAll('#mixThings .thing:not([data-id="bowl"]), #mixThings .label, #mixThings .tag').forEach(x => x.classList.add('gone'));
+  PAN = MIX_PAN;
+  const pan = thing('pan', pic(R.pan + '-empty', PAN.cx, PAN.bottom, panH('empty')));
+  pan.style.opacity = 0; pan.style.transition = 'opacity .35s'; requestAnimationFrame(() => pan.style.opacity = 1);
+  T('bowl').classList.add('pick', 'on');
   stepDone(() => guide(R.dough ? 'Put the dough on the tray.' : 'Pour the batter into the pan.'));
 }
 const panH = state => PAN.w * SIZE[R.pan + '-' + state][1] / SIZE[R.pan + '-' + state][0];
 function panArt(state) { T('pan').querySelectorAll('.art, .ring').forEach(g => g.innerHTML = pic(R.pan + '-' + state, PAN.cx, PAN.bottom, panH(state))); }
 HANDLERS.bowl = {
   next: true,
-  pick() { return step === 1; },
-  async move(d) {   // over the pan, the bowl tips and the batter pours in (it stays in your hand)
-    if (R.poured || d.pouring || !near(d, T('pan').getBBox(), 10)) return;
-    d.pouring = true; const b = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h), c = [b.x + b.w / 2, b.y + b.h / 2];
-    tilt(d.g, -75, c[0], c[1]); await wait(380);
-    const pb = T('pan').getBBox(); stream(held(d, [b.x + b.w * .06, b.y + b.h * .22], c, -75), [pb.x + pb.width / 2, pb.y + pb.height * .45], R.batter, 12);
+  pick() { return step === 1 && !R.poured; },
+  async move(d) {   // above the pan, the bowl tips and the batter pours in from above (it stays in your hand)
+    if (R.poured || d.pouring) return;
+    const b = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h), c = [b.x + b.w / 2, b.y + b.h / 2], pb = T('pan').getBBox();
+    if (!aboveBox(d, c, b.h, pb, pb.y)) return;
+    d.pouring = true; T('bowl').classList.remove('on');
+    const lip = [pb.x + pb.width / 2, pb.y - 40], s = overTarget(d, [b.x + b.w * .06, b.y + b.h * .22], c, -75, lip);
+    tilt(d.g, -75, c[0], c[1], 380, s); await wait(380);
+    stream(lip, [pb.x + pb.width / 2, pb.y + pb.height * .45], R.batter, 12);
+    d.g.querySelectorAll('.bowlIn').forEach(x => { x.style.transition = 'opacity .7s'; x.style.opacity = 0; });   // the bowl empties as it pours
     beep([[392, 0, .15], [523, .12, .2]]); await wait(700);
-    R.poured = true; panArt('raw'); d.g.querySelectorAll('.batterTop').forEach(x => x.remove());
+    R.poured = true; panArt('raw');
     tilt(d.g, 0, c[0], c[1]); await wait(360); d.pouring = false;
-    T('pan').classList.add('pick'); lights(['pan']); guide('Put the pan in the oven.');
+    starBurst(PAN.cx, PAN.bottom - 120); beep(GOOD);
+    if (drag && drag.g === d.g) { drag = null; d.g.classList.remove('held'); }
+    await wait(700); toKitchen();
   },
-  drop(d) { if (!R.poured) return false; d.g.classList.add('gone'); d.g.classList.remove('pick', 'on'); return true; },   // empty: it goes away
+  drop() { return false; },
 };
+// back to the kitchen: the close-up closes, the pan of batter is on the counter, the recipe card keeps the oven number
+async function toKitchen() {
+  const mix = document.getElementById('mix'); mix.style.transition = 'opacity .35s'; mix.style.opacity = 0; await wait(380); mix.remove();
+  THINGS = 'things'; PAN = ROOM_PAN;
+  const card = document.getElementById('recipe'); card.hidden = false; card.innerHTML = `<h3>${cap(R.name)}</h3><div class="oven">Oven: ${R.temp}°</div>`;
+  tray(250); toolAt('oven-mitt', 150, 1088, TOOL_H['oven-mitt'], '', 'Oven mitt', '#d38161');
+  thing('pan', pic(R.pan + '-raw', PAN.cx, PAN.bottom, panH('raw')), 'pick on');
+  guide('Put the pan in the oven.');
+}
 HANDLERS.pan = {
   pick() { return step === 1 && R.poured && !R.inOven; },
   drop(d) {
@@ -1170,37 +1200,50 @@ HANDLERS.pan = {
     d.g.style.transformOrigin = `${b.x + b.width / 2}px ${b.y + b.height / 2}px`;
     d.g.style.transition = 'transform .5s ease-in, opacity .4s .2s'; d.g.style.transform = `translate(${tx}px, ${ty}px) scale(.3)`; d.g.style.opacity = 0;
     beep([[330, 0, .1], [262, .1, .15]]);
-    // the oven's numbers: big buttons by the oven; tap the one on the recipe card
-    dialAt = 0; drawDial(); tempButtons();
-    guide(`Set the oven to ${R.temp}.`); return true;
+    // the oven dial lights up: tap it and it opens big in a pop-up with up and down arrows (Mac, Nov 26)
+    ovenAt = TEMP_LO + TEMP_STEP * 2; if (ovenAt === R.temp) ovenAt -= TEMP_STEP; drawDial(); T('dial').classList.add('on');
+    guide(`Tap the oven dial. Set it to ${R.temp}.`); return true;
   },
 };
-let dialAt = 0;
-function tempButtons() {
-  const y = 470, xs = TEMPS.map((_, i) => 1420 + i * 128);
-  add(`<g id="temps"><rect x="1340" y="${y - 72}" width="${xs[4] - 1340 + 80}" height="144" rx="40" fill="rgba(74,59,92,.14)" transform="translate(0 6)"/><rect x="1340" y="${y - 72}" width="${xs[4] - 1340 + 80}" height="144" rx="40" fill="#fffaf5"/>
-    ${TEMPS.map((n, i) => `<g class="temp" data-n="${n}" style="cursor:pointer"><circle cx="${xs[i]}" cy="${y}" r="56" fill="#f8e3d9" stroke="#d38161" stroke-width="6"/><text x="${xs[i]}" y="${y + 13}" text-anchor="middle" font-size="38" font-weight="bold" fill="#ad5f42">${n}</text></g>`).join('')}</g>`, document.getElementById('fx'));
-}
-room.addEventListener('click', e => {
-  const b = e.target.closest('.temp'); if (!b || R.baking) return;
-  const n = +b.dataset.n;
-  if (n !== R.temp) { beep(SAD, 'sine'); b.classList.remove('shake'); void b.getBBox(); b.classList.add('shake'); showToast(`The recipe says ${R.temp}.`); return; }
-  dialAt = TEMPS.indexOf(n); drawDial(); b.querySelector('circle').setAttribute('fill', '#5fae7a'); b.querySelector('text').setAttribute('fill', '#fff');
-  setTimeout(() => { const g = document.getElementById('temps'); if (g) { g.style.transition = 'opacity .3s'; g.style.opacity = 0; setTimeout(() => g.remove(), 320); } }, 400);
-  bakeNow();
-});
-function drawDial() {
-  const a = -120 + dialAt * 60, art = `<circle cx="${DIAL.cx}" cy="${DIAL.cy}" r="62" fill="rgba(255,255,255,0)"/><circle cx="${DIAL.cx}" cy="${DIAL.cy}" r="26" fill="#fbf3e6"/><circle cx="${DIAL.cx}" cy="${DIAL.cy}" r="20" fill="#f1e2cc"/><rect x="${DIAL.cx - 3.5}" y="${DIAL.cy - 22}" width="7" height="16" rx="3.5" fill="#ad5f42" transform="rotate(${a} ${DIAL.cx} ${DIAL.cy})"/>`;
+let ovenAt = 300, dialOpen = false;
+const dialDeg = t => -135 + (t - TEMP_LO) / (TEMP_HI - TEMP_LO) * 270;
+function drawDial() {   // the little dial on the oven (a clear circle around it so it is easy to tap)
+  const a = dialDeg(ovenAt), art = `<circle cx="${DIAL.cx}" cy="${DIAL.cy}" r="62" fill="rgba(255,255,255,0)"/><circle cx="${DIAL.cx}" cy="${DIAL.cy}" r="26" fill="#fbf3e6"/><circle cx="${DIAL.cx}" cy="${DIAL.cy}" r="20" fill="#f1e2cc"/><rect x="${DIAL.cx - 3.5}" y="${DIAL.cy - 22}" width="7" height="16" rx="3.5" fill="#ad5f42" transform="rotate(${a} ${DIAL.cx} ${DIAL.cy})"/>`;
   let g = T('dial'); if (!g) g = thing('dial', art); else g.querySelectorAll('.art, .ring').forEach(x => x.innerHTML = art);
   g.style.cursor = 'pointer';
 }
 HANDLERS.dial = {
-  tap(g) { return;
-    if (step !== 1 || !R.inOven || R.baking) return;
-    dialAt = (dialAt + 1) % TEMPS.length; drawDial(); beep([[660 + dialAt * 40, 0, .06]]); readout(DIAL.cx, DIAL.cy - 90, TEMPS[dialAt] + '°');
-    if (TEMPS[dialAt] === R.temp) bakeNow();
-  },
+  tap() { if (step === 1 && R.inOven && !R.baking && !dialOpen) openDial(); },
 };
+// the dial pop-up: a big oven dial, the number in a window, and an up and a down arrow
+const DP = { x: 600, y: 170, w: 800, h: 760, cx: 880, cy: 625, r: 190, ax: 1210 };
+function openDial() {
+  dialOpen = true; T('dial').classList.remove('on'); quiet();
+  const arrow = (dir, y) => `<g class="arrow" data-dir="${dir}" style="cursor:pointer"><circle cx="${DP.ax}" cy="${y}" r="74" fill="#d38161" stroke="#fff" stroke-width="7"/>
+    <path d="${dir > 0 ? `M${DP.ax - 34} ${y + 18} L${DP.ax} ${y - 24} L${DP.ax + 34} ${y + 18} Z` : `M${DP.ax - 34} ${y - 18} L${DP.ax} ${y + 24} L${DP.ax + 34} ${y - 18} Z`}" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/></g>`;
+  let ticks = '';
+  for (let t = TEMP_LO; t <= TEMP_HI; t += TEMP_STEP) { const a = (dialDeg(t) - 90) * Math.PI / 180, big = t % 50 === 0;
+    ticks += `<line x1="${DP.cx + Math.cos(a) * (DP.r - 16)}" y1="${DP.cy + Math.sin(a) * (DP.r - 16)}" x2="${DP.cx + Math.cos(a) * (DP.r - (big ? 40 : 30))}" y2="${DP.cy + Math.sin(a) * (DP.r - (big ? 40 : 30))}" stroke="#c9a98a" stroke-width="${big ? 7 : 5}" stroke-linecap="round"/>`; }
+  add(`<g id="dialPop"><rect x="0" y="0" width="2000" height="1116" fill="rgba(43,35,64,.3)"/>
+    <rect x="${DP.x}" y="${DP.y + 10}" width="${DP.w}" height="${DP.h}" rx="46" fill="rgba(74,59,92,.18)"/><rect x="${DP.x}" y="${DP.y}" width="${DP.w}" height="${DP.h}" rx="46" fill="#fffdf6" stroke="#8a5a3b" stroke-width="6"/>
+    <text x="${DP.x + DP.w / 2}" y="${DP.y + 78}" text-anchor="middle" font-size="46" font-weight="bold" fill="#ad5f42">Set the oven to ${R.temp}°</text>
+    <rect x="${DP.cx - 130}" y="${DP.y + 120}" width="260" height="110" rx="30" fill="#4a3b5c"/><text id="dialNum" x="${DP.cx}" y="${DP.y + 200}" text-anchor="middle" font-size="72" font-weight="bold" fill="#ffd34d">${ovenAt}°</text>
+    <circle cx="${DP.cx}" cy="${DP.cy + 8}" r="${DP.r}" fill="rgba(74,59,92,.14)"/><circle cx="${DP.cx}" cy="${DP.cy}" r="${DP.r}" fill="#fbf3e6" stroke="#e3cdb4" stroke-width="8"/>${ticks}
+    <g id="dialKnob" style="transform-box:view-box;transform-origin:${DP.cx}px ${DP.cy}px;transition:transform .25s ease-out;transform:rotate(${dialDeg(ovenAt)}deg)"><circle cx="${DP.cx}" cy="${DP.cy}" r="${DP.r * .62}" fill="#f1e2cc" stroke="#e3cdb4" stroke-width="6"/>
+      <rect x="${DP.cx - 13}" y="${DP.cy - DP.r * .58}" width="26" height="${DP.r * .42}" rx="13" fill="#ad5f42"/></g>
+    ${arrow(1, DP.cy - 110)}${arrow(-1, DP.cy + 110)}</g>`, document.getElementById('fx'));
+  guide('Tap the arrows.');
+}
+room.addEventListener('click', e => {
+  const b = e.target.closest('#dialPop .arrow'); if (!b || R.baking) return;
+  const n = ovenAt + TEMP_STEP * +b.dataset.dir;
+  if (n < TEMP_LO || n > TEMP_HI) { beep(SAD, 'sine'); shakeIt(b); return; }
+  ovenAt = n; drawDial(); beep([[560 + (n - TEMP_LO) * 2, 0, .06]]);
+  document.getElementById('dialNum').textContent = n + '°'; document.getElementById('dialKnob').style.transform = `rotate(${dialDeg(n)}deg)`;
+  if (n !== R.temp) return;
+  R.baking = true; document.getElementById('dialNum').setAttribute('fill', '#8fe0a8');
+  setTimeout(() => { const g = document.getElementById('dialPop'); g.style.transition = 'opacity .3s'; g.style.opacity = 0; setTimeout(() => { g.remove(); dialOpen = false; bakeNow(); }, 320); }, 700);
+});
 async function bakeNow() {
   R.baking = true; beep(GOOD);
   const glow = add(`<rect class="oven-glow" x="${WINDOW.x + 4}" y="${WINDOW.y + 6}" width="${WINDOW.w - 8}" height="${WINDOW.h - 12}" rx="18" fill="#ffb066" filter="url(#soft)"/>`, document.getElementById('behind'));
@@ -1350,10 +1393,10 @@ async function bakeFinished() {
   const saved = SAVE.get('case', []); saved.push(R.id); while (saved.length > CASE.length) saved.shift(); SAVE.set('case', saved);
   SAVE.set('baked', SAVE.get('baked', 0) + 1);
   await wait(900);
-  const g = document.getElementById('plateG'), [tx, ty] = CASE[(saved.length - 1) % CASE.length], k = .42;
+  const g = document.getElementById('plateG'), [tx, ty] = CASE[(saved.length - 1) % CASE.length], k = .42, below = PLATE.rx * 2.2 * SIZE.plate[1] / SIZE.plate[0] / 2 + 6;
   g.style.transformBox = 'view-box'; g.style.transformOrigin = `${PLATE.cx}px ${PLATE.cy}px`;
   g.style.transition = 'transform .9s ease-in-out';
-  g.style.transform = `translate(${tx - PLATE.cx}px, ${ty - 8 - PLATE.cy}px) scale(${k})`;
+  g.style.transform = `translate(${tx - PLATE.cx}px, ${ty + 2 - below * k - PLATE.cy}px) scale(${k})`;
   room.querySelectorAll('#tray, .tag, .label, .thing:not(#onPlate .thing)').forEach(x => x.classList.add('gone'));
   document.getElementById('front').appendChild(g);
   await wait(1100);
@@ -1365,7 +1408,7 @@ function drawCase() {
   saved.forEach((id, i) => {
     const r = RECIPES.find(x => x.id === id); if (!r) return;
     const [cx, b] = CASE[i], key = r.pan + '-baked', h = 44;
-    out.insertAdjacentHTML('beforeend', `<g opacity=".97">${pic('plate', cx, b + 12, 140 * SIZE.plate[1] / SIZE.plate[0])}${pic(key, cx, b + 4, 52)}</g>`);
+    out.insertAdjacentHTML('beforeend', `<g opacity=".97">${pic('plate', cx, b + 2, 140 * SIZE.plate[1] / SIZE.plate[0])}${pic(key, cx, b - 6, 52)}</g>`);
   });
 }
 

@@ -23,10 +23,11 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 - **Only what's needed:** only the tools this job uses are out; a tool for a later step comes out when that step starts.
 - **It stays in your hand:** a tool never snaps back while you hold it, after filling or after pouring. Only letting go sends it back to its place.
 - **Filling:** a cup or spoon fills as soon as it touches what it's filling (a jar's lid opens and closes), while you keep holding it. The scoop sits inside the cup's opening.
-- **Pouring:** when a full tool (cup, spoon, bowl) touches what it pours into, it turns and pours by itself: it tips toward the spout, the food falls from the spout in a little stream, then it turns back upright, still in your hand. What it pours into fills up as you go (a bowl's level rises).
-- **Stirring:** pick up the whisk or spoon and it flips over, tip down; dip it in the bowl (the tip goes into the food, behind the bowl's front) and rub to stir, with the usual rubbing rules below.
+- **Pouring:** when a full tool (cup, spoon, bowl) is held above what it pours into (never down on it or below its rim), it turns and pours by itself: it tips toward the spout, the food falls from the spout in a little stream, then it turns back upright, still in your hand. What it pours into fills up as you go (a bowl's level rises).
+- **Stirring:** pick up the whisk or spoon and it flips over, tip down; dip it in the bowl (the tip goes into the food, behind the bowl's front) and rub to stir, with the usual rubbing rules below. Once it is in the bowl it stays down in the food wherever you move (like the cat food spoon), so you stir round and round; it leans toward the side it is on.
 - **Everything turns naturally:** pouring batter into a pan, food into a bowl, anything poured tips and pours; nothing just disappears into something else.
-- **Numbers to pick** (an oven temperature): big round number buttons to tap, not a small dial to turn. The wrong one shakes and says what the recipe says.
+- **Pouring into a pan** happens in the counter close-up pop-up, like Mix; food set down in a room sits on the surface (its bottom on the counter or shelf top, never over the front edge).
+- **Numbers to pick** (an oven temperature): tap the oven dial and it opens big in a pop-up with an up and a down arrow; tap the arrows until the number matches the recipe, then it closes by itself (Mac, Nov 26).
 
 ## 3. How much rubbing finishes a step
 - The thing being cared for is split into a **7 × 8 grid of cells** over its picture. A cell counts only where the picture is solid (alpha over 200). In the tub, only the top 75% counts, because the bottom is behind the tub.
