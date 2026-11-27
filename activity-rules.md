@@ -18,6 +18,16 @@ The Vet Clinic is the standard (Mac, Nov 25, 2026). Every activity in every buil
 - A brush turns its bristles toward the pet while you move it.
 - Close enough counts: a drop works within about 45 units of the target. Never stop the player partway through a drag.
 
+### Tools work the same everywhere (Mac, Nov 26, 2026; the Vet Clinic's cat and dog food are the model)
+- **Labeled:** every tool wears a name tag above its place: a pill in the tool's own color with its name in white ("1 cup", "½ cup", "Tbsp", "tsp", "Whisk", "Oven mitt"). The recipe or list shows each amount in the same color as its tool. Things that are hard to tell apart (flour, sugar, milk) wear a label: white pill, dark edge, dark bold word, like the Vet Clinic's "Food".
+- **Only what's needed:** only the tools this job uses are out; a tool for a later step comes out when that step starts.
+- **It stays in your hand:** a tool never snaps back while you hold it, after filling or after pouring. Only letting go sends it back to its place.
+- **Filling:** a cup or spoon fills as soon as it touches what it's filling (a jar's lid opens and closes), while you keep holding it. The scoop sits inside the cup's opening.
+- **Pouring:** when a full tool (cup, spoon, bowl) touches what it pours into, it turns and pours by itself: it tips toward the spout, the food falls from the spout in a little stream, then it turns back upright, still in your hand. What it pours into fills up as you go (a bowl's level rises).
+- **Stirring:** pick up the whisk or spoon and it flips over, tip down; dip it in the bowl (the tip goes into the food, behind the bowl's front) and rub to stir, with the usual rubbing rules below.
+- **Everything turns naturally:** pouring batter into a pan, food into a bowl, anything poured tips and pours; nothing just disappears into something else.
+- **Numbers to pick** (an oven temperature): big round number buttons to tap, not a small dial to turn. The wrong one shakes and says what the recipe says.
+
 ## 3. How much rubbing finishes a step
 - The thing being cared for is split into a **7 × 8 grid of cells** over its picture. A cell counts only where the picture is solid (alpha over 200). In the tub, only the top 75% counts, because the bottom is behind the tub.
 - A hand tool (soap, towel, brush) finishes the cells within **46 units** of the pointer. That's about one cell width, since the pet is about 300 units wide. The shower reaches **70 units**.

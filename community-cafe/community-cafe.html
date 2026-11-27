@@ -86,7 +86,8 @@
   #room:has(.thing:hover) .thing.on:not(:hover) .ring { opacity: 0; }   /* hovering one thing lights only that thing */
   .thing.shake > .art { animation: shake .47s; transform-box: fill-box; transform-origin: center; }
   @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
-  .gone { opacity: 0; pointer-events: none; transition: opacity .35s; }
+  .gone { opacity: 0 !important; pointer-events: none; transition: opacity .35s; }
+  .temp.shake { animation: shake .47s; transform-box: fill-box; transform-origin: center; }
   .fade { transition: opacity .4s; }
   /* the guide: one short line that says what to do next, at the bottom center like every room (activity-rules.md 1) */
   .guide { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 3; background: #fffaf5; border-radius: 18px; box-shadow: 0 6px 16px rgba(74, 59, 92, .18);
@@ -890,12 +891,12 @@ function makeList(r) {
 const MIX = { x: 40, y: 30, w: 1920, h: 1056, counter: 700, base: 880 };
 const MIX_BOWL = { cx: 1000, bottom: 862, h: 250 };
 // where each ingredient stands on the counter, at its real size: jars and the milk at the back, butter, eggs and the special one in front [cx, bottom, height]
-const MIX_SPOTS = { flour: [1340, 752, 150], sugar: [1530, 752, 150], milk: [1720, 752, 148], butter: [1345, 872, 96], eggs: [1545, 872, 122], cocoa: [1745, 872, 122], cinnamon: [1745, 872, 122], blueberries: [1745, 872, 108] };   // close to real sizes next to each other (Mac, Nov 26)
+const MIX_SPOTS = { flour: [1335, 752, 178], sugar: [1535, 752, 178], milk: [1735, 752, 172], butter: [1345, 872, 96], eggs: [1548, 872, 150], cocoa: [1745, 872, 122], cinnamon: [1745, 872, 122], blueberries: [1745, 872, 108] };   // close to real sizes next to each other (Mac, Nov 26)
 const TOOL_H = { 'cup-1': 140, 'cup-half': 115, tablespoon: 160, teaspoon: 138, whisk: 165, 'oven-mitt': 112 };
 const ROOM_BOWL = { cx: 905, bottom: 702, h: 150 };
 let BOWL = MIX_BOWL;
-const PAN = { cx: 1218, bottom: 708, w: 290 };
-const PLATE = { cx: 905, cy: 684, rx: 175, ry: 46 };
+const PAN = { cx: 1225, bottom: 708, w: 215 };   // a little smaller, so the pieces and a whole cake or pan of rolls fit the plate
+const PLATE = { cx: 905, cy: 684, rx: 158, ry: 44 };
 const OVEN = { x: 1620, y: 560, w: 360, h: 370 }, WINDOW = { x: 1634, y: 660, w: 100, h: 160 }, DIAL = { cx: 1686, cy: 590 };
 const TEMPS = [300, 325, 350, 375, 400];
 const CASE = [[900, 334], [1112, 334], [900, 432], [1112, 432], [1006, 526]];   // display case shelves: where finished food sits
@@ -904,6 +905,9 @@ const TOOL_SPOT = { 'cup-1': [.42, .14, .33, .07, 0], 'cup-half': [.4, .17, .31,
 // pouring, like the dog food cup: where the food comes out (parts of the picture) and how far the tool tips
 const POUR = { 'cup-1': [.05, .08, -100], 'cup-half': [.07, .12, -100], tablespoon: [.86, .1, 75], teaspoon: [.88, .08, 75] };
 const LIDDED = ['flour', 'sugar', 'cocoa', 'cinnamon'];   // jars whose lid opens when you scoop
+const LABELED = ['flour', 'sugar', 'milk'];   // hard to tell apart, so they wear a label (the Vet Clinic's white label with a dark edge)
+const label = (cx, y, text) => `<g class="label" pointer-events="none"><rect x="${cx - text.length * 11 - 30}" y="${y}" width="${text.length * 22 + 60}" height="56" rx="28" fill="#fff" stroke="#4a3b5c" stroke-width="5"/>
+  <text x="${cx}" y="${y + 39}" text-anchor="middle" font-size="32" font-weight="bold" fill="#4a3b5c">${text}</text></g>`;
 const TOOLPOS = {};   // where each tool waits: [cx, bottom, height]
 // a name tag: a pill in the tool's color with its name in white (above where the tool waits)
 function tag(cx, y, text, color, k) { const w = text.length * 21 + 46; return `<g class="tag" data-for="${k || ''}" pointer-events="none"><rect x="${cx - w / 2}" y="${y}" width="${w}" height="54" rx="27" fill="${color}" stroke="#fff" stroke-width="5"/><text x="${cx}" y="${y + 38}" text-anchor="middle" font-size="32" font-weight="bold" fill="#fff">${text}</text></g>`; }
@@ -931,11 +935,15 @@ function bake() {
     <g id="mixCard"></g><g id="mixThings"></g></g>`, document.getElementById('front'));
   THINGS = 'mixThings';
   // the ingredients on the counter
-  LIST.forEach(it => { const [cx, b, h] = MIX_SPOTS[it.ing]; it.at = [cx, b, h]; thing(it.ing, LIDDED.includes(it.ing) ? jarArt(it.ing, cx, b, h) : pic(ING[it.ing].pic, cx, b, h)); });
+  LIST.forEach(it => { const [cx, b, h] = MIX_SPOTS[it.ing]; it.at = [cx, b, h]; const g = thing(it.ing, LIDDED.includes(it.ing) ? jarArt(it.ing, cx, b, h) : pic(ING[it.ing].pic, cx, b, h));
+    if (LABELED.includes(it.ing)) g.insertAdjacentHTML('afterend', label(cx, b - h - 70, cap(ING[it.ing].name))); });
   // the bowl
   const bb = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h);
   BOWL.mouth = { cx: BOWL.cx, cy: bb.y + bb.h * .2, rx: bb.w * .42, ry: bb.h * .13 };
-  thing('bowl', pic('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h) + `<g id="bowlIn"></g>`);
+  const m = BOWL.mouth;
+  document.getElementById('mix').insertAdjacentHTML('afterbegin', `<clipPath id="mouthClip"><ellipse cx="${m.cx}" cy="${m.cy}" rx="${m.rx}" ry="${m.ry}"/></clipPath>`);
+  thing('bowl', pic('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h) + `<g class="bowlIn" clip-path="url(#mouthClip)"><ellipse class="level" cx="${m.cx}" cy="${m.cy + m.ry * 2}" rx="${m.rx * .6}" ry="${m.ry * .6}" fill="#f1e6d2"/><g class="blobs"></g></g>`);
+  mixColors = [];
   // only the tools this recipe needs, each with its name tag
   const need = [...new Set(LIST.filter(x => x.tool).map(x => x.tool))].sort((a, b) => Object.keys(TOOL_INFO).indexOf(a) - Object.keys(TOOL_INFO).indexOf(b));
   need.forEach((k, i) => toolAt(k, 170 + i * 190, 872, TOOL_H[k], 'pick'));
@@ -992,13 +1000,21 @@ function nextIngredient(silent) {
     say(it.ing === 'eggs' ? 'Crack an egg into the bowl.' : it.ing === 'butter' ? 'Put the butter in the bowl.' : 'Add the blueberries.');
   }
 }
-function bowlBlob(color, n, sparkle) {   // what you poured shows in the bowl
-  const m = BOWL.mouth, g = document.getElementById('bowlIn');
+// what is in the bowl: it fills up as you pour (the level rises and widens), and each thing you add shows on top
+let mixColors = [];
+function fillPart() { const all = LIST.reduce((a, x) => a + x.n, 0), got = LIST.reduce((a, x) => a + x.got, 0); return all ? got / all : 0; }
+function levelAt() { const m = BOWL.mouth, f = fillPart(); return { cx: m.cx, cy: m.cy + m.ry * 2 * (1 - f) * .9, rx: m.rx * (.6 + .38 * f), ry: m.ry * (.6 + .36 * f) }; }
+function bowlBlob(color, n, sparkle) {
+  mixColors.push(color);
+  const avg = [0, 1, 2].map(i => Math.round(mixColors.reduce((a, c) => a + parseInt(c.slice(1 + i * 2, 3 + i * 2), 16), 0) / mixColors.length));
+  const L = levelAt();
+  room.querySelectorAll('.bowlIn .level').forEach(e => { e.style.transition = 'all .4s'; ['cx', 'cy', 'rx', 'ry'].forEach(k => e.setAttribute(k, L[k])); e.setAttribute('fill', `rgb(${avg.map(v => Math.round(v * .92 + 235 * .08)).join(',')})`); });
+  let s = '';
   for (let i = 0; i < n; i++) {
-    const a = Math.random() * Math.PI * 2, d = Math.random() * .55, x = m.cx + Math.cos(a) * m.rx * d, y = m.cy + Math.sin(a) * m.ry * d;
-    g.insertAdjacentHTML('beforeend', `<ellipse class="blob" cx="${x}" cy="${y}" rx="${m.rx * (.28 + Math.random() * .12)}" ry="${m.ry * (.55 + Math.random() * .2)}" fill="${color}"/>` +
-      (sparkle ? `<circle class="blob" cx="${x + 8}" cy="${y - 4}" r="4" fill="#fff"/>` : ''));
+    const a = Math.random() * Math.PI * 2, d = Math.random() * .5, x = L.cx + Math.cos(a) * L.rx * d, y = L.cy + Math.sin(a) * L.ry * d;
+    s += `<ellipse class="blob" cx="${x}" cy="${y}" rx="${L.rx * (.22 + Math.random() * .1)}" ry="${L.ry * (.45 + Math.random() * .2)}" fill="${color}"/>` + (sparkle ? `<circle class="blob" cx="${x + 8}" cy="${y - 4}" r="4" fill="#fff"/>` : '');
   }
+  room.querySelectorAll('.bowlIn .blobs').forEach(g => g.insertAdjacentHTML('beforeend', s));
 }
 function setScoop(toolId, color) {
   const g = T(toolId), [cx, bottom, h] = TOOLPOS[toolId], b = picBox(toolId, cx, bottom, h), [fx, fy, rx, ry, tilt] = TOOL_SPOT[toolId];
@@ -1006,29 +1022,34 @@ function setScoop(toolId, color) {
   g.querySelectorAll('.scoop').forEach(s => s.innerHTML = color ? `<g transform="rotate(${tilt} ${x} ${y})"><ellipse cx="${x}" cy="${y}" rx="${RX}" ry="${RY}" fill="${color}"/>
     <ellipse cx="${x}" cy="${y - RY * .45}" rx="${RX * .7}" ry="${RY * .8}" fill="${color}"/><ellipse cx="${x - RX * .25}" cy="${y - RY * .7}" rx="${RX * .25}" ry="${RY * .25}" fill="#fff" opacity=".5"/></g>` : '');
 }
-// pour, like the dog food cup: the tool glides over the bowl, tips, the food falls in, and it goes back to its place
-async function pourIn(g, k) {
-  busy = true; const it = LIST[cur], color = ING[it.ing].color, m = BOWL.mouth;
-  const [cx, bottom, h] = TOOLPOS[k], b = picBox(k, cx, bottom, h), c = [b.x + b.w / 2, b.y + b.h / 2], [px, py, rot] = POUR[k];
-  const left = rot < 0, target = [m.cx + (left ? b.w * .42 : -b.w * .3), m.cy - b.h * (left ? .75 : .55)];
-  const r = rot * Math.PI / 180, sp = [b.x + b.w * px - c[0], b.y + b.h * py - c[1]];
-  const spout = [target[0] + sp[0] * Math.cos(r) - sp[1] * Math.sin(r), target[1] + sp[0] * Math.sin(r) + sp[1] * Math.cos(r)];
-  g.style.transformBox = 'view-box'; g.style.transformOrigin = `${c[0]}px ${c[1]}px`;
-  g.style.transition = 'transform .45s ease-in-out'; g.style.transform = `translate(${target[0] - c[0]}px, ${target[1] - c[1]}px) rotate(${rot}deg)`;
-  await wait(470);
+// turning a tool in your hand (activity-rules.md 2): the picture turns around its own middle, wherever you are carrying it
+function tilt(g, deg, ox, oy, ms) {
+  g.querySelectorAll(':scope > .ring, :scope > .art').forEach(x => { x.style.transformBox = 'view-box'; x.style.transformOrigin = `${ox}px ${oy}px`;
+    x.style.transition = `transform ${ms ?? 350}ms ease-in-out`; x.style.transform = deg ? `rotate(${deg}deg)` : ''; });
+}
+// where a point of the tool's picture is now: moved with your hand and turned with the tool
+function held(d, p, c, deg) { const r = deg * Math.PI / 180, v = [p[0] - c[0], p[1] - c[1]];
+  return [c[0] + (d.x - d.x0) + v[0] * Math.cos(r) - v[1] * Math.sin(r), c[1] + (d.y - d.y0) + v[0] * Math.sin(r) + v[1] * Math.cos(r)]; }
+function stream(from, to, color, n) {   // food falling from a spout
   const fx = document.getElementById('fx');
-  for (let i = 0; i < 8; i++) setTimeout(() => {   // the food falls from the spout into the bowl
-    const d = add(`<circle cx="${spout[0]}" cy="${spout[1]}" r="${9 + (i % 3) * 3}" fill="${color}"/>`, fx);
+  for (let i = 0; i < (n || 8); i++) setTimeout(() => {
+    const d = add(`<circle cx="${from[0]}" cy="${from[1]}" r="${9 + (i % 3) * 3}" fill="${color}"/>`, fx);
     d.style.transition = 'transform .35s ease-in, opacity .2s .3s'; void d.getBBox();
-    d.style.transform = `translate(${m.cx + (Math.random() - .5) * m.rx * .5 - spout[0]}px, ${m.cy - spout[1]}px)`; d.style.opacity = 0;
+    d.style.transform = `translate(${to[0] + (Math.random() - .5) * 30 - from[0]}px, ${to[1] - from[1]}px)`; d.style.opacity = 0;
     setTimeout(() => d.remove(), 600);
   }, i * 55);
-  setTimeout(() => setScoop(k, null), 250);
-  beep([[587, 0, .1], [784, .08, .14]]);
-  await wait(650);
-  bowlBlob(color, 2, it.ing === 'sugar'); filled = null; it.got++; cardRows();
-  g.style.transform = ''; await wait(470);
-  g.style.transition = ''; busy = false; nextIngredient();
+}
+// pour, like the dog food cup: over the bowl the tool turns, the food falls in, and it turns back up, still in your hand
+async function pourIn(d, k) {
+  d.pouring = true; const it = LIST[cur], color = ING[it.ing].color;
+  const [cx, bottom, h] = TOOLPOS[k], b = picBox(k, cx, bottom, h), c = [b.x + b.w / 2, b.y + b.h / 2], [px, py, rot] = POUR[k];
+  tilt(d.g, rot, c[0], c[1]); await wait(360);
+  const L = levelAt(); stream(held(d, [b.x + b.w * px, b.y + b.h * py], c, rot), [L.cx, L.cy], color);
+  setTimeout(() => setScoop(k, null), 250); beep([[587, 0, .1], [784, .08, .14]]);
+  await wait(600);
+  filled = null; it.got++; bowlBlob(color, 2, it.ing === 'sugar'); cardRows();
+  tilt(d.g, 0, c[0], c[1]); await wait(360);
+  d.pouring = false; nextIngredient();
 }
 ['cup-1', 'cup-half', 'tablespoon', 'teaspoon'].forEach(k => HANDLERS[k] = {
   pick(g) {
@@ -1037,16 +1058,14 @@ async function pourIn(g, k) {
     T(it.tool).classList.remove('hint'); return true;
   },
   move(d) {
-    const it = LIST[cur]; if (!it || busy) return;
+    const it = LIST[cur]; if (!it || busy || d.pouring) return;
     if (filled !== it.ing && !d.filling && near(d, T(it.ing).getBBox(), 10)) {   // over the food: the lid opens and the tool fills
       d.filling = true; if (LIDDED.includes(it.ing)) lid(it.ing, true);
       setTimeout(() => { filled = it.ing; setScoop(k, ING[it.ing].color); beep(TICK); lights(['bowl']); guide('Pour it in the bowl.'); d.filling = false; }, 260);
       setTimeout(() => lid(it.ing, false), 750);
-    } else if (filled === it.ing && near(d, T('bowl').getBBox(), 0)) {   // over the bowl: it pours by itself
-      drag = null; d.g.classList.remove('held'); pourIn(d.g, k);
-    }
+    } else if (filled === it.ing && near(d, T('bowl').getBBox(), 0)) pourIn(d, k);   // over the bowl: it pours by itself, and stays in your hand
   },
-  drop() { return false; },
+  drop(d) { if (d.pouring) { tilt(d.g, 0, 0, 0, 0); d.pouring = false; } return false; },   // only letting go sends it back to its place
 });
 HANDLERS.butter = HANDLERS.blueberries = {
   pick(g) { const it = LIST[cur]; return step === 0 && it && it.ing === g.dataset.id; },
@@ -1077,35 +1096,48 @@ HANDLERS.eggs = {   // the carton stays; you carry one egg from it
     cardRows(); setTimeout(nextIngredient, 350); return true;
   },
 };
-// stir: the measuring tools go away, the whisk comes out; rub it around the bowl
+// stir: the measuring tools go away and the whisk comes out. Pick it up and it flips over, wires down; dip it in the bowl and rub (the Vet Clinic's cat food)
 let rub = null;
 function stirTime() {
   Object.keys(TOOLPOS).forEach(k => { const g = T(k); if (g) g.classList.add('gone'); room.querySelectorAll(`.tag[data-for="${k}"]`).forEach(x => x.classList.add('gone')); });
   toolAt('whisk', 170, 872, TOOL_H.whisk, 'pick on');
   guide('Stir with the whisk.');
-  const m = BOWL.mouth, spots = [];
-  for (let j = 0; j < 8; j++) for (let i = 0; i < 7; i++) { const x = m.cx - m.rx + (i + .5) * m.rx * 2 / 7, y = m.cy - m.ry * 2.2 + (j + .5) * m.ry * 4.4 / 8; if (((x - m.cx) / m.rx) ** 2 + ((y - m.cy) / (m.ry * 2.2)) ** 2 <= 1) spots.push({ x, y }); }
-  document.getElementById('bowlIn').insertAdjacentHTML('beforeend', `<ellipse id="batter" cx="${m.cx}" cy="${m.cy}" rx="${m.rx * .92}" ry="${m.ry * .9}" fill="${R.batter}" opacity="0"/>`);
+  const L = levelAt(), m = BOWL.mouth, spots = [];
+  for (let j = 0; j < 8; j++) for (let i = 0; i < 7; i++) { const x = L.cx - L.rx + (i + .5) * L.rx * 2 / 7, y = L.cy - L.ry + (j + .5) * L.ry * 2 / 8; if (((x - L.cx) / L.rx) ** 2 + ((y - L.cy) / L.ry) ** 2 <= 1) spots.push({ x, y }); }
+  room.querySelectorAll('.bowlIn').forEach(g => g.insertAdjacentHTML('beforeend', `<ellipse class="batter" cx="${L.cx}" cy="${L.cy}" rx="${L.rx}" ry="${L.ry}" fill="${R.batter}" opacity="0"/>`));
+  // the bowl's front and the batter, drawn over the whisk, so its wires look down in the batter
+  const bb = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h);
+  document.getElementById('fx').insertAdjacentHTML('beforeend', `<g id="bowlFront" opacity="0" pointer-events="none"><clipPath id="frontClip"><rect x="${bb.x - 10}" y="${L.cy}" width="${bb.w + 20}" height="${bb.h}"/></clipPath>
+    <g clip-path="url(#frontClip)">${pic('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h)}<g clip-path="url(#mouthClip)"><ellipse class="frontLevel" cx="${L.cx}" cy="${L.cy}" rx="${L.rx}" ry="${L.ry}" fill="${room.querySelector('.bowlIn .level').getAttribute('fill')}"/></g></g></g>`);
   rub = rubber(spots, (s, i, part) => {
-    document.getElementById('batter').setAttribute('opacity', Math.min(1, part / RUB_DONE));
-    document.querySelectorAll('#bowlIn .blob').forEach(b => b.setAttribute('opacity', Math.max(0, 1 - part / RUB_DONE)));
+    const k = Math.min(1, part / RUB_DONE);
+    room.querySelectorAll('.bowlIn .batter').forEach(b => b.setAttribute('opacity', k));
+    room.querySelectorAll('.bowlIn .blobs').forEach(b => b.setAttribute('opacity', 1 - k));
+    document.querySelector('#bowlFront .frontLevel').setAttribute('fill', R.batter); document.querySelector('#bowlFront .frontLevel').setAttribute('opacity', .4 + .6 * k);
   }, mixDone);
 }
+const WHISK_TIP = [.8, .14];   // the end of the wires in the whisk picture
 HANDLERS.whisk = {
   pick() { return step === 0 && rub && !rub.fired; },
-  move(d) { if (near(d, T('bowl').getBBox(), 10)) rub.at(d.x, d.y + 60); },   // the wires are below where you hold it
-  drop() { rub.release(); return false; },
+  grab(d) { const [cx, bottom, h] = TOOLPOS.whisk, b = picBox('whisk', cx, bottom, h); d.c = [b.x + b.w / 2, b.y + b.h / 2]; d.tip = [b.x + b.w * WHISK_TIP[0], b.y + b.h * WHISK_TIP[1]]; tilt(d.g, 180, d.c[0], d.c[1], 250); },
+  move(d) {
+    const [x, y] = held(d, d.tip, d.c, 180), L = levelAt(), inBowl = ((x - L.cx) / (L.rx * 1.3)) ** 2 + ((y - L.cy) / (L.ry * 2.2)) ** 2 <= 1;
+    document.getElementById('bowlFront').setAttribute('opacity', inBowl ? 1 : 0);
+    if (inBowl) rub.at(x, y);
+  },
+  drop(d) { document.getElementById('bowlFront').setAttribute('opacity', 0); tilt(d.g, 0, d.c[0], d.c[1], 200); rub.release(); return false; },
 };
 async function mixDone() {
   T('whisk').classList.remove('pick', 'on');
   const b = BOWL.mouth; starBurst(b.cx, b.cy - 40); beep(GOOD);
+  document.getElementById('bowlFront')?.remove();
   await wait(900);
   // back to the kitchen: the bowl of batter is on the counter, the pan comes out, and the recipe card keeps the oven number
   const mix = document.getElementById('mix'); mix.style.transition = 'opacity .35s'; mix.style.opacity = 0; await wait(380); mix.remove();
   THINGS = 'things'; BOWL = ROOM_BOWL;
   const bb = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h);
   BOWL.mouth = { cx: BOWL.cx, cy: bb.y + bb.h * .2, rx: bb.w * .42, ry: bb.h * .13 };
-  thing('bowl', pic('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h) + `<ellipse cx="${BOWL.mouth.cx}" cy="${BOWL.mouth.cy}" rx="${BOWL.mouth.rx * .92}" ry="${BOWL.mouth.ry * .9}" fill="${R.batter}"/>`, 'pick on');
+  thing('bowl', pic('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h) + `<ellipse class="batterTop" cx="${BOWL.mouth.cx}" cy="${BOWL.mouth.cy}" rx="${BOWL.mouth.rx * .92}" ry="${BOWL.mouth.ry * .9}" fill="${R.batter}"/>`, 'pick on');
   const card = document.getElementById('recipe'); card.hidden = false; card.innerHTML = `<h3>${cap(R.name)}</h3><div class="oven">Oven: ${R.temp}°</div>`;
   tray(250); toolAt('oven-mitt', 150, 1088, TOOL_H['oven-mitt'], '', 'Oven mitt', '#d38161');
   const pan = thing('pan', pic(R.pan + '-empty', PAN.cx, PAN.bottom, PAN.w * SIZE[R.pan + '-empty'][1] / SIZE[R.pan + '-empty'][0]));
@@ -1116,13 +1148,18 @@ const panH = state => PAN.w * SIZE[R.pan + '-' + state][1] / SIZE[R.pan + '-' + 
 function panArt(state) { T('pan').querySelectorAll('.art, .ring').forEach(g => g.innerHTML = pic(R.pan + '-' + state, PAN.cx, PAN.bottom, panH(state))); }
 HANDLERS.bowl = {
   next: true,
-  pick() { return step === 1 && !R.poured; },
-  drop(d) {
-    if (!near(d, T('pan').getBBox(), 20)) return false;
-    R.poured = true; d.g.classList.add('gone'); d.g.classList.remove('pick', 'on');
-    panArt('raw'); beep([[392, 0, .15], [523, .12, .2]]);
-    T('pan').classList.add('pick'); lights(['pan']); guide('Put the pan in the oven.'); return true;
+  pick() { return step === 1; },
+  async move(d) {   // over the pan, the bowl tips and the batter pours in (it stays in your hand)
+    if (R.poured || d.pouring || !near(d, T('pan').getBBox(), 10)) return;
+    d.pouring = true; const b = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h), c = [b.x + b.w / 2, b.y + b.h / 2];
+    tilt(d.g, -75, c[0], c[1]); await wait(380);
+    const pb = T('pan').getBBox(); stream(held(d, [b.x + b.w * .06, b.y + b.h * .22], c, -75), [pb.x + pb.width / 2, pb.y + pb.height * .45], R.batter, 12);
+    beep([[392, 0, .15], [523, .12, .2]]); await wait(700);
+    R.poured = true; panArt('raw'); d.g.querySelectorAll('.batterTop').forEach(x => x.remove());
+    tilt(d.g, 0, c[0], c[1]); await wait(360); d.pouring = false;
+    T('pan').classList.add('pick'); lights(['pan']); guide('Put the pan in the oven.');
   },
+  drop(d) { if (!R.poured) return false; d.g.classList.add('gone'); d.g.classList.remove('pick', 'on'); return true; },   // empty: it goes away
 };
 HANDLERS.pan = {
   pick() { return step === 1 && R.poured && !R.inOven; },
@@ -1133,27 +1170,39 @@ HANDLERS.pan = {
     d.g.style.transformOrigin = `${b.x + b.width / 2}px ${b.y + b.height / 2}px`;
     d.g.style.transition = 'transform .5s ease-in, opacity .4s .2s'; d.g.style.transform = `translate(${tx}px, ${ty}px) scale(.3)`; d.g.style.opacity = 0;
     beep([[330, 0, .1], [262, .1, .15]]);
-    // the dial
-    dialAt = 0; drawDial();
-    T('dial').classList.add('on'); readout(DIAL.cx, DIAL.cy - 90, TEMPS[dialAt] + '°');
-    guide(`Turn the dial to ${R.temp}.`); return true;
+    // the oven's numbers: big buttons by the oven; tap the one on the recipe card
+    dialAt = 0; drawDial(); tempButtons();
+    guide(`Set the oven to ${R.temp}.`); return true;
   },
 };
 let dialAt = 0;
+function tempButtons() {
+  const y = 470, xs = TEMPS.map((_, i) => 1420 + i * 128);
+  add(`<g id="temps"><rect x="1340" y="${y - 72}" width="${xs[4] - 1340 + 80}" height="144" rx="40" fill="rgba(74,59,92,.14)" transform="translate(0 6)"/><rect x="1340" y="${y - 72}" width="${xs[4] - 1340 + 80}" height="144" rx="40" fill="#fffaf5"/>
+    ${TEMPS.map((n, i) => `<g class="temp" data-n="${n}" style="cursor:pointer"><circle cx="${xs[i]}" cy="${y}" r="56" fill="#f8e3d9" stroke="#d38161" stroke-width="6"/><text x="${xs[i]}" y="${y + 13}" text-anchor="middle" font-size="38" font-weight="bold" fill="#ad5f42">${n}</text></g>`).join('')}</g>`, document.getElementById('fx'));
+}
+room.addEventListener('click', e => {
+  const b = e.target.closest('.temp'); if (!b || R.baking) return;
+  const n = +b.dataset.n;
+  if (n !== R.temp) { beep(SAD, 'sine'); b.classList.remove('shake'); void b.getBBox(); b.classList.add('shake'); showToast(`The recipe says ${R.temp}.`); return; }
+  dialAt = TEMPS.indexOf(n); drawDial(); b.querySelector('circle').setAttribute('fill', '#5fae7a'); b.querySelector('text').setAttribute('fill', '#fff');
+  setTimeout(() => { const g = document.getElementById('temps'); if (g) { g.style.transition = 'opacity .3s'; g.style.opacity = 0; setTimeout(() => g.remove(), 320); } }, 400);
+  bakeNow();
+});
 function drawDial() {
   const a = -120 + dialAt * 60, art = `<circle cx="${DIAL.cx}" cy="${DIAL.cy}" r="62" fill="rgba(255,255,255,0)"/><circle cx="${DIAL.cx}" cy="${DIAL.cy}" r="26" fill="#fbf3e6"/><circle cx="${DIAL.cx}" cy="${DIAL.cy}" r="20" fill="#f1e2cc"/><rect x="${DIAL.cx - 3.5}" y="${DIAL.cy - 22}" width="7" height="16" rx="3.5" fill="#ad5f42" transform="rotate(${a} ${DIAL.cx} ${DIAL.cy})"/>`;
   let g = T('dial'); if (!g) g = thing('dial', art); else g.querySelectorAll('.art, .ring').forEach(x => x.innerHTML = art);
   g.style.cursor = 'pointer';
 }
 HANDLERS.dial = {
-  tap(g) {
+  tap(g) { return;
     if (step !== 1 || !R.inOven || R.baking) return;
     dialAt = (dialAt + 1) % TEMPS.length; drawDial(); beep([[660 + dialAt * 40, 0, .06]]); readout(DIAL.cx, DIAL.cy - 90, TEMPS[dialAt] + '°');
     if (TEMPS[dialAt] === R.temp) bakeNow();
   },
 };
 async function bakeNow() {
-  R.baking = true; T('dial').classList.remove('on'); beep(GOOD);
+  R.baking = true; beep(GOOD);
   const glow = add(`<rect class="oven-glow" x="${WINDOW.x + 4}" y="${WINDOW.y + 6}" width="${WINDOW.w - 8}" height="${WINDOW.h - 12}" rx="18" fill="#ffb066" filter="url(#soft)"/>`, document.getElementById('behind'));
   guide('Baking...');
   for (let s = 5; s > 0; s--) { readout(DIAL.cx, DIAL.cy - 90, s); beep([[520, 0, .05]]); await wait(1000); }
@@ -1179,7 +1228,7 @@ function plateSlots(n) {   // a little pile on the plate: a bottom row, and each
   const { cx, cy } = PLATE;
   if (n === 1) return [[cx, cy + 22]];
   const rows = n > 6 ? [4, 3, 2] : n > 3 ? [3, 2, 1] : [n], out = [];
-  rows.forEach((cnt, j) => { for (let i = 0; i < cnt; i++) out.push([cx + (i - (cnt - 1) / 2) * 86, cy + 26 - j * 40]); });
+  rows.forEach((cnt, j) => { for (let i = 0; i < cnt; i++) out.push([cx + (i - (cnt - 1) / 2) * 66, cy + 22 - j * 30]); });
   return out.slice(0, n);
 }
 function plateArt() { const w = PLATE.rx * 2.2, [W, H] = SIZE.plate, h = w * H / W; return pic('plate', PLATE.cx, PLATE.cy + h / 2 + 6, h); }
@@ -1305,7 +1354,7 @@ async function bakeFinished() {
   g.style.transformBox = 'view-box'; g.style.transformOrigin = `${PLATE.cx}px ${PLATE.cy}px`;
   g.style.transition = 'transform .9s ease-in-out';
   g.style.transform = `translate(${tx - PLATE.cx}px, ${ty - 8 - PLATE.cy}px) scale(${k})`;
-  room.querySelectorAll('#tray, .thing:not(#onPlate .thing)').forEach(x => x.classList.add('gone'));
+  room.querySelectorAll('#tray, .tag, .label, .thing:not(#onPlate .thing)').forEach(x => x.classList.add('gone'));
   document.getElementById('front').appendChild(g);
   await wait(1100);
   payMe(10, `Baked ${R.name} at the Community Cafe`, `You baked ${R.name} for the cafe!`, 'Bake again');
