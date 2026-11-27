@@ -1580,7 +1580,8 @@ function buyItem(card) {
   const s = Math.min(.5, 48 / a.width);
   fly.style.transform = `translate(${b.left + b.width / 2 - (a.left + a.width / 2)}px, ${b.top + b.height / 2 - (a.top + a.height / 2)}px) scale(${s})`; fly.style.opacity = '0';
   setTimeout(() => { fly.remove(); tbSparkle(tbBagButton(), 16); }, 760);
-  if (it.play) setTimeout(() => { closeShop(); tbAskPlay(it.id, true); }, 900);   // a game: Play now or Save in backpack (Mac, Nov 26, 2026)
+  if (it.play) setTimeout(() => { closeShop(); tbAskPlay(it.id, true); }, 900);
+  if (it.kind === 'food') setTimeout(() => { shopBack = null; closeShop(); history.replaceState(null, '', '#town'); showMap(); }, 1000);   // bought at the cafe: back to town (Mac, Nov 26, 2026)   // a game: Play now or Save in backpack (Mac, Nov 26, 2026)
 }
 // tap an item: a pop-up shows it big, with its name, price and a Buy button (Mac, Nov 25, 2026)
 function openBuy(card) {
