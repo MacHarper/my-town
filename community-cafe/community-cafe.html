@@ -891,7 +891,7 @@ function makeList(r) {
 const MIX = { x: 40, y: 30, w: 1920, h: 1056, counter: 700, base: 880 };
 const MIX_BOWL = { cx: 1000, bottom: 862, h: 250 };
 // where each ingredient stands on the counter, at its real size: jars and the milk at the back, butter, eggs and the special one in front [cx, bottom, height]
-const MIX_SPOTS = { flour: [1335, 752, 178], sugar: [1535, 752, 178], milk: [1735, 752, 172], butter: [1345, 872, 96], eggs: [1548, 872, 150], cocoa: [1745, 872, 122], cinnamon: [1745, 872, 122], blueberries: [1745, 872, 108] };   // close to real sizes next to each other (Mac, Nov 26)
+const MIX_SPOTS = { flour: [1335, 752, 178], sugar: [1535, 752, 178], milk: [1735, 752, 172], butter: [1345, 872, 96], eggs: [1548, 872, 172], cocoa: [1745, 872, 122], cinnamon: [1745, 872, 122], blueberries: [1745, 872, 108] };   // close to real sizes next to each other (Mac, Nov 26)
 const TOOL_H = { 'cup-1': 140, 'cup-half': 115, tablespoon: 160, teaspoon: 138, whisk: 165, 'oven-mitt': 112 };
 let BOWL = MIX_BOWL;
 // the pan: in the close-up the bowl pours into it; in the kitchen it stands on the counter top (its bottom on the counter, not over the front edge)
@@ -904,7 +904,7 @@ const CASE = [[900, 337], [1112, 337], [900, 434], [1112, 434], [1006, 525]];   
 // where the scoop sits inside each tool: [center x, center y (parts of the picture), half-width (part of its width), half-height (part of its height), tilt]
 const TOOL_SPOT = { 'cup-1': [.42, .14, .33, .07, 0], 'cup-half': [.4, .17, .31, .1, 0], tablespoon: [.68, .24, .13, .15, 38], teaspoon: [.75, .2, .12, .13, 38] };
 // pouring, like the dog food cup: where the food comes out (parts of the picture) and how far the tool tips
-const POUR = { 'cup-1': [.05, .08, -100], 'cup-half': [.07, .12, -100], tablespoon: [.86, .1, 75], teaspoon: [.88, .08, 75] };
+const POUR = { 'cup-1': [.05, .08, -68], 'cup-half': [.07, .12, -68], tablespoon: [.86, .1, 62], teaspoon: [.88, .08, 62] };   // tipped so it pours over the lip, not out the side (Mac, Nov 26)
 const LIDDED = ['flour', 'sugar', 'cocoa', 'cinnamon'];   // jars whose lid opens when you scoop
 const LABELED = ['flour', 'sugar', 'milk'];   // hard to tell apart, so they wear a label (the Vet Clinic's white label with a dark edge)
 const label = (cx, y, text) => `<g class="label" pointer-events="none"><rect x="${cx - text.length * 11 - 30}" y="${y}" width="${text.length * 22 + 60}" height="56" rx="28" fill="#fff" stroke="#4a3b5c" stroke-width="5"/>
@@ -1033,7 +1033,7 @@ function overTarget(d, p, c, deg, target) { const now = held(d, p, c, deg); retu
 // where a held tool's middle is now
 const heldMid = (d, c) => [c[0] + d.x - d.x0, c[1] + d.y - d.y0];
 // is the held tool above this box (over it, its bottom above the top of it: above, not on it)?
-function aboveBox(d, c, h, box, top) { const [x, y] = heldMid(d, c), w = box.w ?? box.width, bh = box.h ?? box.height; return x > box.x - 40 && x < box.x + w + 40 && y + h / 2 > top - 340 && y + h / 2 < top + 30; }
+function aboveBox(d, c, h, box, top) { const [x, y] = heldMid(d, c), w = box.w ?? box.width, bh = box.h ?? box.height; return x > box.x - 90 && x < box.x + w + 90 && y + h / 2 > top - 340 && y + h / 2 < top + 90; }   // a bit wider and lower (Mac, Nov 26)
 // where a point of the tool's picture is now: moved with your hand and turned with the tool
 function held(d, p, c, deg) { const r = deg * Math.PI / 180, v = [p[0] - c[0], p[1] - c[1]];
   return [c[0] + (d.x - d.x0) + v[0] * Math.cos(r) - v[1] * Math.sin(r), c[1] + (d.y - d.y0) + v[0] * Math.sin(r) + v[1] * Math.cos(r)]; }
@@ -1091,7 +1091,7 @@ HANDLERS.eggs = {   // the carton stays; you carry one egg from it
   pick() { return step === 0 && LIST[cur] && LIST[cur].ing === 'eggs'; },
   grab(d) {
     const it = LIST[cur], [cx, b] = it.at;
-    d.egg = add(`<g style="pointer-events:none">${pic('egg', cx, b - 30, 90)}</g>`, document.getElementById('fx'));
+    d.egg = add(`<g style="pointer-events:none">${pic('egg', cx, b - 34, 106)}</g>`, document.getElementById('fx'));
     d.g.style.transform = ''; d.g.classList.remove('held'); d.carton = d.g;
     d.g = d.egg;
   },
@@ -1113,19 +1113,25 @@ function stirTime() {
   Object.keys(TOOLPOS).forEach(k => { const g = T(k); if (g) g.classList.add('gone'); room.querySelectorAll(`.tag[data-for="${k}"]`).forEach(x => x.classList.add('gone')); });
   toolAt('whisk', 170, 872, TOOL_H.whisk, 'pick on');
   guide('Stir with the whisk.');
-  const L = levelAt(), m = BOWL.mouth, spots = [];
-  for (let j = 0; j < 8; j++) for (let i = 0; i < 7; i++) { const x = L.cx - L.rx + (i + .5) * L.rx * 2 / 7, y = L.cy - L.ry + (j + .5) * L.ry * 2 / 8; if (((x - L.cx) / L.rx) ** 2 + ((y - L.cy) / L.ry) ** 2 <= 1) spots.push({ x, y }); }
+  const L = levelAt();
   room.querySelectorAll('.bowlIn').forEach(g => g.insertAdjacentHTML('beforeend', `<ellipse class="batter" cx="${L.cx}" cy="${L.cy}" rx="${L.rx}" ry="${L.ry}" fill="${R.batter}" opacity="0"/>`));
   // the bowl's front and the batter, drawn over the whisk, so its wires look down in the batter
   const bb = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h);
   document.getElementById('fx').insertAdjacentHTML('beforeend', `<g id="bowlFront" opacity="0" pointer-events="none"><clipPath id="frontClip"><rect x="${bb.x - 10}" y="${L.cy}" width="${bb.w + 20}" height="${bb.h}"/></clipPath>
     <g clip-path="url(#frontClip)">${pic('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h)}<g clip-path="url(#mouthClip)"><ellipse class="frontLevel" cx="${L.cx}" cy="${L.cy}" rx="${L.rx}" ry="${L.ry}" fill="${room.querySelector('.bowlIn .level').getAttribute('fill')}"/></g></g></g>`);
-  rub = rubber(spots, (s, i, part) => {
-    const k = Math.min(1, part / RUB_DONE);
+  // like the Vet Clinic's cat food (Mac, Nov 26): every bit of stirring counts (about 4 times round the bowl), and it finishes by itself
+  const lap = Math.PI * (L.rx * .78 + L.ry * .75);
+  rub = { mix: 0, fired: false, last: null, need: lap * 4 };
+  rub.at = (x, y) => {
+    if (rub.fired) return;
+    if (rub.last) rub.mix = Math.min(1, rub.mix + Math.hypot(x - rub.last[0], y - rub.last[1]) / rub.need);
+    rub.last = [x, y]; const k = rub.mix;
     room.querySelectorAll('.bowlIn .batter').forEach(b => b.setAttribute('opacity', k));
     room.querySelectorAll('.bowlIn .blobs').forEach(b => b.setAttribute('opacity', 1 - k));
     document.querySelector('#bowlFront .frontLevel').setAttribute('fill', R.batter); document.querySelector('#bowlFront .frontLevel').setAttribute('opacity', .4 + .6 * k);
-  }, mixDone);
+    if (k >= 1) { rub.fired = true; const d = drag; if (d && d.id === 'whisk') { drag = null; d.g.classList.remove('held'); HANDLERS.whisk.drop(d); goBack(d.g); } mixDone(); }
+  };
+  rub.release = () => { rub.last = null; };
 }
 const WHISK_TIP = [.8, .14];   // the end of the wires in the whisk picture
 HANDLERS.whisk = {
@@ -1136,7 +1142,7 @@ HANDLERS.whisk = {
   move(d) {
     const L = levelAt(), bb = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h), [rx, ry] = held(d, d.tip, d.c, 180), front = document.getElementById('bowlFront');
     const inBowl = rx > bb.x - 60 && rx < bb.x + bb.w + 60 && ry > L.cy - L.ry * 3 && ry < bb.y + bb.h + 90;
-    if (!inBowl) { front.setAttribute('opacity', 0); tilt(d.g, 180, d.c[0], d.c[1], 0); return; }
+    if (!inBowl) { front.setAttribute('opacity', 0); tilt(d.g, 180, d.c[0], d.c[1], 0); rub.last = null; return; }
     let dx = rx - L.cx, dy = ry - L.cy; const r = Math.hypot(dx / (L.rx * .78), dy / (L.ry * .75)); if (r > 1) { dx /= r; dy /= r; }
     const x = L.cx + dx, y = L.cy + dy, deg = 180 + dx / 5, a = deg * Math.PI / 180, v = [d.tip[0] - d.c[0], d.tip[1] - d.c[1]];
     d.g.style.transform = `translate(${x - d.c[0] - (v[0] * Math.cos(a) - v[1] * Math.sin(a))}px, ${y - d.c[1] - (v[0] * Math.sin(a) + v[1] * Math.cos(a))}px)`;
@@ -1428,6 +1434,7 @@ const CLW = 237, CK = CLW / SIZE['box-closed'][0], C0 = { x: 1000 - CLW / 2, y: 
 const ob = (x, y) => [BOX0.x + x * BOXK, BOX0.y + y * BOXK], cb = (x, y) => [C0.x + x * CK, C0.y + y * CK];
 const BOX = { cx: 1000, bottom: 694, h: SIZE['box-open'][1] * BOXK };
 const FLAPS = [[[12, 68], [235, 5], [285, 88], [75, 152]], [[290, 88], [345, 2], [548, 60], [485, 142]], [[75, 160], [280, 224], [215, 325], [5, 235]], [[285, 224], [485, 150], [555, 215], [345, 322]]];
+const SHELF = [[200, 302, 118], [330, 302, 118], [335, 452, 92], [335, 562, 92], [335, 672, 92], [335, 782, 92]];   // the shelves: [cx, bottom, height]
 const TRUCK = { x: 1494, y: 410, w: 192, h: 240 };   // the open back of the truck
 let NEED, have, inBox = [];
 function pack() {
