@@ -899,7 +899,11 @@ const PLATE = { cx: 905, cy: 684, rx: 175, ry: 46 };
 const OVEN = { x: 1620, y: 560, w: 360, h: 370 }, WINDOW = { x: 1634, y: 660, w: 100, h: 160 }, DIAL = { cx: 1686, cy: 590 };
 const TEMPS = [300, 325, 350, 375, 400];
 const CASE = [[900, 334], [1112, 334], [900, 432], [1112, 432], [1006, 526]];   // display case shelves: where finished food sits
-const TOOL_SPOT = { 'cup-1': [.36, .2, .3], 'cup-half': [.34, .25, .3], tablespoon: [.74, .2, .2], teaspoon: [.74, .2, .2] };   // where the scoop shows on each tool [x, y, size] as parts of its picture
+// where the scoop sits inside each tool: [center x, center y (parts of the picture), half-width (part of its width), half-height (part of its height), tilt]
+const TOOL_SPOT = { 'cup-1': [.42, .14, .33, .07, 0], 'cup-half': [.4, .17, .31, .1, 0], tablespoon: [.68, .24, .13, .15, 38], teaspoon: [.75, .2, .12, .13, 38] };
+// pouring, like the dog food cup: where the food comes out (parts of the picture) and how far the tool tips
+const POUR = { 'cup-1': [.05, .08, -100], 'cup-half': [.07, .12, -100], tablespoon: [.86, .1, 75], teaspoon: [.88, .08, 75] };
+const LIDDED = ['flour', 'sugar', 'cocoa', 'cinnamon'];   // jars whose lid opens when you scoop
 const TOOLPOS = {};   // where each tool waits: [cx, bottom, height]
 // a name tag: a pill in the tool's color with its name in white (above where the tool waits)
 function tag(cx, y, text, color, k) { const w = text.length * 21 + 46; return `<g class="tag" data-for="${k || ''}" pointer-events="none"><rect x="${cx - w / 2}" y="${y}" width="${w}" height="54" rx="27" fill="${color}" stroke="#fff" stroke-width="5"/><text x="${cx}" y="${y + 38}" text-anchor="middle" font-size="32" font-weight="bold" fill="#fff">${text}</text></g>`; }
@@ -927,7 +931,7 @@ function bake() {
     <g id="mixCard"></g><g id="mixThings"></g></g>`, document.getElementById('front'));
   THINGS = 'mixThings';
   // the ingredients on the counter
-  LIST.forEach(it => { const [cx, b, h] = MIX_SPOTS[it.ing]; it.at = [cx, b, h]; thing(it.ing, pic(ING[it.ing].pic, cx, b, h)); });
+  LIST.forEach(it => { const [cx, b, h] = MIX_SPOTS[it.ing]; it.at = [cx, b, h]; thing(it.ing, LIDDED.includes(it.ing) ? jarArt(it.ing, cx, b, h) : pic(ING[it.ing].pic, cx, b, h)); });
   // the bowl
   const bb = picBox('mixing-bowl', BOWL.cx, BOWL.bottom, BOWL.h);
   BOWL.mouth = { cx: BOWL.cx, cy: bb.y + bb.h * .2, rx: bb.w * .42, ry: bb.h * .13 };
@@ -937,8 +941,22 @@ function bake() {
   need.forEach((k, i) => toolAt(k, 170 + i * 190, 872, TOOL_H[k], 'pick'));
   mixCard();
   step = 0; ready = false; drawTasks(true);
-  guide(`Let's make ${R.name}!`, true);
-  setTimeout(() => nextIngredient(), 2200);
+  // say what we are making, in the usual guide line, long enough to read (activity-rules.md 6); the first thing to do lights up right away
+  const hi = `Let's make ${R.name}!`;
+  guide(hi); nextIngredient(true);
+  setTimeout(() => { if (guideEl.textContent === hi) nextIngredient(); }, tbReadMs(hi));
+}
+// a jar whose lid can open: the jar and its lid are the same picture, cut at the lid's bottom edge
+function jarArt(ing, cx, b, h) {
+  const key = ING[ing].pic, bx = picBox(key, cx, b, h), ly = bx.y + bx.h * .19, im = `href="${ART[key]}" x="${bx.x}" y="${bx.y}" width="${bx.w}" height="${bx.h}"`;
+  return `<clipPath id="jb-${ing}"><rect x="${bx.x - 20}" y="${ly}" width="${bx.w + 40}" height="${bx.h}"/></clipPath><clipPath id="jl-${ing}"><rect x="${bx.x - 20}" y="${bx.y - 20}" width="${bx.w + 40}" height="${ly - bx.y + 20}"/></clipPath>
+    <image ${im} clip-path="url(#jb-${ing})"/><g class="lid" data-hx="${bx.x + bx.w * .08}" data-hy="${ly}"><image ${im} clip-path="url(#jl-${ing})"/></g>`;
+}
+function lid(ing, open) {
+  room.querySelectorAll(`.thing[data-id="${ing}"] .lid`).forEach(l => {
+    l.style.transformBox = 'view-box'; l.style.transformOrigin = `${l.dataset.hx}px ${l.dataset.hy}px`; l.style.transition = 'transform .25s ease-out';
+    l.style.transform = open ? 'translate(-12px, -30px) rotate(-30deg)' : '';
+  });
 }
 const cap = s => s[0].toUpperCase() + s.slice(1);
 // the recipe card: like the cat food list. The current row is yellow, done rows get a green check, amounts are in their tool's color, a dot for each scoop.
@@ -959,18 +977,19 @@ function mixCard() {
 }
 const cardRows = () => mixCard();
 function lights(ids) { room.querySelectorAll('.thing').forEach(g => g.classList.toggle('on', ids.includes(g.dataset.id))); }
-function nextIngredient() {
+function nextIngredient(silent) {
   cur = LIST.findIndex(it => it.got < it.n); cardRows();
+  const say = s => { if (!silent) guide(s); };
   if (cur < 0) return stirTime();
   const it = LIST[cur], ing = ING[it.ing];
   room.querySelectorAll('.thing').forEach(g => g.classList.remove('hint'));
   if (it.tool) {   // scoop with a measuring tool: the food lights up; you pick the right tool (its tag matches the color on the card)
     T(it.ing).classList.remove('pick');
     lights([it.ing]);
-    guide(filled === it.ing ? `Pour it in the bowl.` : `Scoop ${it.one} of ${ing.name}.`);
+    say(filled === it.ing ? `Pour it in the bowl.` : `Scoop ${it.one} of ${ing.name}.`);
   } else {   // butter, an egg, the blueberries: carry it to the bowl
     T(it.ing).classList.add('pick'); lights([it.ing]);
-    guide(it.ing === 'eggs' ? 'Crack an egg into the bowl.' : it.ing === 'butter' ? 'Put the butter in the bowl.' : 'Add the blueberries.');
+    say(it.ing === 'eggs' ? 'Crack an egg into the bowl.' : it.ing === 'butter' ? 'Put the butter in the bowl.' : 'Add the blueberries.');
   }
 }
 function bowlBlob(color, n, sparkle) {   // what you poured shows in the bowl
@@ -982,8 +1001,34 @@ function bowlBlob(color, n, sparkle) {   // what you poured shows in the bowl
   }
 }
 function setScoop(toolId, color) {
-  const g = T(toolId), s = g.querySelector('.art .scoop'), [cx, bottom, h] = TOOLPOS[toolId], b = picBox(toolId, cx, bottom, h), [fx, fy, fs] = TOOL_SPOT[toolId];
-  s.innerHTML = color ? `<ellipse cx="${b.x + b.w * fx}" cy="${b.y + b.h * fy}" rx="${b.w * fs}" ry="${b.w * fs * .45}" fill="${color}"/><ellipse cx="${b.x + b.w * fx}" cy="${b.y + b.h * fy - b.w * fs * .18}" rx="${b.w * fs * .7}" ry="${b.w * fs * .32}" fill="${color}"/>` : '';
+  const g = T(toolId), [cx, bottom, h] = TOOLPOS[toolId], b = picBox(toolId, cx, bottom, h), [fx, fy, rx, ry, tilt] = TOOL_SPOT[toolId];
+  const x = b.x + b.w * fx, y = b.y + b.h * fy, RX = b.w * rx, RY = b.h * ry;
+  g.querySelectorAll('.scoop').forEach(s => s.innerHTML = color ? `<g transform="rotate(${tilt} ${x} ${y})"><ellipse cx="${x}" cy="${y}" rx="${RX}" ry="${RY}" fill="${color}"/>
+    <ellipse cx="${x}" cy="${y - RY * .45}" rx="${RX * .7}" ry="${RY * .8}" fill="${color}"/><ellipse cx="${x - RX * .25}" cy="${y - RY * .7}" rx="${RX * .25}" ry="${RY * .25}" fill="#fff" opacity=".5"/></g>` : '');
+}
+// pour, like the dog food cup: the tool glides over the bowl, tips, the food falls in, and it goes back to its place
+async function pourIn(g, k) {
+  busy = true; const it = LIST[cur], color = ING[it.ing].color, m = BOWL.mouth;
+  const [cx, bottom, h] = TOOLPOS[k], b = picBox(k, cx, bottom, h), c = [b.x + b.w / 2, b.y + b.h / 2], [px, py, rot] = POUR[k];
+  const left = rot < 0, target = [m.cx + (left ? b.w * .42 : -b.w * .3), m.cy - b.h * (left ? .75 : .55)];
+  const r = rot * Math.PI / 180, sp = [b.x + b.w * px - c[0], b.y + b.h * py - c[1]];
+  const spout = [target[0] + sp[0] * Math.cos(r) - sp[1] * Math.sin(r), target[1] + sp[0] * Math.sin(r) + sp[1] * Math.cos(r)];
+  g.style.transformBox = 'view-box'; g.style.transformOrigin = `${c[0]}px ${c[1]}px`;
+  g.style.transition = 'transform .45s ease-in-out'; g.style.transform = `translate(${target[0] - c[0]}px, ${target[1] - c[1]}px) rotate(${rot}deg)`;
+  await wait(470);
+  const fx = document.getElementById('fx');
+  for (let i = 0; i < 8; i++) setTimeout(() => {   // the food falls from the spout into the bowl
+    const d = add(`<circle cx="${spout[0]}" cy="${spout[1]}" r="${9 + (i % 3) * 3}" fill="${color}"/>`, fx);
+    d.style.transition = 'transform .35s ease-in, opacity .2s .3s'; void d.getBBox();
+    d.style.transform = `translate(${m.cx + (Math.random() - .5) * m.rx * .5 - spout[0]}px, ${m.cy - spout[1]}px)`; d.style.opacity = 0;
+    setTimeout(() => d.remove(), 600);
+  }, i * 55);
+  setTimeout(() => setScoop(k, null), 250);
+  beep([[587, 0, .1], [784, .08, .14]]);
+  await wait(650);
+  bowlBlob(color, 2, it.ing === 'sugar'); filled = null; it.got++; cardRows();
+  g.style.transform = ''; await wait(470);
+  g.style.transition = ''; busy = false; nextIngredient();
 }
 ['cup-1', 'cup-half', 'tablespoon', 'teaspoon'].forEach(k => HANDLERS[k] = {
   pick(g) {
@@ -991,16 +1036,17 @@ function setScoop(toolId, color) {
     if (k !== it.tool) { beep(SAD, 'sine'); T(it.tool).classList.add('hint'); showToast(`Use the ${TOOL_INFO[it.tool][0]} for ${it.one}.`); return false; }
     T(it.tool).classList.remove('hint'); return true;
   },
-  drop(d) {
-    const it = LIST[cur]; if (!it) return false;
-    const jar = T(it.ing).getBBox();
-    if (filled !== it.ing && near(d, jar, 30)) { filled = it.ing; setScoop(k, ING[it.ing].color); beep(TICK); lights(['bowl']); guide('Pour it in the bowl.'); return false; }
-    if (filled === it.ing && near(d, T('bowl').getBBox(), 30)) {
-      filled = null; setScoop(k, null); it.got++; bowlBlob(ING[it.ing].color, 2, it.ing === 'sugar'); beep([[587, 0, .1], [784, .08, .14]]);
-      cardRows(); setTimeout(nextIngredient, 250); return false;
+  move(d) {
+    const it = LIST[cur]; if (!it || busy) return;
+    if (filled !== it.ing && !d.filling && near(d, T(it.ing).getBBox(), 10)) {   // over the food: the lid opens and the tool fills
+      d.filling = true; if (LIDDED.includes(it.ing)) lid(it.ing, true);
+      setTimeout(() => { filled = it.ing; setScoop(k, ING[it.ing].color); beep(TICK); lights(['bowl']); guide('Pour it in the bowl.'); d.filling = false; }, 260);
+      setTimeout(() => lid(it.ing, false), 750);
+    } else if (filled === it.ing && near(d, T('bowl').getBBox(), 0)) {   // over the bowl: it pours by itself
+      drag = null; d.g.classList.remove('held'); pourIn(d.g, k);
     }
-    return false;
   },
+  drop() { return false; },
 });
 HANDLERS.butter = HANDLERS.blueberries = {
   pick(g) { const it = LIST[cur]; return step === 0 && it && it.ing === g.dataset.id; },
