@@ -1037,12 +1037,12 @@ function aboveBox(d, c, h, box, top) { const [x, y] = heldMid(d, c), w = box.w ?
 // where a point of the tool's picture is now: moved with your hand and turned with the tool
 function held(d, p, c, deg) { const r = deg * Math.PI / 180, v = [p[0] - c[0], p[1] - c[1]];
   return [c[0] + (d.x - d.x0) + v[0] * Math.cos(r) - v[1] * Math.sin(r), c[1] + (d.y - d.y0) + v[0] * Math.sin(r) + v[1] * Math.cos(r)]; }
-function stream(from, to, color, n) {   // food falling from a spout
-  const fx = document.getElementById('fx');
+function stream(from, to, color, n, inside) {   // food falling from a spout; with inside, it slides out of the opening, over the lip, then falls (Mac, Nov 26)
+  const fx = document.getElementById('fx'), o = inside || from;
   for (let i = 0; i < (n || 8); i++) setTimeout(() => {
-    const d = add(`<circle cx="${from[0]}" cy="${from[1]}" r="${9 + (i % 3) * 3}" fill="${color}"/>`, fx);
-    d.style.transition = 'transform .35s ease-in, opacity .2s .3s'; void d.getBBox();
-    d.style.transform = `translate(${to[0] + (Math.random() - .5) * 30 - from[0]}px, ${to[1] - from[1]}px)`; d.style.opacity = 0;
+    const d = add(`<circle cx="${o[0]}" cy="${o[1]}" r="${9 + (i % 3) * 3}" fill="${color}"/>`, fx), tx = to[0] + (Math.random() - .5) * 30;
+    const k = inside ? [{ transform: 'translate(0,0)', offset: 0 }, { transform: `translate(${from[0] - o[0]}px, ${from[1] - o[1]}px)`, offset: .3, easing: 'ease-in' }] : [{ transform: 'translate(0,0)', easing: 'ease-in' }];
+    d.animate([...k, { transform: `translate(${tx - o[0]}px, ${to[1] - o[1]}px)`, opacity: 1, offset: .85 }, { transform: `translate(${tx - o[0]}px, ${to[1] - o[1]}px)`, opacity: 0 }], { duration: inside ? 520 : 400, fill: 'forwards' });
     setTimeout(() => d.remove(), 600);
   }, i * 55);
 }
@@ -1052,7 +1052,8 @@ async function pourIn(d, k) {
   const [cx, bottom, h] = TOOLPOS[k], b = picBox(k, cx, bottom, h), c = [b.x + b.w / 2, b.y + b.h / 2], [px, py, rot] = POUR[k];
   const m = BOWL.mouth, spout = [m.cx, m.cy - m.ry - 50], s = overTarget(d, [b.x + b.w * px, b.y + b.h * py], c, rot, spout);
   tilt(d.g, rot, c[0], c[1], 360, s); await wait(360);
-  const L = levelAt(); stream(spout, [L.cx, L.cy], color);
+  const [fx, fy] = TOOL_SPOT[k], mid = held(d, [b.x + b.w * fx, b.y + b.h * fy], c, rot);   // the middle of the opening, where the food is
+  const L = levelAt(); stream(spout, [L.cx, L.cy], color, 8, [mid[0] + s[0], mid[1] + s[1]]);
   setTimeout(() => setScoop(k, null), 250); beep([[587, 0, .1], [784, .08, .14]]);
   await wait(600);
   filled = null; it.got++; bowlBlob(color, 2, it.ing === 'sugar'); cardRows();
