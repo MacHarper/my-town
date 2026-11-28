@@ -340,9 +340,10 @@
     #tbPlay .tp-eat { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; }
     #tbPlay .tp-eat[hidden], #tbPlay .tp-pic img.tp-off { display: none; }
     #tbPlay .tp-eat .te-doll { height: 94%; width: auto; max-width: none; object-fit: contain; }
-    #tbPlay .tp-eat .te-food { position: absolute; width: 30%; height: auto; max-width: none; max-height: none; filter: drop-shadow(0 3px 2px rgba(0,0,0,.12)); }
+    #tbPlay .tp-eat .te-food { position: absolute; width: 17%; height: auto; max-width: none; max-height: none; filter: drop-shadow(0 3px 2px rgba(0,0,0,.12)); }
     #tbPlay .te-crumb { position: absolute; width: 7px; height: 6px; border-radius: 3px; background: #c0874f; pointer-events: none; }
-    #tbPlay .te-heart { position: absolute; width: 34px; height: 30px; pointer-events: none; }`;
+    #tbPlay .te-heart { position: absolute; width: 50px; height: 44px; pointer-events: none; }
+    #tbPlay .te-heart svg { width: 100%; height: 100%; display: block; }`;
   document.head.appendChild(playCss);
   const play = document.createElement('div'); play.id = 'tbPlay'; play.setAttribute('aria-hidden', 'true');
   play.innerHTML = `<div class="tp-box" role="dialog" aria-labelledby="tpName"><button class="tp-x" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg></button>
@@ -391,8 +392,8 @@
     play.querySelector('#tpName').textContent = 'Yum!';
     const run = () => {
       const S = pic.getBoundingClientRect(), D = (data.avatar ? doll : pic).getBoundingClientRect();
-      const mx = D.left - S.left + D.width * (data.avatar ? .62 : .5), my = D.top - S.top + D.height * (data.avatar ? .14 : .45);   // just in front of the mouth
       const fw = food.offsetWidth, fh = food.offsetHeight;
+      const mx = D.left - S.left + (data.avatar ? D.width * .5 + fw * .42 : D.width * .5), my = D.top - S.top + D.height * (data.avatar ? .15 : .45);   // held up beside the mouth, not over the face
       const at = (x, y) => `translate(${x - fw / 2}px, ${y - fh / 2}px)`;
       food.style.left = '0px'; food.style.top = '0px';
       const sx = S.width * .78, sy = S.height * .8, bites = [1, .72, .48, .26, 0];
@@ -411,7 +412,7 @@
         for (let h = 0; h < 9; h++) setTimeout(() => {
           const e = document.createElement('div'); e.className = 'te-heart'; e.innerHTML = HEART;
           const x = mx + (Math.random() - .5) * S.width * .55, s = .6 + Math.random() * .6;
-          e.style.left = (x - 17) + 'px'; e.style.top = (my + 20) + 'px'; stage.appendChild(e);
+          e.style.left = (x - 25) + 'px'; e.style.top = (my + 10) + 'px'; stage.appendChild(e);
           e.animate([{ transform: `translateY(0) scale(${s * .4})`, opacity: 0 }, { transform: `translateY(-30px) scale(${s})`, opacity: 1, offset: .25 }, { transform: `translateY(-${110 + Math.random() * 60}px) scale(${s}) rotate(${(Math.random() - .5) * 30}deg)`, opacity: 0 }], { duration: 1500, easing: 'ease-out' }).onfinish = () => e.remove();
         }, h * 130);
         tx.textContent = `You loved the ${it.name}!`; tx.hidden = false;
