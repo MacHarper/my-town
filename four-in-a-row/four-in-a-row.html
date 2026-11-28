@@ -600,7 +600,9 @@
     const it = item(id), pic = play.querySelector('.tp-pic'), stage = play.querySelector('.tp-eat'), still = pic.querySelector('img');
     const doll = stage.querySelector('.te-doll'), food = stage.querySelector('.te-food'), go = play.querySelector('.tp-go'), tx = play.querySelector('.tp-text');
     tbRemoveItem(id);
-    still.classList.add('tp-off'); stage.hidden = false; doll.hidden = !data.avatar; if (data.avatar) doll.src = data.avatar; food.src = tbItemPic(id);
+    [food, doll].forEach(x => x.getAnimations().forEach(a => a.cancel()));   // a fresh start every time (no leftovers from the last treat)
+    food.style.transform = 'scale(0)';
+    still.classList.add('tp-off'); stage.hidden = false; doll.hidden = !data.avatar; if (data.avatar && doll.getAttribute('src') !== data.avatar) doll.src = data.avatar; food.src = tbItemPic(id);
     go.hidden = true; play.querySelector('.tp-x').hidden = true; tx.hidden = true;
     play.querySelector('#tpName').textContent = 'Yum!';
     const run = () => {
@@ -608,7 +610,7 @@
       const fw = food.offsetWidth, fh = food.offsetHeight;
       const mx = D.left - S.left + (data.avatar ? D.width * .5 + fw * .42 : D.width * .5), my = D.top - S.top + D.height * (data.avatar ? .15 : .45);   // held up beside the mouth, not over the face
       const at = (x, y) => `translate(${x - fw / 2}px, ${y - fh / 2}px)`;
-      food.style.left = '0px'; food.style.top = '0px';
+      food.style.left = '0px'; food.style.top = '0px'; food.style.transform = '';
       const sx = S.width * .78, sy = S.height * .8, bites = [1, .72, .48, .26, 0];
       food.animate([{ transform: at(sx, sy) + ' scale(1)' }, { transform: at(mx, my) + ' scale(1)' }], { duration: 650, easing: 'cubic-bezier(.3, 1.3, .5, 1)', fill: 'forwards' });
       bites.slice(1).forEach((k, i) => setTimeout(() => {   // a bite: the treat gets smaller, a few crumbs fall
@@ -632,7 +634,8 @@
         go.textContent = 'OK'; go.hidden = false; go.onclick = () => { closePlay(); beep([[660, 0, .1], [440, .07, .15]]); };
       }, 900 + 4 * 480 + 250);
     };
-    if (doll.hidden || doll.complete) requestAnimationFrame(run); else doll.onload = () => requestAnimationFrame(run);
+    let ran = false; const go1 = () => { if (!ran) { ran = true; requestAnimationFrame(run); } };
+    if (doll.hidden || (doll.complete && doll.naturalWidth)) go1(); else { doll.onload = go1; setTimeout(go1, 600); }
   }
   const resetEat = () => { const s = play.querySelector('.tp-eat'); s.hidden = true; s.querySelectorAll('.te-crumb, .te-heart').forEach(x => x.remove()); play.querySelector('.tp-pic img').classList.remove('tp-off'); play.querySelector('.tp-go').hidden = false; };
   play.querySelector('.tp-save').onclick = () => { closePlay(); wiggle($('tbBag')); tbSparkle($('tbBag'), 14); beep([[659, 0, .1], [523, .08, .15]]); };
