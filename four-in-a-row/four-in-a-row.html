@@ -263,7 +263,7 @@
     transform: translateY(16px) scale(.6); transform-origin: 70% 100%; opacity: 0; pointer-events: none; transition: transform .263s cubic-bezier(.3, 1.5, .5, 1), opacity .21s; color: #4a3b5c; }
   #tb .tb-panel.open { transform: none; opacity: 1; pointer-events: auto; }
   #tb .tb-bag { display: grid; grid-template-columns: repeat(3, 64px); gap: 10px; }
-  #tb .tb-slot { position: relative; width: 64px; height: 64px; border-radius: 16px; background: #f8f4fc; box-shadow: inset 0 3px 6px rgba(120, 60, 120, .08); display: flex; align-items: center; justify-content: center; }
+  #tb .tb-slot { touch-action: none; position: relative; width: 64px; height: 64px; border-radius: 16px; background: #f8f4fc; box-shadow: inset 0 3px 6px rgba(120, 60, 120, .08); display: flex; align-items: center; justify-content: center; }
   #tb .tb-slot svg { width: 22px; height: 22px; opacity: .5; }
   #tb .tb-slot img { width: 84%; height: 84%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
   #tb .tb-slot.new img { animation: tbStamp .693s cubic-bezier(.3, 1.6, .5, 1); }
@@ -547,14 +547,22 @@
     #tbPlay .tp-btns button:active { transform: translateY(4px); box-shadow: none; }
     #tbPlay .tp-x { position: absolute; right: 14px; top: 14px; width: 52px; height: 52px; border: none; border-radius: 16px; background: #5f5a6b; box-shadow: 0 5px 0 #46424f; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     #tbPlay .tp-x[hidden] { display: none; }
-    #tbPlay .tp-x svg { width: 22px; height: 22px; }`;
+    #tbPlay .tp-x svg { width: 22px; height: 22px; }
+    /* eating a treat (Mac, Nov 27, 2026): your doll takes bites, crumbs fall, hearts float up */
+    #tbPlay .tp-pic { position: relative; overflow: hidden; }
+    #tbPlay .tp-eat { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; }
+    #tbPlay .tp-eat[hidden], #tbPlay .tp-pic img.tp-off { display: none; }
+    #tbPlay .tp-eat .te-doll { height: 94%; width: auto; max-width: none; object-fit: contain; }
+    #tbPlay .tp-eat .te-food { position: absolute; width: 30%; height: auto; max-width: none; max-height: none; filter: drop-shadow(0 3px 2px rgba(0,0,0,.12)); }
+    #tbPlay .te-crumb { position: absolute; width: 7px; height: 6px; border-radius: 3px; background: #c0874f; pointer-events: none; }
+    #tbPlay .te-heart { position: absolute; width: 34px; height: 30px; pointer-events: none; }`;
   document.head.appendChild(playCss);
   const play = document.createElement('div'); play.id = 'tbPlay'; play.setAttribute('aria-hidden', 'true');
   play.innerHTML = `<div class="tp-box" role="dialog" aria-labelledby="tpName"><button class="tp-x" aria-label="Close"><svg viewBox="0 0 22 22"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg></button>
-    <div class="tp-pic"><img alt=""></div><h3 id="tpName"></h3><p class="tp-text" hidden></p>
+    <div class="tp-pic"><img alt=""><div class="tp-eat" hidden><img class="te-doll" alt=""><img class="te-food" alt=""></div></div><h3 id="tpName"></h3><p class="tp-text" hidden></p>
     <div class="tp-btns"><button class="tp-go">Play now</button><button class="tp-save">Save in backpack</button></div></div>`;
   document.body.appendChild(play);
-  const closePlay = () => { play.classList.remove('open'); play.setAttribute('aria-hidden', 'true'); };
+  const closePlay = () => { play.classList.remove('open'); play.setAttribute('aria-hidden', 'true'); setTimeout(() => { if (!play.classList.contains('open')) resetEat(); }, 250); };
   window.tbAskPlay = (id, bought) => {   // bought: just bought at the store, so it also offers Save in backpack
     const it = item(id); if (!it.play) return false;
     closePanels();
@@ -581,16 +589,91 @@
     const tx = play.querySelector('.tp-text'); tx.textContent = about(it); tx.hidden = false;
     play.querySelector('.tp-save').hidden = true; play.querySelector('.tp-x').hidden = false;
     const go = play.querySelector('.tp-go'); go.textContent = 'OK'; go.onclick = () => { closePlay(); beep([[660, 0, .1], [440, .07, .15]]); };
+    if (it.kind === 'food') { go.textContent = 'Eat'; go.onclick = () => eatTreat(id); }   // treats from the cafe: eat them (Mac, Nov 27, 2026)
     play.classList.add('open'); play.setAttribute('aria-hidden', 'false');
     beep([[587, 0, .08], [784, .07, .12]]);
   };
+  // ---- eating a treat (Mac, Nov 27, 2026): your doll holds it up, takes bites (crumbs fall), then hearts float up; it leaves the backpack ----
+  const HEART = '<svg viewBox="0 0 34 30"><path d="M17 29 C6 21 1 15 1 9 C1 4 5 1 9.5 1 C13 1 15.5 3 17 6 C18.5 3 21 1 24.5 1 C29 1 33 4 33 9 C33 15 28 21 17 29 Z" fill="#e0457b"/><ellipse cx="9" cy="8" rx="3.5" ry="2.4" fill="#fff" opacity=".55" transform="rotate(-30 9 8)"/></svg>';
+  function eatTreat(id) {
+    const it = item(id), pic = play.querySelector('.tp-pic'), stage = play.querySelector('.tp-eat'), still = pic.querySelector('img');
+    const doll = stage.querySelector('.te-doll'), food = stage.querySelector('.te-food'), go = play.querySelector('.tp-go'), tx = play.querySelector('.tp-text');
+    tbRemoveItem(id);
+    still.classList.add('tp-off'); stage.hidden = false; doll.hidden = !data.avatar; if (data.avatar) doll.src = data.avatar; food.src = tbItemPic(id);
+    go.hidden = true; play.querySelector('.tp-x').hidden = true; tx.hidden = true;
+    play.querySelector('#tpName').textContent = 'Yum!';
+    const run = () => {
+      const S = pic.getBoundingClientRect(), D = (data.avatar ? doll : pic).getBoundingClientRect();
+      const mx = D.left - S.left + D.width * (data.avatar ? .62 : .5), my = D.top - S.top + D.height * (data.avatar ? .14 : .45);   // just in front of the mouth
+      const fw = food.offsetWidth, fh = food.offsetHeight;
+      const at = (x, y) => `translate(${x - fw / 2}px, ${y - fh / 2}px)`;
+      food.style.left = '0px'; food.style.top = '0px';
+      const sx = S.width * .78, sy = S.height * .8, bites = [1, .72, .48, .26, 0];
+      food.animate([{ transform: at(sx, sy) + ' scale(1)' }, { transform: at(mx, my) + ' scale(1)' }], { duration: 650, easing: 'cubic-bezier(.3, 1.3, .5, 1)', fill: 'forwards' });
+      bites.slice(1).forEach((k, i) => setTimeout(() => {   // a bite: the treat gets smaller, a few crumbs fall
+        food.animate([{ transform: at(mx, my) + ` scale(${bites[i]})` }, { transform: at(mx + 4, my - 3) + ` scale(${(bites[i] + k) / 2 + .05})` }, { transform: at(mx, my) + ` scale(${k})` }], { duration: 260, fill: 'forwards' });
+        beep([[180 + i * 20, 0, .05], [140, .06, .05]], 'square');
+        for (let c = 0; c < 4; c++) {
+          const b = document.createElement('i'); b.className = 'te-crumb'; b.style.left = (mx + (Math.random() - .5) * fw * .5) + 'px'; b.style.top = (my + fh * .2) + 'px'; stage.appendChild(b);
+          b.animate([{ transform: 'translate(0, 0)', opacity: 1 }, { transform: `translate(${(Math.random() - .5) * 40}px, ${60 + Math.random() * 50}px)`, opacity: 0 }], { duration: 700, easing: 'ease-in' }).onfinish = () => b.remove();
+        }
+      }, 900 + i * 480));
+      setTimeout(() => {   // all gone: hearts float up and the doll does a happy hop
+        beep([[659, 0, .1], [784, .09, .1], [1047, .18, .25]]);
+        if (data.avatar) doll.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-14px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(-8px)' }, { transform: 'translateY(0)' }], { duration: 750, easing: 'ease-in-out' });
+        for (let h = 0; h < 9; h++) setTimeout(() => {
+          const e = document.createElement('div'); e.className = 'te-heart'; e.innerHTML = HEART;
+          const x = mx + (Math.random() - .5) * S.width * .55, s = .6 + Math.random() * .6;
+          e.style.left = (x - 17) + 'px'; e.style.top = (my + 20) + 'px'; stage.appendChild(e);
+          e.animate([{ transform: `translateY(0) scale(${s * .4})`, opacity: 0 }, { transform: `translateY(-30px) scale(${s})`, opacity: 1, offset: .25 }, { transform: `translateY(-${110 + Math.random() * 60}px) scale(${s}) rotate(${(Math.random() - .5) * 30}deg)`, opacity: 0 }], { duration: 1500, easing: 'ease-out' }).onfinish = () => e.remove();
+        }, h * 130);
+        tx.textContent = `You loved the ${it.name}!`; tx.hidden = false;
+        go.textContent = 'OK'; go.hidden = false; go.onclick = () => { closePlay(); beep([[660, 0, .1], [440, .07, .15]]); };
+      }, 900 + 4 * 480 + 250);
+    };
+    if (doll.hidden || doll.complete) requestAnimationFrame(run); else doll.onload = () => requestAnimationFrame(run);
+  }
+  const resetEat = () => { const s = play.querySelector('.tp-eat'); s.hidden = true; s.querySelectorAll('.te-crumb, .te-heart').forEach(x => x.remove()); play.querySelector('.tp-pic img').classList.remove('tp-off'); play.querySelector('.tp-go').hidden = false; };
   play.querySelector('.tp-save').onclick = () => { closePlay(); wiggle($('tbBag')); tbSparkle($('tbBag'), 14); beep([[659, 0, .1], [523, .08, .15]]); };
   play.querySelector('.tp-x').onclick = () => { closePlay(); beep([[660, 0, .1], [440, .07, .15]]); };
   play.addEventListener('click', e => { if (e.target === play && play.querySelector('.tp-save').hidden) closePlay(); });
+  // ---- using a thing right here (Mac, Nov 26, 2026): when the game can use it now (a cat toy while you care for a cat), you drag it
+  // out of the backpack onto the spot, with no pop-up. A game says so with window.tbCanUse(id) -> a short hint ('Drag it to Luna') or false,
+  // and takes it with window.tbUseItem(id, x, y) -> true when it was dropped in the right place (then it leaves the backpack).
+  const slotId = slot => data.backpack[[...slot.parentNode.children].indexOf(slot)];
+  const canUse = id => id && window.tbCanUse ? tbCanUse(id) : false;
+  let drag = null;
+  $('tbPanel').addEventListener('pointerdown', e => {
+    const slot = e.target.closest('.tb-slot'); if (!slot) return; const id = slotId(slot);
+    if (!canUse(id)) return;
+    e.preventDefault(); drag = { id, x0: e.clientX, y0: e.clientY, ghost: null, slot };
+  });
+  window.addEventListener('pointermove', e => {
+    if (!drag) return;
+    if (!drag.ghost) {
+      if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 8) return;
+      const g = drag.ghost = document.createElement('img'); g.src = tbItemPic(drag.id); g.alt = '';
+      g.style.cssText = 'position: fixed; z-index: 200; width: 96px; height: 96px; object-fit: contain; pointer-events: none; transform: translate(-50%, -50%) scale(1.1); filter: drop-shadow(0 8px 10px rgba(74, 59, 92, .3)); left: 0; top: 0;';
+      document.body.appendChild(g); closePanels(); beep([[587, 0, .08], [784, .07, .12]]);
+    }
+    drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px';
+  });
+  const endDrag = e => {
+    if (!drag) return; const d = drag; drag = null;
+    if (!d.ghost) return;   // a tap: the click below shows the hint
+    let ok = false; try { ok = e.type === 'pointerup' && tbUseItem(d.id, e.clientX, e.clientY); } catch (err) {}
+    if (ok) { d.ghost.remove(); tbRemoveItem(d.id); return; }
+    const b = $('tbBag').getBoundingClientRect();   // not on the spot: it goes back into the backpack
+    d.ghost.style.transition = 'left .35s ease-in, top .35s ease-in, opacity .35s, transform .35s'; d.ghost.style.left = (b.left + b.width / 2) + 'px'; d.ghost.style.top = (b.top + b.height / 2) + 'px';
+    d.ghost.style.transform = 'translate(-50%, -50%) scale(.4)'; d.ghost.style.opacity = '0'; setTimeout(() => d.ghost.remove(), 400);
+    beep([[660, 0, .1], [440, .07, .15]]);
+  };
+  window.addEventListener('pointerup', endDrag); window.addEventListener('pointercancel', endDrag);
   $('tbPanel').addEventListener('click', e => {
     const slot = e.target.closest('.tb-slot'); if (!slot) return;
-    const id = data.backpack[[...slot.parentNode.children].indexOf(slot)];
+    const id = slotId(slot);
     if (!id) return;
+    const hint = canUse(id); if (hint) { tbToast(hint); wiggle(slot); return; }   // usable here: no pop-up, just how to use it
     if (item(id).play) return tbAskPlay(id);
     setTimeout(() => { if (!e.tbHandled) tbItemInfo(id); }, 0);   // a game can use the tap itself (the Vet Clinic gives the toy to the pet)
   });
